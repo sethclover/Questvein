@@ -1,0 +1,41 @@
+# Changelog
+
+Notable changes to Assignment 1.01 will be documented here.
+The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+
+## [1.0.0] - 2025-2-4
+
+### Added
+
+- Created README
+- Created Makefile
+
+### Changed
+
+- Logic for building corridors now has an 80% chance of building in the X
+  direction and a 20% chance to build in the Y direction to increase
+  the number of iterations it takes for the Y's to line up
+
+## [0.2.0] - 2025-2-3
+
+### Added
+
+- Enums for floor, corridor, upward and downward stairs, and rock
+- Print statements for failure to allocate memory or build rooms
+
+### Fixed
+
+- Rooms incorrectly checking for overlapping rooms, resulting in large
+  rooms completely enveloping smaller rooms, making them practically
+  invisible
+
+## [0.1.0] - 2025-2-3
+
+### Added
+
+- Building the perimeter for the dungeon (80x21)
+- Generating between 6 and 8 randomly sized and located
+  rooms to be placed in the dungeon
+- Connecting each room with a random other room with corridors
+- Building upward and downward stairs in two different rooms
+- Printing the dungeon

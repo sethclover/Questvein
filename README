@@ -1,0 +1,11 @@
+The dungeon generation first creates a solid border around the edge
+of the perimeter. Then it creates and inserts between 6 and 8 rooms, 
+which are type-defined structs containing the X and Y coordinates
+of the top left corner, along with the length (X) and width (Y). The
+rooms are between 4x3 and 12x12 in size. Next, it builds the
+corridors by iterating through the array of stored rooms and creating
+a pathway from the center point of the room to next random room in the
+array by randomly selecting a direction to build it. It then places
+upward and downward stairs in two different rooms that are never
+directed connected, unless a corridor happens to run in bewteen them.
+Finally, the dungeon is printed to stdout.
