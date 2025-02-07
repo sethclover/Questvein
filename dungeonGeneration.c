@@ -3,21 +3,7 @@
 #include <time.h>
 #include <string.h>
 
-#define MAX_LENGTH 80
-#define MAX_WIDTH 21
-#define ATTEMPTS 1000
-#define FLOOR '.'
-#define CORRIDOR '#'
-#define STAIR_UP '<'
-#define STAIR_DOWN '>'
-#define ROCK ' '
-
-typedef struct {
-    int length;
-    int width;
-    int x;
-    int y;
-} Room;
+#include "dungeon.h"
 
 char dungeon[MAX_WIDTH][MAX_LENGTH];
 
@@ -149,7 +135,7 @@ int main(int argc, char *argv[]) {
 
     buildPerimeter();
 
-    int roomCount = rand() % 3 + 6;
+    int roomCount = rand() % 5 + 7;
     Room *rooms = buildRooms(roomCount);
     if (!rooms) {
         return 1;
