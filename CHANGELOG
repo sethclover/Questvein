@@ -3,6 +3,13 @@
 Notable changes to Assignment 1.01 will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.0.1] - 2025-2-7
+
+### Added
+
+- Git Repo is for the project has been made, link below
+- Heading in README for which assignment it refers to
+
 ## [1.0.0] - 2025-2-4
 
 ### Added
@@ -39,3 +46,5 @@ The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.
 - Connecting each room with a random other room with corridors
 - Building upward and downward stairs in two different rooms
 - Printing the dungeon
+
+https://github.com/sethclover/dungeonGame
