@@ -5,38 +5,57 @@
 
 #include "dungeon.h"
 
-char dungeon[MAX_WIDTH][MAX_LENGTH];
+Tile dungeon[MAX_HEIGHT][MAX_WIDTH];
 
-void buildPerimeter() {
-    memset(dungeon, ROCK, sizeof(dungeon));
+void initDungeon() {
+    generateHardness(dungeon);
 
-    dungeon[0][0] = '+';
-    dungeon[0][MAX_LENGTH - 1] = '+';
-    dungeon[MAX_WIDTH - 1][0] = '+';
-    dungeon[MAX_WIDTH - 1][MAX_LENGTH - 1] = '+';
-
-    for (int i = 1; i < MAX_LENGTH - 1; i++) {
-        dungeon[0][i] = '-';
-        dungeon[MAX_WIDTH - 1][i] = '-';
+    for (int i = 0; i < MAX_HEIGHT; i++) {
+        for (int j = 0; j < MAX_WIDTH; j++) {
+            dungeon[i][j].type = ROCK;
+        }
     }
+
     for (int i = 1; i < MAX_WIDTH - 1; i++) {
-        dungeon[i][0] = '|';
-        dungeon[i][MAX_LENGTH - 1] = '|';
+        dungeon[0][i].type = '-';
+        dungeon[0][i].hardness = MAX_HARDNESS;
+
+        dungeon[MAX_HEIGHT - 1][i].type = '-';
+        dungeon[MAX_HEIGHT - 1][i].hardness = MAX_HARDNESS;
     }
+    for (int i = 1; i < MAX_HEIGHT - 1; i++) {
+        dungeon[i][0].type = '|';
+        dungeon[i][0].hardness = MAX_HARDNESS;
+
+        dungeon[i][MAX_WIDTH - 1].type = '|';
+        dungeon[i][MAX_WIDTH - 1].hardness = MAX_HARDNESS;
+    }
+
+    dungeon[0][0].type = CORNER;
+    dungeon[0][0].hardness = MAX_HARDNESS;
+
+    dungeon[0][MAX_WIDTH - 1].type = '+';
+    dungeon[0][MAX_WIDTH - 1].hardness = MAX_HARDNESS;
+
+    dungeon[MAX_HEIGHT - 1][0].type = '+';
+    dungeon[MAX_HEIGHT - 1][0].hardness = MAX_HARDNESS;
+
+    dungeon[MAX_HEIGHT - 1][MAX_WIDTH - 1].type = '+';
+    dungeon[MAX_HEIGHT - 1][MAX_WIDTH - 1].hardness = MAX_HARDNESS;
 }
 
 int placeRoom(Room room) {
-    for (int i = room.y - 1; i < room.y + room.width + 1; i++) {
-        for (int j = room.x - 1; j < room.x + room.length + 1; j++) {
-            if (dungeon[i][j] == FLOOR) {
+    for (int i = room.y - 1; i < room.y + room.height + 1; i++) {
+        for (int j = room.x - 1; j < room.x + room.width + 1; j++) {
+            if (dungeon[i][j].type == FLOOR) {
                 return 0;
             }
         }
     }
 
-    for (int i = room.y; i < room.y + room.width; i++) {
-        for (int j = room.x; j < room.x + room.length; j++) {
-            dungeon[i][j] = FLOOR;
+    for (int i = room.y; i < room.y + room.height; i++) {
+        for (int j = room.x; j < room.x + room.width; j++) {
+            dungeon[i][j].type = FLOOR;
         }
     }
 
@@ -53,10 +72,10 @@ Room* buildRooms(int roomCount) {
     }
 
     for (int i = 0; i < ATTEMPTS; i++) {
-        rooms[roomsBuilt].length = rand() % 9 + 4;
-        rooms[roomsBuilt].width = rand() % 10 + 3;
-        rooms[roomsBuilt].x = rand() % (MAX_LENGTH - rooms[roomsBuilt].length - 1) + 1;
-        rooms[roomsBuilt].y = rand() % (MAX_WIDTH - rooms[roomsBuilt].width - 1) + 1;
+        rooms[roomsBuilt].width = rand() % 9 + 4;
+        rooms[roomsBuilt].height = rand() % 10 + 3;
+        rooms[roomsBuilt].x = rand() % (MAX_WIDTH - rooms[roomsBuilt].width - 1) + 1;
+        rooms[roomsBuilt].y = rand() % (MAX_HEIGHT - rooms[roomsBuilt].height - 1) + 1;
 
         if (placeRoom(rooms[roomsBuilt])) {
             roomsBuilt++;
@@ -73,10 +92,10 @@ Room* buildRooms(int roomCount) {
 
 void buildCorridors(Room *rooms, int roomCount) {
     for (int i = 0 ; i < roomCount - 1; i++) {
-        int x = rooms[i].x + rooms[i].length / 2;
-        int y = rooms[i].y + rooms[i].width / 2;
-        int x2 = rooms[i + 1].x + rooms[i + 1].length / 2;
-        int y2 = rooms[i + 1].y + rooms[i + 1].width / 2;
+        int x = rooms[i].x + rooms[i].width / 2;
+        int y = rooms[i].y + rooms[i].height / 2;
+        int x2 = rooms[i + 1].x + rooms[i + 1].width / 2;
+        int y2 = rooms[i + 1].y + rooms[i + 1].height / 2;
         int xDir = (x2 - x > 0) ? 1 : -1;
         int yDir = (y2 - y > 0) ? 1 : -1;
 
@@ -84,27 +103,27 @@ void buildCorridors(Room *rooms, int roomCount) {
             int dir = rand() % 5;
 
             if (dir == 0) {
-                if (dungeon[y][x] != FLOOR) {
-                    dungeon[y][x] = CORRIDOR;
+                if (dungeon[y][x].type != FLOOR) {
+                    dungeon[y][x].type = CORRIDOR;
                 }
                 y += yDir;
             } 
             else {
-                if (dungeon[y][x] != FLOOR) {
-                    dungeon[y][x] = CORRIDOR;
+                if (dungeon[y][x].type != FLOOR) {
+                    dungeon[y][x].type = CORRIDOR;
                 }
                 x += xDir;
             }
         }
         while (x != x2) {
-            if (dungeon[y][x] != FLOOR) {
-                    dungeon[y][x] = CORRIDOR;
+            if (dungeon[y][x].type != FLOOR) {
+                    dungeon[y][x].type = CORRIDOR;
                 }
             x += xDir;
         }
         while (y != y2) {
-            if (dungeon[y][x] != FLOOR) {
-                    dungeon[y][x] = CORRIDOR;
+            if (dungeon[y][x].type != FLOOR) {
+                    dungeon[y][x].type = CORRIDOR;
                 }
             y += yDir;
         }
@@ -112,19 +131,43 @@ void buildCorridors(Room *rooms, int roomCount) {
 }
 
 void buildStairs(Room *rooms, int roomCount) {
-    int xUp = rand() % rooms[0].length + rooms[0].x;
-    int yUp = rand() % rooms[0].width + rooms[0].y;
-    dungeon[yUp][xUp] = STAIR_UP;
+    int xUp = rand() % rooms[0].width + rooms[0].x;
+    int yUp = rand() % rooms[0].height + rooms[0].y;
+    dungeon[yUp][xUp].type = STAIR_UP;
 
-    int xDown = rand() % rooms[roomCount - 1].length + rooms[roomCount - 1].x;
-    int yDown = rand() % rooms[roomCount - 1].width + rooms[roomCount - 1].y;
-    dungeon[yDown][xDown] = STAIR_DOWN;
+    int xDown = rand() % rooms[roomCount - 1].width + rooms[roomCount - 1].x;
+    int yDown = rand() % rooms[roomCount - 1].height + rooms[roomCount - 1].y;
+    dungeon[yDown][xDown].type = STAIR_DOWN;
 }
 
 void printDungeon() {
-    for (int i = 0; i < MAX_WIDTH; i++) {
-        for (int j = 0; j < MAX_LENGTH; j++) {
-            printf("%c", dungeon[i][j]);
+    for (int i = 0; i < MAX_HEIGHT; i++) {
+        for (int j = 0; j < MAX_WIDTH; j++) {
+            printf("%c", dungeon[i][j].type);
+        }
+        printf("\n");
+    }
+}
+
+void printHardness() {
+    for (int i = 0; i < MAX_HEIGHT; i++) {
+        for (int j = 0; j < MAX_WIDTH; j++) {
+            int h = dungeon[i][j].hardness;
+            if ( h < 65) {
+                printf(" ");
+            } 
+            else if (h < 130) {
+                printf(".");
+            } 
+            else if (h < 195) {
+                printf(";");
+            }
+            else if (h < 255) {
+                printf("*");
+            } 
+            else {
+                printf("#");
+            }
         }
         printf("\n");
     }
@@ -133,7 +176,7 @@ void printDungeon() {
 int main(int argc, char *argv[]) {
     srand(time(NULL));
 
-    buildPerimeter();
+    initDungeon();
 
     int roomCount = rand() % 5 + 7;
     Room *rooms = buildRooms(roomCount);
@@ -146,6 +189,18 @@ int main(int argc, char *argv[]) {
     buildStairs(rooms, roomCount);
 
     printDungeon();
+
+    char op;
+    if (argc == 2 && argv[1][0] == '-') {
+        op = argv[1][1];
+    }
+
+    switch (op) {
+        case 'h':
+            printHardness();
+        default:
+            break;
+    }
 
     free(rooms);
     rooms = NULL;

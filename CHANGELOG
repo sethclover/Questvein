@@ -3,11 +3,35 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.2.0] - 2025-2-10
+
+### Added
+
+- Perlin gradient noise for hardness determination, which
+  defines a grid of gradient vectors, computes the dot product,
+  and then interpolates their values
+- Definitions for border is now defined in the header file
+- Switch operation using -h for printing an additional board for
+  hardness values that shows a bolder character for a higher
+  hardness value and vice versa
+
+### Changed
+
+- The 2d dungeon array is now a Tile struct instead of char array,
+  and now contains a type of symbol and a hardness value from 0-255
+- buildPerimeter has been replaced with initDungeon and now sets the
+  hardness of the board based on the Perlin noise algorithm and then 
+  sets the type as rock and the edges as max-hardness border rock
+- Instead of length for X and width for Y, now fits the convention of
+  using width for X and height for Y values
+- Makefile updated to include perlin.c
+
 ## [1.1.0] - 2025-2-7
 
 ### Added 
 
-- Header file containing definitions and structs
+- Header file containing definitions and structs, the global dungeon,
+  and methods
 
 ### Changed
 
