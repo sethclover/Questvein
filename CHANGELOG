@@ -3,6 +3,30 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.3.0] - 2025-2-11
+
+### Added
+
+- Player is now placed in a random location in a random room excluding
+  positions that are upward or downward stairs
+
+### Changed
+
+- The switch -h for printing the hardness of the dungeon has been
+  replaced with -hb and -ha for printing the hardness before the floors
+  and corridors are added and printing after the hardness has been added,
+  respectively
+- Instead of corridors connecting at the center point of a room, it
+  connects to a random point in the room that is not on the edge of the
+  room
+- The print function for hardness acts displays differently, as it now 
+  prints floor as empty space, max-hardness rock as '#', and lowest to 
+  highest hardness rock using '.', ';', '*', '%', respectively  
+
+### Fixed
+
+- Spelling and grammar in the changelog
+
 ## [1.2.0] - 2025-2-10
 
 ### Added
@@ -20,7 +44,7 @@ The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.
 - The 2d dungeon array is now a Tile struct instead of char array,
   and now contains a type of symbol and a hardness value from 0-255
 - buildPerimeter has been replaced with initDungeon and now sets the
-  hardness of the board based on the Perlin noise algorithm and then 
+  hardness of the board based on the Perlin noise algorithm and then
   sets the type as rock and the edges as max-hardness border rock
 - Instead of length for X and width for Y, now fits the convention of
   using width for X and height for Y values
@@ -28,7 +52,7 @@ The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [1.1.0] - 2025-2-7
 
-### Added 
+### Added
 
 - Header file containing definitions and structs, the global dungeon,
   and methods
@@ -36,9 +60,9 @@ The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.
 ### Changed
 
 - Makefile now uses CC and CFLAGS instead of hardcoding
-- Makefile was updated to check if heaader file has changed during make
+- Makefile was updated to check if the header file has changed during make
 - Random room count has been updated from 6-8 to 7-12 for more filled
-  space and varibility
+  space and variability
 
 ### Fixed
 
