@@ -9,8 +9,7 @@
 char *dungeon_file;
 
 void setupDungeonFile(char *filename) {
-    // char *home = getenv("HOME");
-    char *home = "/mnt/c/Users/sethc/dungeonGame";
+    char *home = getenv("HOME");
     int dungeon_file_length = strlen(home) + strlen("/.rlg327/") + strlen(filename) + 1;
 
     dungeon_file = malloc(dungeon_file_length * sizeof(*dungeon_file));
