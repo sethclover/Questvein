@@ -27,6 +27,26 @@ typedef struct {
     int hardness;
 } Tile;
 
-extern Tile dungeon[MAX_HEIGHT][MAX_WIDTH];
+typedef struct {
+    int x;
+    int y;
+} Pos;
 
-void generateHardness(Tile dungeon[MAX_HEIGHT][MAX_WIDTH]);
+extern Tile dungeon[MAX_HEIGHT][MAX_WIDTH];
+extern int roomCount;
+extern Room *rooms;
+extern Pos player;
+extern Pos *upStairs;
+extern int upStairsCount;
+extern Pos *downStairs;
+extern int downStairsCount;
+
+void generateHardness();
+
+void initDungeon();
+void printDungeon();
+void printHardness();
+void fillDungeon();
+
+void loadDungeon(char *filename);
+void saveDungeon(char *filename);

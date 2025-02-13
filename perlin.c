@@ -57,7 +57,7 @@ float perlin(float x, float y) {
     return lerp(ix0, ix1, fade(y - (float)y0));
 }
 
-void generateHardness(Tile dungeon[MAX_HEIGHT][MAX_WIDTH]) {
+void generateHardness() {
     initGrads();
 
     for (int i = 0; i < MAX_HEIGHT; i++) {

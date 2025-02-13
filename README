@@ -1,13 +1,15 @@
-### Assignment 1.01 README
+### Assignment 1.02 README
 
-The dungeon generation first creates a solid border around the edge
-of the perimeter. Then it creates and inserts between 6 and 8 rooms, 
-which are type-defined structs containing the X and Y coordinates
-of the top left corner, along with the length (X) and width (Y). The
-rooms are between 4x3 and 12x12 in size. Next, it builds the
-corridors by iterating through the array of stored rooms and creating
-a pathway from the center point of the room to next random room in the
-array by randomly selecting a direction to build it. It then places
-upward and downward stairs in two different rooms that are never
-directed connected, unless a corridor happens to run in bewteen them.
-Finally, the dungeon is printed to stdout.
+This project implements dungeon save and load functionality.
+The dungeon is stored in a hidden directory "~/.rlg327/dungeon"
+using a structured binary format. The program supports three
+main operations: generating a new dungeon, saving a dungeon to
+disk, and loading a previously saved dungeon. The --save switch
+saves the dungeon before exiting, while the --load switch loads
+and displays a saved dungeon. The dungeon file format includes
+metadata such as a semantic marker, file version, and dungeon
+size, along with the player’s position, dungeon layout, room
+locations, and staircases. All data is stored in big-endian
+format for consistency. The main function will check for each
+of the switches and call the appropriate functions for generating,
+saving, or loading the dungeon.

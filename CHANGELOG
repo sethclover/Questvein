@@ -3,6 +3,31 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [2.0.0] - 2025-2-12
+
+### Added
+
+- Two new switches for saving and loading dungeons in the .rlg327 folder
+- Functionality for switches to be used together, including -hb and -ha
+  for printing the hardness visuals both before and after fill, --load for
+  printing hardness visuals after loading a dungeon
+- Global structs containing X and Y coordinates for the PC, upward stairs, and
+  downward stairs
+- Error checking for malloc function calls
+
+### Changed
+
+- The main function now exists in its own main.c file instead of within
+  dungeonGeneration.c
+- Main in dungeonGeneration.c is now called fillDungeon, which builds
+  rooms, corridors, and stairs, and places the player
+- Makefile is updated to include the new saveLoad.c file for saving and
+  loading dungeons
+
+### Removed
+
+- Unnecessary passing of external variables into functions
+
 ## [1.3.0] - 2025-2-11
 
 ### Added

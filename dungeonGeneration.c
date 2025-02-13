@@ -1,19 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <string.h>
 
 #include "dungeon.h"
 
-typedef enum {
-    op_hb,
-    op_ha
-} Operation;
-
 Tile dungeon[MAX_HEIGHT][MAX_WIDTH];
+int roomCount;
+Room *rooms;
+Pos player;
+Pos *upStairs;
+int upStairsCount;
+Pos *downStairs;
+int downStairsCount;
 
 void initDungeon() {
-    generateHardness(dungeon);
+    generateHardness();
 
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
@@ -96,7 +97,7 @@ Room* buildRooms(int roomCount) {
     return NULL;
 }
 
-void buildCorridors(Room *rooms, int roomCount) {
+void buildCorridors() {
     for (int i = 0 ; i < roomCount - 1; i++) {
         int x = rand() % (rooms[i].width - 2) + rooms[i].x + 1;
         int y = rand() % (rooms[i].height - 2) + rooms[i].y + 1;
@@ -141,17 +142,35 @@ void buildCorridors(Room *rooms, int roomCount) {
     }
 }
 
-void buildStairs(Room *rooms, int roomCount) {
+void buildStairs() {
     int xUp = rand() % rooms[0].width + rooms[0].x;
     int yUp = rand() % rooms[0].height + rooms[0].y;
+
+    upStairsCount = 1;
+    upStairs = malloc(upStairsCount * sizeof(Pos));
+    if (!upStairs) {
+        printf("Failed to allocate memory for upStairs\n");
+        return;
+    }
+    upStairs[0].x = xUp;
+    upStairs[0].y = yUp;
     dungeon[yUp][xUp].type = STAIR_UP;
 
     int xDown = rand() % rooms[roomCount - 1].width + rooms[roomCount - 1].x;
     int yDown = rand() % rooms[roomCount - 1].height + rooms[roomCount - 1].y;
+
+    downStairsCount = 1;
+    downStairs = malloc(downStairsCount * sizeof(Pos));
+    if (!downStairs) {
+        printf("Failed to allocate memory for downStairs\n");
+        return;
+    }
+    downStairs[0].x = xDown;
+    downStairs[0].y = yDown;
     dungeon[yDown][xDown].type = STAIR_DOWN;
 }
 
-void placePlayer(Room *rooms, int roomCount) {
+void placePlayer() {
     int roomNum = rand() % roomCount;
     int x, y;
     do {
@@ -159,7 +178,8 @@ void placePlayer(Room *rooms, int roomCount) {
         y = rand() % (rooms[roomNum].height - 2) + rooms[roomNum].y + 1;
     } while (dungeon[y][x].type != FLOOR);
     
-
+    player.x = x;
+    player.y = y;
     dungeon[y][x].type = '@';
 }
 
@@ -172,10 +192,10 @@ void printDungeon() {
     }
 }
 
-void printHardness(Tile dungeonToPrint[MAX_HEIGHT][MAX_WIDTH]) {
+void printHardness() {
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
-            int h = dungeonToPrint[i][j].hardness;
+            int h = dungeon[i][j].hardness;
             if (h < 1) {
                 printf(" ");
             }
@@ -199,42 +219,10 @@ void printHardness(Tile dungeonToPrint[MAX_HEIGHT][MAX_WIDTH]) {
     }
 }
 
-int main(int argc, char *argv[]) {
-    Operation op;
-    if (argc == 2 && argv[1][0] == '-') {
-        if (argv[1][1] == 'h') {
-            if (argv[1][2] == 'b') {
-                op = op_hb;
-            }
-            else if (argv[1][2] == 'a') {
-                op = op_ha;
-            }
-        }
-    }
-
-    srand(time(NULL));
-
-    initDungeon();
-
-    if (op == op_hb) {
-        printHardness(dungeon);
-    }
-
-    int roomCount = rand() % 5 + 7;
-    Room *rooms = buildRooms(roomCount);
-    if (!rooms) {
-        return 1;
-    }
-    buildCorridors(rooms, roomCount);
-    buildStairs(rooms, roomCount);
-    placePlayer(rooms, roomCount);
-
-    if (op == op_ha) {
-        printHardness(dungeon);
-    }
-    printDungeon();
-
-    free(rooms);
-    rooms = NULL;
-    return 0;
+void fillDungeon() {
+    roomCount = rand() % 5 + 7;
+    rooms = buildRooms(roomCount);
+    buildCorridors();
+    buildStairs();
+    placePlayer();
 }
