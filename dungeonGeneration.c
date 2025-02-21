@@ -219,10 +219,37 @@ void printHardness() {
     }
 }
 
+void printTunnelingDistances() {
+    for (int i = 0; i < MAX_HEIGHT; i++) {
+        for (int j = 0; j < MAX_WIDTH; j++) {
+            if (dungeon[i][j].tunnelingDist == UNREACHABLE) {
+                printf(" ");
+            }
+            else {
+                printf("%d", dungeon[i][j].tunnelingDist % 10);
+            }
+        }
+    }
+}
+
+void printNonTunnelingDistances() {
+    for (int i = 0; i < MAX_HEIGHT; i++) {
+        for (int j = 0; j < MAX_WIDTH; j++) {
+            if (dungeon[i][j].nonTunnelingDist == UNREACHABLE) {
+                printf(" ");
+            }
+            else {
+                printf("%d", dungeon[i][j].nonTunnelingDist % 10);
+            }
+        }
+    }
+}
+
 void fillDungeon() {
     roomCount = rand() % 5 + 7;
     rooms = buildRooms(roomCount);
     buildCorridors();
     buildStairs();
     placePlayer();
+    //generateDistances();
 }

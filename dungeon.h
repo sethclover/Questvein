@@ -14,20 +14,23 @@
 #define STAIR_UP '<'
 #define STAIR_DOWN '>'
 #define ROCK ' ' 
+#define UNREACHABLE 9999
 
-typedef struct {
+typedef struct Room {
     int width;
     int height;
     int x;
     int y;
 } Room;
 
-typedef struct {
+typedef struct Tile {
     char type;
     int hardness;
+    int tunnelingDist;
+    int nonTunnelingDist;
 } Tile;
 
-typedef struct {
+typedef struct Position {
     int x;
     int y;
 } Pos;

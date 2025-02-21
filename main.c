@@ -56,6 +56,8 @@ int main(int argc, char *argv[]) {
     }
 
     printDungeon();
+    //printTunnelingDistances();
+    //printNonTunnelingDistances();
 
     free(rooms);
     free(upStairs);

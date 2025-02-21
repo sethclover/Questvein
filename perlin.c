@@ -8,7 +8,7 @@
 
 #define SCALE 0.12
 
-typedef struct {
+typedef struct Gradient {
     float x;
     float y;
 } Gradient;

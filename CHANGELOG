@@ -3,6 +3,23 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [2.1.0] - 2025-2-21
+
+### Added
+
+- Fibonacci heap implementation (from scratch) supporting insert, getMin,
+  extractMin, and decrease key, for use in Dijkstra's algorithm
+- Printing for the tunneling and non tunneling distance from the PC for later
+  use in displaying Dijkstra's algorithm results
+- Stubs for generating distance in dungeonGeneration and printing them in
+  main for future implementation purposes
+- the Tiles that make up the dungeon now also keep track of their relative
+  distance to the PC for tunneling and non tunneling monsters
+
+### Fixed
+
+- Declares struct names now so they are no longer anonymous
+
 ## [2.0.2] - 2025-2-12
 
 - More addressing problems
