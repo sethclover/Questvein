@@ -9,8 +9,8 @@
 char *dungeon_file;
 
 void setupDungeonFile(char *filename) {
-    char *home = getenv("HOME");
-    int dungeon_file_length = strlen(home) + strlen("/.rlg327/") + strlen(filename) + 1;
+    char *homeDir = getenv("HOME");
+    int dungeon_file_length = strlen(homeDir) + strlen("/.rlg327/") + strlen(filename) + 1;
 
     dungeon_file = malloc(dungeon_file_length * sizeof(*dungeon_file));
     if (!dungeon_file) {
@@ -18,7 +18,7 @@ void setupDungeonFile(char *filename) {
         exit(EXIT_FAILURE);
     }
 
-    strcpy(dungeon_file, home);
+    strcpy(dungeon_file, homeDir);
     strcat(dungeon_file, "/.rlg327/");
     strcat(dungeon_file, filename);
 }

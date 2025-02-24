@@ -1,20 +1,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-typedef struct FibNode {
-    int key;
-    int degree;
-    struct FibNode *parent;
-    struct FibNode *child;
-    struct FibNode *left;
-    struct FibNode *right;
-    int marked;
-} FibNode;
-
-typedef struct FibHeap {
-    int numNodes;
-    FibNode *min;
-} FibHeap;
+#include "dungeon.h"
 
 FibHeap *createFibHeap() {
     FibHeap *heap = (FibHeap*)malloc(sizeof(FibHeap));
@@ -24,8 +11,9 @@ FibHeap *createFibHeap() {
     return heap;
 }
 
-FibNode *createFibNode(int key) {
-    FibNode *node = (FibNode*)malloc(sizeof(FibNode)); // FREEEEE
+FibNode *createFibNode(int key, Pos pos) {
+    FibNode *node = (FibNode*)malloc(sizeof(FibNode));
+    node->pos = pos;
     node->key = key;
     node->degree = 0;
     node->parent = NULL;
@@ -37,8 +25,8 @@ FibNode *createFibNode(int key) {
     return node;
 }
 
-void *insert(FibHeap *heap, int key) {
-    FibNode *node = createFibNode(key);
+FibNode *insert(FibHeap *heap, int key, Pos pos) {
+    FibNode *node = createFibNode(key, pos);
     if (heap->min == NULL) {
         heap->min = node;
     }
@@ -54,6 +42,7 @@ void *insert(FibHeap *heap, int key) {
     }
 
     heap->numNodes++;
+    return node;
 }
 
 FibNode *getMin(FibHeap *heap) {
@@ -223,4 +212,47 @@ void decreaseKey(FibHeap *heap, FibNode *node, int newKey) {
     if (node->key < heap->min->key) {
         heap->min = node;
     }
+}
+
+void destroyFibNode(FibNode *node) {
+    if (node == NULL) {
+        return;
+    }
+    else if (node->child != NULL) {
+        FibNode *childStart = node->child;
+        FibNode *childCurr = childStart;
+        node->child = NULL;
+
+        do {
+            FibNode *nextChild = childCurr->right;
+            childCurr->right = NULL;
+            destroyFibNode(childCurr);
+            childCurr = nextChild;
+        } while (childCurr != NULL && childCurr != childStart);
+    }
+
+    FibNode *start = node;
+    FibNode *next = node->right;
+    node->right = NULL;
+
+    while (next != NULL && next != start) {
+        FibNode *temp = next;
+        next = next->right;
+        temp->right = NULL;
+        destroyFibNode(temp);
+    }
+
+    free(node);
+}
+
+void destroyFibHeap(FibHeap *heap) {
+    if (heap == NULL) {
+        return;
+    }
+    else if (heap->min != NULL) {
+        destroyFibNode(heap->min);
+        heap->min = NULL;
+    }
+
+    free(heap);
 }

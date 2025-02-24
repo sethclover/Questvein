@@ -33,6 +33,7 @@ int main(int argc, char *argv[]) {
         filename[sizeof(filename) - 1] = '\0';
 
         loadDungeon(filename);
+        generateDistances();
     }
     else {
         initDungeon();
@@ -56,8 +57,8 @@ int main(int argc, char *argv[]) {
     }
 
     printDungeon();
-    //printTunnelingDistances();
-    //printNonTunnelingDistances();
+    printTunnelingDistances();
+    printNonTunnelingDistances();
 
     free(rooms);
     free(upStairs);

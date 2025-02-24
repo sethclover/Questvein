@@ -225,10 +225,14 @@ void printTunnelingDistances() {
             if (dungeon[i][j].tunnelingDist == UNREACHABLE) {
                 printf(" ");
             }
+            else if (dungeon[i][j].tunnelingDist == 0) {
+                printf("@");
+            }
             else {
                 printf("%d", dungeon[i][j].tunnelingDist % 10);
             }
         }
+        printf("\n");
     }
 }
 
@@ -238,10 +242,14 @@ void printNonTunnelingDistances() {
             if (dungeon[i][j].nonTunnelingDist == UNREACHABLE) {
                 printf(" ");
             }
+            else if (dungeon[i][j].nonTunnelingDist == 0) {
+                printf("@");
+            }
             else {
                 printf("%d", dungeon[i][j].nonTunnelingDist % 10);
             }
         }
+        printf("\n");
     }
 }
 
@@ -251,5 +259,5 @@ void fillDungeon() {
     buildCorridors();
     buildStairs();
     placePlayer();
-    //generateDistances();
+    generateDistances();
 }

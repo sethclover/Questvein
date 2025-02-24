@@ -3,6 +3,32 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [3.0.0] - 2025-2-24
+
+### Added
+
+- Distances for tunneling and non tunneling monsters are now calculated
+  for generated and loaded dungeons, which are stored in the array of
+  Tiles for the dungeon
+- Distances for both tunneling and non tunneling monsters are now
+  printed after the initial printing of the dungeon
+- Fibonacci heap nodes now keep track of their position, for
+  implementation of Dijkstra's algorithm
+- Proper destruction of a Fibonacci heap along with all of its nodes is
+  now possible
+
+### Changed
+
+- Inserting nodes now returns that node for Fibonacci heaps, for easier
+  implementation
+- Makefile has been updated to include the Fibonacci heap and path
+  finding files
+
+### Fixed
+
+- Printing for tunneling distances now displays the character location
+  and is not on one line, as intended
+
 ## [2.1.0] - 2025-2-21
 
 ### Added
