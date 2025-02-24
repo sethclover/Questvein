@@ -1,4 +1,4 @@
-### Assignment 1.02 README
+### Assignment 1.03 README
 
 This project implements dungeon save and load functionality.
 The dungeon is stored in a hidden directory "~/.rlg327/dungeon"
@@ -13,3 +13,13 @@ locations, and staircases. All data is stored in big-endian
 format for consistency. The main function will check for each
 of the switches and call the appropriate functions for generating,
 saving, or loading the dungeon.
+
+For this assignment, I formed a custom implementation of a
+Fibonacci heap from scratch, which was utilized for Dijkstra's
+Algorithm to determine the distances to the player character for
+both tunneling and non tunneling monsters, which are soon to be
+implemented. The distance calculations are compatible with the
+existing switches for hardness and save/load. Now, the main
+function will build the dungeon, through generation or loading,
+then print the mapping for tunneling and then non tunneling
+distances to output.
