@@ -1,19 +1,5 @@
 ### Assignment 1.03 README
 
-This project implements dungeon save and load functionality.
-The dungeon is stored in a hidden directory "~/.rlg327/dungeon"
-using a structured binary format. The program supports three
-main operations: generating a new dungeon, saving a dungeon to
-disk, and loading a previously saved dungeon. The --save switch
-saves the dungeon before exiting, while the --load switch loads
-and displays a saved dungeon. The dungeon file format includes
-metadata such as a semantic marker, file version, and dungeon
-size, along with the player’s position, dungeon layout, room
-locations, and staircases. All data is stored in big-endian
-format for consistency. The main function will check for each
-of the switches and call the appropriate functions for generating,
-saving, or loading the dungeon.
-
 For this assignment, I formed a custom implementation of a
 Fibonacci heap from scratch, which was utilized for Dijkstra's
 Algorithm to determine the distances to the player character for
