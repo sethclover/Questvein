@@ -3,6 +3,8 @@
 #include <time.h>
 
 #include "dungeon.h"
+#include "saveLoad.h"
+#include "pathFinding.h"
 
 int main(int argc, char *argv[]) {
     int hbFlag = 0;

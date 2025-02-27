@@ -3,6 +3,8 @@
 #include <string.h>
 
 #include "dungeon.h"
+#include "perlin.h"
+#include "pathFinding.h"
 
 Tile dungeon[MAX_HEIGHT][MAX_WIDTH];
 int roomCount;

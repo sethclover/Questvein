@@ -2,6 +2,7 @@
 #include <math.h>
 
 #include "dungeon.h"
+#include "fibonacciHeap.h"
 
 FibHeap *createFibHeap() {
     FibHeap *heap = (FibHeap*)malloc(sizeof(FibHeap));

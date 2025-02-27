@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "dungeon.h"
+#include "fibonacciHeap.h"
 
 void initDistances() {
     for (int i = 0; i < MAX_HEIGHT; i++) {

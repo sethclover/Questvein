@@ -35,22 +35,6 @@ typedef struct Position {
     int y;
 } Pos;
 
-typedef struct FibNode {
-    Pos pos;
-    int key;
-    int degree;
-    struct FibNode *parent;
-    struct FibNode *child;
-    struct FibNode *left;
-    struct FibNode *right;
-    int marked;
-} FibNode;
-
-typedef struct FibHeap {
-    int numNodes;
-    FibNode *min;
-} FibHeap;
-
 extern Tile dungeon[MAX_HEIGHT][MAX_WIDTH];
 extern int roomCount;
 extern Room *rooms;
@@ -60,28 +44,9 @@ extern int upStairsCount;
 extern Pos *downStairs;
 extern int downStairsCount;
 
-// Perlin
-void generateHardness();
-
-// Dungeon Generation
 void initDungeon();
 void printDungeon();
 void printHardness();
-void fillDungeon();
 void printTunnelingDistances();
 void printNonTunnelingDistances();
-
-// Load Save
-void loadDungeon(char *filename);
-void saveDungeon(char *filename);
-
-// Pathfinding
-void generateDistances();
-
-// Fibonacci Heap
-FibHeap *createFibHeap();
-FibNode *insert(FibHeap *heap, int key, Pos pos);
-FibNode *getMin(FibHeap *heap);
-FibNode *extractMin(FibHeap *heap);
-void decreaseKey(FibHeap *heap, FibNode *node, int newKey);
-void destroyFibHeap(FibHeap *heap);
+void fillDungeon();
