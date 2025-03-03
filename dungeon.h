@@ -5,6 +5,7 @@
 #define MAX_HARDNESS 255
 
 #define ATTEMPTS 1000
+#define DEFAULT_MONSTER_COUNT 10
 
 #define CORNER '+'
 #define VERT_WALL '|'
@@ -49,4 +50,5 @@ void printDungeon();
 void printHardness();
 void printTunnelingDistances();
 void printNonTunnelingDistances();
-void fillDungeon();
+void populateDungeon(int numMonsters);
+void fillDungeon(int numMonsters);

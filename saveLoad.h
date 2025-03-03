@@ -1,4 +1,4 @@
 #pragma once
 
-void loadDungeon(char *filename);
-void saveDungeon(char *filename);
+int loadDungeon(char *filename);
+int saveDungeon(char *filename);

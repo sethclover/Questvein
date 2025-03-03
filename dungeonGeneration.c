@@ -172,7 +172,7 @@ void buildStairs() {
     dungeon[yDown][xDown].type = STAIR_DOWN;
 }
 
-void placePlayer() {
+void spawnPlayer() {
     int roomNum = rand() % roomCount;
     int x, y;
     do {
@@ -255,11 +255,16 @@ void printNonTunnelingDistances() {
     }
 }
 
-void fillDungeon() {
+void populateDungeon(int numMonsters) {
+    generateDistances();
+    // spawnMonsters(numMonsters);
+}
+
+void fillDungeon(int numMonsters) {
     roomCount = rand() % 5 + 7;
     rooms = buildRooms(roomCount);
     buildCorridors();
     buildStairs();
-    placePlayer();
-    generateDistances();
+    spawnPlayer();
+    populateDungeon(numMonsters);
 }

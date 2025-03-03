@@ -8,27 +8,28 @@
 
 char *dungeon_file;
 
-void setupDungeonFile(char *filename) {
+int setupDungeonFile(char *filename) {
     char *homeDir = getenv("HOME");
     int dungeon_file_length = strlen(homeDir) + strlen("/.rlg327/") + strlen(filename) + 1;
 
     dungeon_file = malloc(dungeon_file_length * sizeof(*dungeon_file));
     if (!dungeon_file) {
-        perror("Memory allocation failed for dungeon_file");
-        exit(EXIT_FAILURE);
+        fprintf(stderr, "Error: Memory allocation failed for dungeon_file");
+        return 1;
     }
 
     strcpy(dungeon_file, homeDir);
     strcat(dungeon_file, "/.rlg327/");
     strcat(dungeon_file, filename);
+    return 0;
 }
 
-void loadDungeon(char *filename) {
+int loadDungeon(char *filename) {
     setupDungeonFile(filename);
     FILE *file = fopen(dungeon_file, "r");
     if (!file) {
-        perror("Error opening file");
-        exit(EXIT_FAILURE);
+        fprintf(stderr, "Error: Cannot opening file");
+        return 1;
     }
 
     char marker[12];
@@ -78,8 +79,8 @@ void loadDungeon(char *filename) {
 
     Room *rooms = malloc(r * sizeof(Room));
     if (!rooms) {
-        fprintf(stderr, "Memory allocation failed for rooms\n");
-        exit(EXIT_FAILURE);
+        fprintf(stderr, "Error: Memory allocation failed for rooms\n");
+        return 1;
     }
     for (int i = 0; i < r; i++) {
         fread(&rooms[i].x, 1, 1, file);
@@ -102,8 +103,8 @@ void loadDungeon(char *filename) {
 
     Pos *upStairs = malloc(u * sizeof(Pos));
     if (!upStairs) {
-        fprintf(stderr, "Memory allocation failed for upStairs\n");
-        exit(EXIT_FAILURE);
+        fprintf(stderr, "Error: Memory allocation failed for upStairs\n");
+        return 1;
     }
     for (int i = 0; i < u; i++) {
         fread(&upStairs[i].x, 1, 1, file);
@@ -119,8 +120,8 @@ void loadDungeon(char *filename) {
 
     Pos *downStairs = malloc(d * sizeof(Pos));
     if (!downStairs) {
-        fprintf(stderr, "Memory allocation failed for downStairs\n");
-        exit(EXIT_FAILURE);
+        fprintf(stderr, "Error: Memory allocation failed for downStairs\n");
+        return 1;
     }
     for (int i = 0; i < d; i++) {
         fread(&downStairs[i].x, 1, 1, file);
@@ -134,14 +135,15 @@ void loadDungeon(char *filename) {
     printf("Dungeon loaded from %s\n", dungeon_file);
     fclose(file);
     free(dungeon_file);
+    return 0;
 }
 
-void saveDungeon(char *filename) {
+int saveDungeon(char *filename) {
     setupDungeonFile(filename);
     FILE *file = fopen(dungeon_file, "w");
     if (!file) {
-        perror("Error opening file");
-        exit(EXIT_FAILURE);
+        fprintf(stderr, "Error: Cannot opening file");
+        return 1;
     }
 
     fwrite("RLG327-S2025", 1, 12, file);
@@ -188,4 +190,5 @@ void saveDungeon(char *filename) {
     printf("Dungeon saved to %s\n", dungeon_file);
     fclose(file);
     free(dungeon_file);
+    return 0;
 }
