@@ -3,14 +3,22 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
-## [unreleased]
+## [unreleased] <!-- Spell Check -->
 
-- Switch --nummon for determining the number of monsters in the dungeon,
-  defaulted to 10
+### Added
+
+- Dungeon generation now spawns monsters, 10 by default unless specified 
+  by the --nummon switch, in a random location inside a room that the 
+  player is not in, excluding stairs
+- Exhaustive error checking and memory freeing, so now all heap blocks
+  are completely freed
 
 ### Changed
 
 - Better error checking for switches and load/save functions
+- Printing the dungeon now displays the monster's location,
+  marked by its hexcode equivalent of the binary value of its
+  attributes
 
 ## [3.1.0] - 2025-2-26
 

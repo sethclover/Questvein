@@ -50,5 +50,6 @@ void printDungeon();
 void printHardness();
 void printTunnelingDistances();
 void printNonTunnelingDistances();
-void populateDungeon(int numMonsters);
-void fillDungeon(int numMonsters);
+int populateDungeon(int numMonsters);
+int fillDungeon(int numMonsters);
+void cleanup();

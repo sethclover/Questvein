@@ -1,11 +1,16 @@
 #include <stdlib.h>
 #include <math.h>
+#include <stdio.h>
 
 #include "dungeon.h"
 #include "fibonacciHeap.h"
 
 FibHeap *createFibHeap() {
     FibHeap *heap = (FibHeap*)malloc(sizeof(FibHeap));
+    if (!heap) {
+        fprintf(stderr, "Error: Failed to allocate memory for Fibonacci heap\n");
+        return NULL;
+    }
     heap->numNodes = 0;
     heap->min = NULL;
 
@@ -14,6 +19,10 @@ FibHeap *createFibHeap() {
 
 FibNode *createFibNode(int key, Pos pos) {
     FibNode *node = (FibNode*)malloc(sizeof(FibNode));
+    if (!node) {
+        fprintf(stderr, "Error: Failed to allocate memory for Fibonacci node\n");
+        return NULL;
+    }
     node->pos = pos;
     node->key = key;
     node->degree = 0;
@@ -28,6 +37,10 @@ FibNode *createFibNode(int key, Pos pos) {
 
 FibNode *insert(FibHeap *heap, int key, Pos pos) {
     FibNode *node = createFibNode(key, pos);
+    if (!node) {
+        return NULL;
+    }
+
     if (heap->min == NULL) {
         heap->min = node;
     }
@@ -50,11 +63,22 @@ FibNode *getMin(FibHeap *heap) {
     return heap->min;
 }
 
-void consolidate(FibHeap *heap) {
+int consolidate(FibHeap *heap) {
     int maxDegree = (int)(log(heap->numNodes - 1) / log(2)) + 1;
     FibNode **A = (FibNode**)calloc(maxDegree, sizeof(FibNode*));
+    if (!A) {
+        fprintf(stderr, "Error: Failed to allocate memory for consolidation array\n");
+        free(A);
+        return 1;
+    }
 
     FibNode **nodes = (FibNode**)malloc((heap->numNodes - 1) * sizeof(FibNode*));
+    if (!nodes) {
+        fprintf(stderr, "Error: Failed to allocate memory for nodes array\n");
+        free(A);
+        free(nodes);
+        return 1;
+    }
     int count = 0;
 
     if (heap->min) {
@@ -125,6 +149,7 @@ void consolidate(FibHeap *heap) {
 
     free(A);
     free(nodes);
+    return 0;
 }
 
 FibNode *extractMin(FibHeap *heap) {
@@ -152,7 +177,9 @@ FibNode *extractMin(FibHeap *heap) {
         }
         else {
             heap->min = minNode->right;
-            consolidate(heap);
+            if (consolidate(heap)) {
+                return NULL;
+            }
         }
 
         heap->numNodes--;

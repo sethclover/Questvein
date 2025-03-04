@@ -89,6 +89,7 @@ Room* buildRooms(int roomCount) {
     Room *rooms = malloc(roomCount * sizeof(Room));
     if (!rooms) {
         fprintf(stderr, "Error: Failed to allocate memory for rooms\n");
+        free(rooms);
         return NULL;
     }
 
@@ -108,6 +109,7 @@ Room* buildRooms(int roomCount) {
     }
     
     fprintf(stderr, "Error: Failed to build all rooms\n");
+    free(rooms);
     return NULL;
 }
 
@@ -156,15 +158,16 @@ void buildCorridors() {
     }
 }
 
-void buildStairs() {
+int buildStairs() {
     int xUp = rand() % rooms[0].width + rooms[0].x;
     int yUp = rand() % rooms[0].height + rooms[0].y;
 
     upStairsCount = 1;
     upStairs = malloc(upStairsCount * sizeof(Pos));
     if (!upStairs) {
-        printf("Failed to allocate memory for upStairs\n");
-        return;
+        fprintf(stderr, "Error: Failed to allocate memory for upStairs\n");
+        free(upStairs);
+        return 1;
     }
     upStairs[0].x = xUp;
     upStairs[0].y = yUp;
@@ -176,12 +179,16 @@ void buildStairs() {
     downStairsCount = 1;
     downStairs = malloc(downStairsCount * sizeof(Pos));
     if (!downStairs) {
-        printf("Failed to allocate memory for downStairs\n");
-        return;
+        fprintf(stderr, "Error: Failed to allocate memory for downStairs\n");
+        free(upStairs);
+        free(downStairs);
+        return 1;
     }
     downStairs[0].x = xDown;
     downStairs[0].y = yDown;
     dungeon[yDown][xDown].type = STAIR_DOWN;
+
+    return 0;
 }
 
 void spawnPlayer() {
@@ -201,6 +208,7 @@ Mon *createMonster() {
     Mon *monster = malloc(sizeof(Mon));
     if (!monster) {
         fprintf(stderr, "Error: Failed to allocate memory for monster\n");
+        free(monster);
         return NULL;
     }
 
@@ -213,8 +221,13 @@ Mon *createMonster() {
     return monster;
 }
 
-void spawnMonsters(int numMonsters) {
+int spawnMonsters(int numMonsters) {
     monsters = (Mon**)calloc(numMonsters, sizeof(Mon*));
+    if (!monsters) {
+        fprintf(stderr, "Error: Failed to allocate memory for monsters\n");
+        free(monsters);
+        return 1;
+    }
 
     for (int i = 0; i < numMonsters; i++) {  
         for (int j = 0; j < ATTEMPTS; j++) {
@@ -236,6 +249,13 @@ void spawnMonsters(int numMonsters) {
                     }
                     else {
                         monsters[i] = createMonster();
+                        if (!monsters[i]) {
+                            for (int l = 0; l < i; l++) {
+                                free(monsters[l]);
+                            }
+                            free(monsters);
+                            return 1;
+                        }
                         monsters[i]->pos.x = x;
                         monsters[i]->pos.y = y;
                         monsterAt[y][x] = monsters[i];
@@ -252,10 +272,15 @@ void spawnMonsters(int numMonsters) {
         }
         if (monsters[i] == NULL) {
             fprintf(stderr, "Error: Failed to spawn monster\n");
+            for (int k = 0; k < i; k++) {
+                free(monsters[k]);
+            }
             free(monsters);
-            return;
+            return 1;
         }
     }
+
+    return 0;
 }
 
 void printDungeon() {
@@ -337,16 +362,49 @@ void printNonTunnelingDistances() {
     }
 }
 
-void populateDungeon(int numMonsters) {
-    generateDistances();
-    spawnMonsters(numMonsters);
+int populateDungeon(int numMonsters) {
+    if (generateDistances()) {
+        return 1;
+    }
+    if (spawnMonsters(numMonsters)) {
+        return 1;
+    }
+
+    return 0;
 }
 
-void fillDungeon(int numMonsters) {
+int fillDungeon(int numMonsters) {
     roomCount = rand() % 5 + 7;
     rooms = buildRooms(roomCount);
+    if (!rooms) {
+        return 1;
+    }
+
     buildCorridors();
-    buildStairs();
+
+    if (buildStairs()) {
+        free(rooms);
+        return 1;
+    }
+
     spawnPlayer();
-    populateDungeon(numMonsters);
+
+    if (populateDungeon(numMonsters)) {
+        free(rooms);
+        free(upStairs);
+        free(downStairs);
+        return 1;
+    }
+
+    return 0;
+}
+
+void cleanup(int numMonsters) {
+    free(rooms);
+    free(upStairs);
+    free(downStairs);
+    for (int i = 0; i < numMonsters; i++) {
+        free(monsters[i]);
+    }
+    free(monsters);
 }

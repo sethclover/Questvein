@@ -13,15 +13,27 @@ void initDistances() {
     }
 }
 
-void tunnelingDistances() {
+int tunnelingDistances() {
     FibHeap *heap = createFibHeap();
+    if (!heap) {
+        return 1;
+    }
     FibNode *nodes[MAX_HEIGHT][MAX_WIDTH] = {NULL};
 
     dungeon[player.y][player.x].tunnelingDist = 0;
     nodes[player.y][player.x] = insert(heap, 0, player);
+    if (!nodes[player.y][player.x]) {
+        destroyFibHeap(heap);
+        return 1;
+    }
 
     while (heap->min != NULL) {
         FibNode *minNode = extractMin(heap);
+        if (!minNode) {
+            destroyFibHeap(heap);
+            return 1;
+        }
+
         Pos pos = minNode->pos;
         int dist = minNode->key;
 
@@ -43,6 +55,10 @@ void tunnelingDistances() {
 
                         if (nodes[newY][newX] == NULL) {
                             nodes[newY][newX] = insert(heap, newDist, (Pos){newX, newY});
+                            if (!nodes[newY][newX]) {
+                                destroyFibHeap(heap);
+                                return 1;
+                            }
                         }
                         else {
                             decreaseKey(heap, nodes[newY][newX], newDist);
@@ -56,17 +72,29 @@ void tunnelingDistances() {
     }
 
     destroyFibHeap(heap);
+    return 0;
 }
 
-void nonTunnelingDistances() {
+int nonTunnelingDistances() {
     FibHeap *heap = createFibHeap();
+    if (!heap) {
+        return 1;
+    }
     FibNode *nodes[MAX_HEIGHT][MAX_WIDTH] = {NULL};
 
     dungeon[player.y][player.x].nonTunnelingDist = 0;
     nodes[player.y][player.x] = insert(heap, 0, player);
+    if (!nodes[player.y][player.x]) {
+        destroyFibHeap(heap);
+        return 1;
+    }
 
     while (heap->min != NULL) {
         FibNode *minNode = extractMin(heap);
+        if (!minNode) {
+            destroyFibHeap(heap);
+            return 1;
+        }
         Pos pos = minNode->pos;
         int dist = minNode->key;
 
@@ -88,6 +116,10 @@ void nonTunnelingDistances() {
 
                         if (nodes[newY][newX] == NULL) {
                             nodes[newY][newX] = insert(heap, newDist, (Pos){newX, newY});
+                            if (!nodes[newY][newX]) {
+                                destroyFibHeap(heap);
+                                return 1;
+                            }
                         }
                         else {
                             decreaseKey(heap, nodes[newY][newX], newDist);
@@ -101,10 +133,17 @@ void nonTunnelingDistances() {
     }
 
     destroyFibHeap(heap);
+    return 0;
 }
 
-void generateDistances() {
+int generateDistances() {
     initDistances();
-    tunnelingDistances();
-    nonTunnelingDistances();
+    if (tunnelingDistances()) {
+        return 1;
+    }
+    if (nonTunnelingDistances()) {
+        return 1;
+    }
+
+    return 0;
 }

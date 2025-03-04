@@ -3,10 +3,12 @@
 #include <time.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <unistd.h>
 
 #include "dungeon.h"
 #include "saveLoad.h"
 #include "pathFinding.h"
+#include "fibonacciHeap.h"
 
 int main(int argc, char *argv[]) {
     int hardnessBeforeFlag = 0;
@@ -105,7 +107,10 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         loadDungeon(filename);
-        populateDungeon(numMonsters);
+
+        if (populateDungeon(numMonsters)) {
+            return 1;
+        }
     }
     else {
         initDungeon();
@@ -113,7 +118,9 @@ int main(int argc, char *argv[]) {
             printHardness();
         }
 
-        fillDungeon(numMonsters);
+        if (fillDungeon(numMonsters)) {
+            return 1;
+        }
     }
 
     if (hardnessAfterFlag) {
@@ -124,12 +131,19 @@ int main(int argc, char *argv[]) {
         saveDungeon(filename);
     }
 
-    printDungeon();
     printTunnelingDistances();
     printNonTunnelingDistances();
 
-    free(rooms);
-    free(upStairs);
-    free(downStairs);
+    //FibHeap *heap = createFibHeap();
+    // int i = 10;
+    // while (i) {
+    printDungeon();
+    //     //update positions
+    //     usleep(50000);
+
+    //     i--;
+    // }
+
+    cleanup(numMonsters);
     return 0;
 }

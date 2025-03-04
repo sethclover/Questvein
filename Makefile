@@ -1,4 +1,4 @@
-CC = gcc
+CC = gcc -g
 CFLAGS = -Wall -Werror
 OBJECTS = main.o dungeonGeneration.o perlin.o saveLoad.o fibonacciHeap.o pathFinding.o
 
