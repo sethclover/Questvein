@@ -6,6 +6,15 @@
 #include "perlin.h"
 #include "pathFinding.h"
 
+typedef struct Monster {
+    int intelligent;
+    int tunneling;
+    int telepathic;
+    int erratic;
+    int speed;
+    Pos pos;
+} Mon;
+
 Tile dungeon[MAX_HEIGHT][MAX_WIDTH];
 int roomCount;
 Room *rooms;
@@ -14,6 +23,9 @@ Pos *upStairs;
 int upStairsCount;
 Pos *downStairs;
 int downStairsCount;
+
+Mon *monsterAt[MAX_HEIGHT][MAX_WIDTH] = {NULL};
+Mon **monsters;
 
 void initDungeon() {
     generateHardness();
@@ -76,7 +88,7 @@ Room* buildRooms(int roomCount) {
 
     Room *rooms = malloc(roomCount * sizeof(Room));
     if (!rooms) {
-        printf("Failed to allocate memory for rooms\n");
+        fprintf(stderr, "Error: Failed to allocate memory for rooms\n");
         return NULL;
     }
 
@@ -95,7 +107,7 @@ Room* buildRooms(int roomCount) {
         }
     }
     
-    printf("Failed to build all rooms\n");
+    fprintf(stderr, "Error: Failed to build all rooms\n");
     return NULL;
 }
 
@@ -185,10 +197,80 @@ void spawnPlayer() {
     dungeon[y][x].type = '@';
 }
 
+Mon *createMonster() {
+    Mon *monster = malloc(sizeof(Mon));
+    if (!monster) {
+        fprintf(stderr, "Error: Failed to allocate memory for monster\n");
+        return NULL;
+    }
+
+    monster->intelligent = rand() % 2;
+    monster->tunneling = rand() % 2;
+    monster->telepathic = rand() % 2;
+    monster->erratic = rand() % 2;
+    monster->speed = rand() % 16 + 5;
+
+    return monster;
+}
+
+void spawnMonsters(int numMonsters) {
+    monsters = (Mon**)calloc(numMonsters, sizeof(Mon*));
+
+    for (int i = 0; i < numMonsters; i++) {  
+        for (int j = 0; j < ATTEMPTS; j++) {
+            int placed = 0;
+            int x = rand() % MAX_WIDTH;
+            int y = rand() % MAX_HEIGHT;
+            if (dungeon[y][x].type != FLOOR) {
+                continue;
+            }
+            for (int k = 0; k < roomCount; k++) {
+                if ((player.x >= rooms[k].x && player.x <= rooms[k].x + rooms[k].width - 1 &&
+                    player.y >= rooms[k].y && player.y <= rooms[k].y + rooms[k].height - 1)) {
+                    continue;
+                }
+                else if (x >= rooms[k].x && x <= rooms[k].x + rooms[k].width - 1 &&
+                         y >= rooms[k].y && y <= rooms[k].y + rooms[k].height - 1) {
+                    if (monsterAt[y][x]) {
+                        continue;
+                    }
+                    else {
+                        monsters[i] = createMonster();
+                        monsters[i]->pos.x = x;
+                        monsters[i]->pos.y = y;
+                        monsterAt[y][x] = monsters[i];
+
+                        placed = 1;
+                        break;
+                    }
+                }
+            }
+
+            if (placed) {
+                break;
+            }
+        }
+        if (monsters[i] == NULL) {
+            fprintf(stderr, "Error: Failed to spawn monster\n");
+            free(monsters);
+            return;
+        }
+    }
+}
+
 void printDungeon() {
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
-            printf("%c", dungeon[i][j].type);
+            if (monsterAt[i][j] != NULL) {
+                int personality = 1 * monsterAt[i][j]->intelligent +
+                                  2 * monsterAt[i][j]->tunneling +
+                                  4 * monsterAt[i][j]->telepathic +
+                                  8 * monsterAt[i][j]->erratic;
+                printf("%c", personality < 10 ? '0' + personality : 'A' + (personality - 10));
+            }
+            else {
+                printf("%c", dungeon[i][j].type);
+            }
         }
         printf("\n");
     }
@@ -257,7 +339,7 @@ void printNonTunnelingDistances() {
 
 void populateDungeon(int numMonsters) {
     generateDistances();
-    // spawnMonsters(numMonsters);
+    spawnMonsters(numMonsters);
 }
 
 void fillDungeon(int numMonsters) {
