@@ -3,13 +3,19 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
-## [unreleased] <!-- Spell Check -->
+## [4.0.0] - 2025-3-5
 
 ### Added
 
-- Dungeon generation now spawns monsters, 10 by default unless specified 
-  by the --nummon switch, in a random location inside a room that the 
-  player is not in, excluding stairs
+- The PC now aimlessly wanders the dungeon in search of an exit to the
+  neverending nightmare he cannot escape from
+- The dungeon now spawns monsters, between 7 and 20 by default 
+  unless specified by the --nummon switch, in a random location inside a 
+  room that the player is not in, excluding stairs
+- Monsters roam the dungeon based on their randomly generated personality
+- When a character walks where another character is, the character that
+  was already there now dies and prints that they have died and ends the
+  game if it was the player
 - Exhaustive error checking and memory freeing, so now all heap blocks
   are completely freed
 
@@ -17,7 +23,7 @@ The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 - Better error checking for switches and load/save functions
 - Printing the dungeon now displays the monster's location,
-  marked by its hexcode equivalent of the binary value of its
+  marked by its hex code equivalent of the binary value of its
   attributes
 
 ## [3.1.0] - 2025-2-26

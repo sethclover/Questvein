@@ -1,11 +1,13 @@
-### Assignment 1.03 README
+### Assignment 1.04 README
 
-For this assignment, I formed a custom implementation of a
-Fibonacci heap from scratch, which was utilized for Dijkstra's
-Algorithm to determine the distances to the player character for
-both tunneling and non tunneling monsters, which are soon to be
-implemented. The distance calculations are compatible with the
-existing switches for hardness and save/load. Now, the main
-function will build the dungeon, through generation or loading,
-then print the mapping for tunneling and then non tunneling
-distances to output.
+For this assignment, I implemented monsters that have randomly
+generated personalities that determine how they roam the dungeon.
+The amount of monsters is random (7-20, arbitrarily), but the new
+--nummon switch can set the number of monsters. If the monsters 
+cannot be correctly fitted in the dungeon, it exits with a print
+statement to stderr. The player also wanders the dungeon in a 
+random direction every turn. When a character comes in contact
+with another character, they die. The game ends when the PC kills 
+all the monsters or when the PC is killed. After each turn, or when
+the PC moves, it prints the dungeon and displays the locations of
+every character 

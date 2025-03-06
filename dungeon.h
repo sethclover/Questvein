@@ -5,7 +5,6 @@
 #define MAX_HARDNESS 255
 
 #define ATTEMPTS 1000
-#define DEFAULT_MONSTER_COUNT 10
 
 #define CORNER '+'
 #define VERT_WALL '|'
@@ -36,6 +35,16 @@ typedef struct Position {
     int y;
 } Pos;
 
+typedef struct Monster {
+    int intelligent;
+    int tunneling;
+    int telepathic;
+    int erratic;
+    int speed;
+    Pos pos;
+    Pos lastSeen;
+} Mon;
+
 extern Tile dungeon[MAX_HEIGHT][MAX_WIDTH];
 extern int roomCount;
 extern Room *rooms;
@@ -44,6 +53,8 @@ extern Pos *upStairs;
 extern int upStairsCount;
 extern Pos *downStairs;
 extern int downStairsCount;
+extern Mon *monsterAt[MAX_HEIGHT][MAX_WIDTH];
+extern Mon **monsters;
 
 void initDungeon();
 void printDungeon();

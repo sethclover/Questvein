@@ -5,15 +5,7 @@
 #include "dungeon.h"
 #include "perlin.h"
 #include "pathFinding.h"
-
-typedef struct Monster {
-    int intelligent;
-    int tunneling;
-    int telepathic;
-    int erratic;
-    int speed;
-    Pos pos;
-} Mon;
+#include "fibonacciHeap.h"
 
 Tile dungeon[MAX_HEIGHT][MAX_WIDTH];
 int roomCount;
@@ -201,10 +193,9 @@ void spawnPlayer() {
     
     player.x = x;
     player.y = y;
-    dungeon[y][x].type = '@';
 }
 
-Mon *createMonster() {
+Mon *createMonster(Pos pos) {
     Mon *monster = malloc(sizeof(Mon));
     if (!monster) {
         fprintf(stderr, "Error: Failed to allocate memory for monster\n");
@@ -217,12 +208,13 @@ Mon *createMonster() {
     monster->telepathic = rand() % 2;
     monster->erratic = rand() % 2;
     monster->speed = rand() % 16 + 5;
+    monster->pos = pos;
 
     return monster;
 }
 
 int spawnMonsters(int numMonsters) {
-    monsters = (Mon**)calloc(numMonsters, sizeof(Mon*));
+    monsters = malloc(numMonsters * sizeof(Mon*));
     if (!monsters) {
         fprintf(stderr, "Error: Failed to allocate memory for monsters\n");
         free(monsters);
@@ -248,18 +240,16 @@ int spawnMonsters(int numMonsters) {
                         continue;
                     }
                     else {
-                        monsters[i] = createMonster();
+                        monsters[i] = createMonster((Pos){x, y});
                         if (!monsters[i]) {
                             for (int l = 0; l < i; l++) {
                                 free(monsters[l]);
                             }
                             free(monsters);
+                            printf("mon not init\n");
                             return 1;
                         }
-                        monsters[i]->pos.x = x;
-                        monsters[i]->pos.y = y;
                         monsterAt[y][x] = monsters[i];
-
                         placed = 1;
                         break;
                     }
@@ -286,12 +276,15 @@ int spawnMonsters(int numMonsters) {
 void printDungeon() {
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
-            if (monsterAt[i][j] != NULL) {
+            if (monsterAt[i][j]) {
                 int personality = 1 * monsterAt[i][j]->intelligent +
                                   2 * monsterAt[i][j]->tunneling +
                                   4 * monsterAt[i][j]->telepathic +
                                   8 * monsterAt[i][j]->erratic;
                 printf("%c", personality < 10 ? '0' + personality : 'A' + (personality - 10));
+            }
+            else if (player.x == j && player.y == i) {
+                printf("@");
             }
             else {
                 printf("%c", dungeon[i][j].type);
