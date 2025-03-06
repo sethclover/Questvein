@@ -64,15 +64,20 @@ FibNode *getMin(FibHeap *heap) {
 }
 
 int consolidate(FibHeap *heap) {
-    int maxDegree = (int)(log(heap->numNodes - 1) / log(2)) + 1;
+    int maxDegree;
+    if (heap->numNodes <= 1) {
+        maxDegree = 1;
+    }
+    else {
+        maxDegree = (int)(log(heap->numNodes - 1) / log(2)) + 1;
+    }
     FibNode **A = (FibNode**)calloc(maxDegree, sizeof(FibNode*));
     if (!A) {
         fprintf(stderr, "Error: Failed to allocate memory for consolidation array\n");
-        free(A);
         return 1;
     }
 
-    FibNode **nodes = (FibNode**)malloc((heap->numNodes - 1) * sizeof(FibNode*));
+    FibNode **nodes = (FibNode**)malloc(heap->numNodes * sizeof(FibNode*));
     if (!nodes) {
         fprintf(stderr, "Error: Failed to allocate memory for nodes array\n");
         free(A);
@@ -83,9 +88,20 @@ int consolidate(FibHeap *heap) {
 
     if (heap->min) {
         FibNode *curr = heap->min;
+        int safetyCounter = 0;
+        int maxCount = heap->numNodes;
+        
         do {
             nodes[count++] = curr;
             curr = curr->right;
+            safetyCounter++;
+            
+            if (safetyCounter > maxCount) {
+                fprintf(stderr, "Error: Possible circular reference issue detected\n");
+                free(A);
+                free(nodes);
+                return 1;
+            }
         } while (curr != heap->min);
     }
 
@@ -249,25 +265,31 @@ void destroyFibNode(FibNode *node) {
     else if (node->child != NULL) {
         FibNode *childStart = node->child;
         FibNode *childCurr = childStart;
-        node->child = NULL;
-
+        FibNode *childNext;
+        
         do {
-            FibNode *nextChild = childCurr->right;
+            childNext = childCurr->right;
+            childCurr->left = NULL;
             childCurr->right = NULL;
             destroyFibNode(childCurr);
-            childCurr = nextChild;
+            childCurr = childNext;
         } while (childCurr != NULL && childCurr != childStart);
     }
 
-    FibNode *start = node;
-    FibNode *next = node->right;
-    node->right = NULL;
-
-    while (next != NULL && next != start) {
-        FibNode *temp = next;
-        next = next->right;
-        temp->right = NULL;
-        destroyFibNode(temp);
+    if (node->left && node->right && (node->left != node || node->right != node)) {
+        FibNode *curr = node->right;
+        FibNode *next;
+        
+        node->left->right = NULL;
+        node->right = NULL;
+        
+        while (curr != NULL) {
+            next = curr->right;
+            curr->left = NULL;
+            curr->right = NULL;
+            destroyFibNode(curr);
+            curr = next;
+        }
     }
 
     free(node);

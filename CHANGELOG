@@ -16,6 +16,8 @@ The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.
 - When a character walks where another character is, the character that
   was already there now dies and prints that they have died and ends the
   game if it was the player
+- Switch --montype which takes a char and will make a dungeon with only
+  one monster in it, which is that type
 - Exhaustive error checking and memory freeing, so now all heap blocks
   are completely freed
 

@@ -57,10 +57,13 @@ extern Mon *monsterAt[MAX_HEIGHT][MAX_WIDTH];
 extern Mon **monsters;
 
 void initDungeon();
+void initRoom(Room *roomsLoaded);
 void printDungeon();
 void printHardness();
 void printTunnelingDistances();
 void printNonTunnelingDistances();
+int populateDungeonWithMonType(char monType);
 int populateDungeon(int numMonsters);
+int fillDungeonWithMonType(char monType);
 int fillDungeon(int numMonsters);
 void cleanup();

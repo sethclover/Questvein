@@ -77,24 +77,26 @@ int loadDungeon(char *filename) {
     r = be16toh(r);
     roomCount = r;
 
-    Room *rooms = malloc(r * sizeof(Room));
-    if (!rooms) {
-        fprintf(stderr, "Error: Memory allocation failed for rooms\n");
+    Room *roomsLoaded = malloc(r * sizeof(Room));
+    if (!roomsLoaded) {
+        fprintf(stderr, "Error: Memory allocation failed for roomsLoaded\n");
         return 1;
     }
     for (int i = 0; i < r; i++) {
-        fread(&rooms[i].x, 1, 1, file);
-        fread(&rooms[i].y, 1, 1, file);
-        fread(&rooms[i].width, 1, 1, file);
-        fread(&rooms[i].height, 1, 1, file);
+        fread(&roomsLoaded[i].x, 1, 1, file);
+        fread(&roomsLoaded[i].y, 1, 1, file);
+        fread(&roomsLoaded[i].width, 1, 1, file);
+        fread(&roomsLoaded[i].height, 1, 1, file);
     }
     for (int i = 0; i < r; i++) {
-        for (int j = rooms[i].y; j < rooms[i].y + rooms[i].height; j++) {
-            for (int k = rooms[i].x; k < rooms[i].x + rooms[i].width; k++) {
+        for (int j = roomsLoaded[i].y; j < roomsLoaded[i].y + roomsLoaded[i].height; j++) {
+            for (int k = roomsLoaded[i].x; k < roomsLoaded[i].x + roomsLoaded[i].width; k++) {
                 dungeon[j][k].type = FLOOR;
             }
         }
     }
+    initRoom(roomsLoaded);
+    free(roomsLoaded);
 
     uint16_t u;
     fread(&u, 2, 1, file);
