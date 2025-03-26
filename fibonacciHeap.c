@@ -3,12 +3,13 @@
 #include <stdio.h>
 
 #include "dungeon.h"
+#include "errorHandle.h"
 #include "fibonacciHeap.h"
 
 FibHeap *createFibHeap() {
     FibHeap *heap = (FibHeap*)malloc(sizeof(FibHeap));
     if (!heap) {
-        fprintf(stderr, "Error: Failed to allocate memory for Fibonacci heap\n");
+        errorHandle("Error: Failed to allocate memory for Fibonacci heap");
         return NULL;
     }
     heap->numNodes = 0;
@@ -20,7 +21,7 @@ FibHeap *createFibHeap() {
 FibNode *createFibNode(int key, Pos pos) {
     FibNode *node = (FibNode*)malloc(sizeof(FibNode));
     if (!node) {
-        fprintf(stderr, "Error: Failed to allocate memory for Fibonacci node\n");
+        errorHandle("Error: Failed to allocate memory for Fibonacci node");
         return NULL;
     }
     node->pos = pos;
@@ -73,13 +74,13 @@ int consolidate(FibHeap *heap) {
     }
     FibNode **A = (FibNode**)calloc(maxDegree, sizeof(FibNode*));
     if (!A) {
-        fprintf(stderr, "Error: Failed to allocate memory for consolidation array\n");
+        errorHandle("Error: Failed to allocate memory for consolidation array");
         return 1;
     }
 
     FibNode **nodes = (FibNode**)malloc(heap->numNodes * sizeof(FibNode*));
     if (!nodes) {
-        fprintf(stderr, "Error: Failed to allocate memory for nodes array\n");
+        errorHandle("Error: Failed to allocate memory for nodes array");
         free(A);
         free(nodes);
         return 1;
@@ -97,7 +98,7 @@ int consolidate(FibHeap *heap) {
             safetyCounter++;
             
             if (safetyCounter > maxCount) {
-                fprintf(stderr, "Error: Possible circular reference issue detected\n");
+                errorHandle("Error: Possible circular reference issue detected");
                 free(A);
                 free(nodes);
                 return 1;

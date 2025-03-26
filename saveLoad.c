@@ -1,10 +1,11 @@
+#include <endian.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
-#include <endian.h>
 
 #include "dungeon.h"
+#include "errorHandle.h"
 
 char *dungeon_file;
 
@@ -14,7 +15,7 @@ int setupDungeonFile(char *filename) {
 
     dungeon_file = malloc(dungeon_file_length * sizeof(*dungeon_file));
     if (!dungeon_file) {
-        fprintf(stderr, "Error: Memory allocation failed for dungeon_file");
+        errorHandle("Error: Memory allocation failed for dungeon_file");
         return 1;
     }
 
@@ -28,7 +29,7 @@ int loadDungeon(char *filename) {
     setupDungeonFile(filename);
     FILE *file = fopen(dungeon_file, "r");
     if (!file) {
-        fprintf(stderr, "Error: Cannot opening file");
+        errorHandle("Error: Failed to open file");
         return 1;
     }
 
@@ -79,7 +80,7 @@ int loadDungeon(char *filename) {
 
     Room *roomsLoaded = malloc(r * sizeof(Room));
     if (!roomsLoaded) {
-        fprintf(stderr, "Error: Memory allocation failed for roomsLoaded\n");
+        errorHandle("Error: Memory allocation failed for roomsLoaded");
         return 1;
     }
     for (int i = 0; i < r; i++) {
@@ -105,7 +106,7 @@ int loadDungeon(char *filename) {
 
     Pos *upStairs = malloc(u * sizeof(Pos));
     if (!upStairs) {
-        fprintf(stderr, "Error: Memory allocation failed for upStairs\n");
+        errorHandle("Error: Memory allocation failed for upStairs");
         return 1;
     }
     for (int i = 0; i < u; i++) {
@@ -122,7 +123,7 @@ int loadDungeon(char *filename) {
 
     Pos *downStairs = malloc(d * sizeof(Pos));
     if (!downStairs) {
-        fprintf(stderr, "Error: Memory allocation failed for downStairs\n");
+        errorHandle("Error: Memory allocation failed for downStairs");
         return 1;
     }
     for (int i = 0; i < d; i++) {
@@ -144,7 +145,7 @@ int saveDungeon(char *filename) {
     setupDungeonFile(filename);
     FILE *file = fopen(dungeon_file, "w");
     if (!file) {
-        fprintf(stderr, "Error: Cannot opening file");
+        errorHandle("Error: Failed to open file");
         return 1;
     }
 

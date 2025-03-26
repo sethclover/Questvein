@@ -1,21 +1,48 @@
+#include <ctype.h>
+#include <ncurses.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <unistd.h>
 
 #include "dungeon.h"
-#include "saveLoad.h"
+#include "errorHandle.h"
+#include "game.h"
 #include "pathFinding.h"
-#include "fibonacciHeap.h"
+#include "saveLoad.h"
+
+int ncursesFlag;
+
+typedef struct SwitchInfo {
+    const char *shortOp;
+    const char *longOp;
+    const char *desc;
+} SwitchInfo;
+
+static const SwitchInfo switches[] = {
+    {"-h", "--help", "Display this help message and exit"},
+    {"-hb", "--printhardb", "Print hardness before dungeon generation"},
+    {"-ha", "--printharda", "Print hardness after dungeon generation"},
+    {"-d", "--printdist", "Print tunneling and non-tunneling distances"},
+    {"-s", "--save", "Save the dungeon to a file (requires filename)"},
+    {"-l", "--load", "Load a dungeon from a file (requires filename)"},
+    {"-n", "--nummon", "Set the number of monsters (requires positive integer)"},
+    {"-t", "--montype", "Set a specific monster type (requires a single Hex character)"},
+    {"-a", "--auto", "Run the game in automatic (random) movement mode"}
+};
+
+static const int numSwitches = sizeof(switches) / sizeof(SwitchInfo);
 
 int main(int argc, char *argv[]) {
-    int hardnessBeforeFlag = 0;
-    int hardnessAfterFlag = 0;
+    int printhardbFlag = 0;
+    int printhardaFlag = 0;
+    int printdistFlag = 0;
     int saveFlag = 0;
     int loadFlag = 0;
     int monTypeFlag = 0;
+    int autoFlag = 0;
+
+    ncursesFlag = 0;    
 
     srand(time(NULL));
 
@@ -24,16 +51,31 @@ int main(int argc, char *argv[]) {
     int numMonsters = rand() % 14 + 7;
 
     for (int i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "-hb")) {
-            hardnessBeforeFlag = 1;
+        if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
+            printf("Usage: Dungeon Crawler [options]\n"
+                    "\nAvailable options:\n");
+            for (int i = 0; i < numSwitches; i++) {
+                printf("  %-4s, %-13s:  %s\n", switches[i].shortOp, switches[i].longOp, switches[i].desc);
+            }
+            printf("\nExamples:\n"
+                    "    ./dungeon --save test1.rlg327 -a\n"
+                    "    ./dungeon -l test1.rlg327 --nummon 10 -d\n"
+                    "\nTry the print hardness before option!\n\n");
+            return 0;
         }
-        else if (!strcmp(argv[i], "-ha")) {
-            hardnessAfterFlag = 1;
+        else if (!strcmp(argv[i], "-hb") || !strcmp(argv[i], "--printhardb")) {
+            printhardbFlag = 1;
         }
-        else if (!strcmp(argv[i], "--save")) {
+        else if (!strcmp(argv[i], "-ha") || !strcmp(argv[i], "--printharda")) {
+            printhardaFlag = 1;
+        }
+        else if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--printdist")) {
+            printdistFlag = 1;
+        }
+        else if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--save")) {
             if (i < argc - 1) {
                 if (argv[i + 1][0] == '-') {
-                    fprintf(stderr, "Error: Argument after '--save' must be file name\n");
+                    errorHandle("Error: Argument after '--save/-s' must be file name");
                     return 1;
                 }
                 else {
@@ -43,16 +85,16 @@ int main(int argc, char *argv[]) {
                 }
             }
             else {
-                fprintf(stderr, "Error: Argument '--save' requires a file name\n");
+                errorHandle("Error: Argument '--save/-s' requires a file name");
                 return 1;
             }
 
             i++;
         }
-        else if (!strcmp(argv[i], "--load")) {
+        else if (!strcmp(argv[i], "-l") || !strcmp(argv[i], "--load")) {
             if (i < argc - 1) {
                 if (argv[i + 1][0] == '-') {
-                    fprintf(stderr, "Error: Argument after '--load' must be file name\n");
+                    errorHandle("Error: Argument after '--load/-l' must be file name");
                     return 1;
                 }
                 else {
@@ -62,13 +104,13 @@ int main(int argc, char *argv[]) {
                 } 
             }
             else {
-                fprintf(stderr, "Error: Argument '--load' requires a file name\n");
+                errorHandle("Error: Argument '--load/-l' requires a file name");
                 return 1;
             }
 
             i++;
         }
-        else if (!strcmp(argv[i], "--nummon")) {
+        else if (!strcmp(argv[i], "-n") || !strcmp(argv[i], "--nummon")) {
             if (i < argc - 1) {
                 char *next = argv[i + 1];
 
@@ -83,21 +125,21 @@ int main(int argc, char *argv[]) {
                 if (isNum && strlen(next) > 0) {
                     numMonsters = atoi(next);
                     if (numMonsters < 0) {
-                        fprintf(stderr, "Error: Number of monsters must be positive\n");
+                        errorHandle("Error: Number of monsters must be positive");
                         return 1;
                     }
                 } else {
-                    fprintf(stderr, "Error: Argument after '--nummon' must be a positive integer\n");
+                    errorHandle("Error: Argument after '--nummon/-n' must be a positive integer");
                     return 1;
                 }
             } else {
-                fprintf(stderr, "Error: Argument '--nummon' requires a positive integer\n");
+                errorHandle("Error: Argument '--nummon/-n' requires a positive integer");
                 return 1;
             }
 
             i++;
         }
-        else if (!strcmp(argv[i], "--montype")) {
+        else if (!strcmp(argv[i], "-t") || !strcmp(argv[i], "--montype")) {
             if (i < argc - 1) {
                 if (strlen(argv[i + 1]) == 1) {
                     monType = argv[i + 1][0];
@@ -105,26 +147,29 @@ int main(int argc, char *argv[]) {
                     monTypeFlag = 1;
                 }
                 else {
-                    fprintf(stderr, "Error: Argument after '--montype' must be a single character\n");
+                    errorHandle("Error: Argument after '--montype/-t' must be a single character");
                     return 1;
                 }
             }
             else {
-                fprintf(stderr, "Error: Argument '--montype' requires a single character\n");
+                errorHandle("Error: Argument '--montype/-t' requires a single character");
                 return 1;
             }
 
             i++;
         }
+        else if (!strcmp(argv[i], "-a") || !strcmp(argv[i], "--auto")) {
+            autoFlag = 1;
+        }
         else {
-            fprintf(stderr, "Error: Unrecognized argument '%s'\n", argv[i]);
+            errorHandle("Error: Unrecognized argument, use '--help/-h' for usage information");
             return 1;
         }
     }
     
     if (loadFlag) {
-        if (hardnessBeforeFlag) {
-            fprintf(stderr, "Error: Argument '--load' and '-hb' cannot be used together\n");
+        if (printhardbFlag) {
+            errorHandle("Error: Argument '--printhardb/-hb' cannot be used with '--load/-l'");
             return 1;
         }
         loadDungeon(filename);
@@ -142,7 +187,7 @@ int main(int argc, char *argv[]) {
     }
     else {
         initDungeon();
-        if (hardnessBeforeFlag) {
+        if (printhardbFlag) {
             printHardness();
         }
 
@@ -158,7 +203,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (hardnessAfterFlag) {
+    if (printhardaFlag) {
         printHardness();
     }
 
@@ -166,355 +211,21 @@ int main(int argc, char *argv[]) {
         saveDungeon(filename);
     }
 
-    printTunnelingDistances();
-    printNonTunnelingDistances();
+    if (printdistFlag) {
+        printTunnelingDistances();
+        printNonTunnelingDistances();       
+    }
 
-    int time = 0;
-    int monstersAlive = numMonsters;
-    FibNode *nodes[MAX_HEIGHT][MAX_WIDTH] = {NULL};
-    FibHeap *heap = createFibHeap();
-    if (!heap) {
-        return 1;
-    }
-    for (int i = 0; i < MAX_HEIGHT; i++) {
-        for (int j = 0; j < MAX_WIDTH; j++) {
-            if (monsterAt[i][j]) {
-                nodes[i][j] = insert(heap, 1000 / monsterAt[i][j]->speed, (Pos){j, i});
-                if (!nodes[i][j]) {
-                    destroyFibHeap(heap);
-                    cleanup(numMonsters);
-                    return 1;
-                }
-            }
-        }
-    }
-    nodes[player.y][player.x] = insert(heap, 100, player);
-    if (!nodes[player.y][player.x]) {
-        destroyFibHeap(heap);
-        cleanup(numMonsters);
+    initscr();
+    raw();
+    noecho();
+    keypad(stdscr, TRUE);
+    ncursesFlag = 1;
+
+    if (playGame(numMonsters, autoFlag)) {
         return 1;
     }
 
-    printDungeon();
-    while (1) {
-        FibNode *node = extractMin(heap);
-        if (!node) {
-            destroyFibHeap(heap);
-            cleanup(numMonsters);
-            return 1;
-        }
-        time = node->key;
-
-        if (node->pos.x == player.x && node->pos.y == player.y) {
-            for (int i = 0; i < ATTEMPTS; i++) {
-                int xDir = rand() % 3 - 1;
-                int yDir = rand() % 3 - 1;
-                
-                if (dungeon[player.y + yDir][player.x + xDir].hardness == 0) {
-                    int oldX = player.x;
-                    int oldY = player.y;
-                    player.x += xDir;
-                    player.y += yDir;
-                    if (monsterAt[player.y][player.x]) {
-                        FibHeap *tempHeap = createFibHeap();
-                        if (!tempHeap) {
-                            destroyFibHeap(heap);
-                            cleanup(numMonsters);
-                            return 1;
-                        }
-                        FibNode *tempNode = extractMin(heap);
-                        if (!tempNode) {
-                            destroyFibHeap(heap);
-                            cleanup(numMonsters);
-                            return 1;
-                        }
-                        while (tempNode->pos.x != monsterAt[player.y][player.x]->pos.x ||
-                               tempNode->pos.y != monsterAt[player.y][player.x]->pos.y) {
-                            insert(tempHeap, tempNode->key, tempNode->pos);
-                            free(tempNode);
-                            tempNode = extractMin(heap);
-                        }
-                        if (tempNode) {
-                            free(tempNode);
-                        }
-                        while (tempHeap->min) {
-                            tempNode = extractMin(tempHeap);
-                            insert(heap, tempNode->key, tempNode->pos);
-                            free(tempNode);
-                        }
-                        destroyFibHeap(tempHeap);
-
-                        monsterAt[player.y][player.x] = NULL;
-
-                        nodes[oldY][oldX] = NULL;
-                        nodes[player.y][player.x] = insert(heap, time + 100, player);
-                        if (!nodes[player.y][player.x]) {
-                            destroyFibHeap(heap);
-                            cleanup(numMonsters);
-                            return 1;
-                        }
-                        printf("Player killed monster, Monsters alive: %d\n", --monstersAlive);
-                        if (monstersAlive <= 0) {
-                            printDungeon();
-                            printf("Player killed all monsters\n");
-                            destroyFibHeap(heap);
-                            cleanup(numMonsters);
-                            return 0;
-                        }
-                    }
-                    else {
-                        nodes[oldY][oldX] = NULL;
-                        nodes[player.y][player.x] = insert(heap, time + 100, player);
-                        if (!nodes[player.y][player.x]) {
-                            destroyFibHeap(heap);
-                            cleanup(numMonsters);
-                            return 1;
-                        }
-                    }
-                    generateDistances();
-                    break;
-                }
-            }
-
-            usleep(200000);
-            printDungeon();
-        }
-        else {
-            Mon *mon = monsterAt[node->pos.y][node->pos.x];
-            if (!mon) {
-                fprintf(stderr, "Error: Monster not found at %d, %d\n", node->pos.x, node->pos.y);
-                destroyFibHeap(heap);
-                cleanup(numMonsters);
-                return 1;
-            }
-
-            int isIntelligent = mon->intelligent;
-            int isTunneling = mon->tunneling;
-            int isTelepathic = mon->telepathic;
-            int isErratic = mon->erratic;
-
-            int x = mon->pos.x;
-            int y = mon->pos.y;
-
-            int directions[9][2] = {
-                {-1, 1}, {0, 1}, {1, 1},
-                {-1, 0}, {0, 0}, {1, 0},
-                {-1, -1}, {0, -1}, {1, -1}};
-
-            int sameRoom = 0;
-            for (int i = 0; i < roomCount; i++) {
-                if (x >= rooms[i].x && x <= rooms[i].x + rooms[i].width - 1 &&
-                    y >= rooms[i].y && y <= rooms[i].y + rooms[i].height - 1 &&
-                    player.x >= rooms[i].x && player.x <= rooms[i].x + rooms[i].width - 1 &&
-                    player.y >= rooms[i].y && player.y <= rooms[i].y + rooms[i].height - 1) {
-                    sameRoom = 1;
-                    break;
-                }
-            }
-
-            int newX = x;
-            int newY = y;
-            if (isErratic && rand() % 2) {
-                for (int i = 0; i < ATTEMPTS; i++) {
-                    int dir = rand() % 9;
-                    newX = x + directions[dir][0];
-                    newY = y + directions[dir][1];
-                    
-                    if ((isTunneling && dungeon[newY][newX].tunnelingDist != UNREACHABLE) ||
-                       (!isTunneling && dungeon[newY][newX].nonTunnelingDist != UNREACHABLE)) {
-                        break;
-                    }
-                }
-            }
-            else if (isTelepathic || sameRoom) {
-                if (isIntelligent) {
-                    int minDist = UNREACHABLE;
-                    int *possibleDir = NULL;
-                    int numPossible = 0;
-                    for (int i = 0; i < 9; i++) {
-                        int newX = x + directions[i][0];
-                        int newY = y + directions[i][1];
-                        if ((isTunneling && dungeon[newY][newX].tunnelingDist < minDist) ||
-                           (!isTunneling && dungeon[newY][newX].nonTunnelingDist < minDist)) {
-                            numPossible = 1;
-                            possibleDir = malloc(sizeof(int));
-                            if (!possibleDir) {
-                                fprintf(stderr, "Error: Failed to allocate memory for possibleDir\n");
-                                return 1;
-                            }
-                            minDist = (isTunneling) ? dungeon[newY][newX].tunnelingDist : dungeon[newY][newX].nonTunnelingDist;
-                            possibleDir[0] = i;
-                        }
-                        else if ((isTunneling && dungeon[newY][newX].tunnelingDist == minDist) ||
-                                (!isTunneling && dungeon[newY][newX].nonTunnelingDist == minDist)) {
-                            numPossible++;
-                            possibleDir = realloc(possibleDir, numPossible * sizeof(int));
-                            if (!possibleDir) {
-                                fprintf(stderr, "Error: Failed to reallocate memory for possibleDir\n");
-                                return 1;
-                            }
-                            possibleDir[numPossible - 1] = i;
-                        }
-                    }
-                    int dir = possibleDir[rand() % numPossible];
-                    free(possibleDir);
-
-                    newX = x + directions[dir][0];
-                    newY = y + directions[dir][1];
-                }
-                else {
-                    int xDist = abs(player.x - x);
-                    int yDist = abs(player.y - y);
-
-                    int xDir = 0;
-                    int yDir = 0;
-                    if (xDist >= 2 * yDist) {
-                        xDir = player.x > x ? 1 : -1;
-                    }
-                    else if (yDist >= 2 * xDist) {
-                        yDir = player.y > y ? 1 : -1;
-                    }
-                    else {
-                        if (x == player.x) {
-                            yDir = player.y > y ? 1 : -1;
-                        }
-                        else if (y == player.y) {
-                            xDir = player.x > x ? 1 : -1;
-                        }
-                        else {
-                            xDir = player.x > x ? 1 : -1;
-                            yDir = player.y > y ? 1 : -1;
-                        }
-                    }
-                    newX = x + xDir;
-                    newY = y + yDir;
-                    if ((isTunneling && dungeon[newY][newX].tunnelingDist == UNREACHABLE) ||
-                        (!isTunneling && dungeon[newY][newX].nonTunnelingDist == UNREACHABLE)) {
-                        nodes[y][x] = insert(heap, time + 1000 / mon->speed, mon->pos);
-                        if (!nodes[y][x]) {
-                            free(node);
-                            destroyFibHeap(heap);
-                            cleanup(numMonsters);
-                            return 1;
-                        }
-                        free(node);
-                        continue;
-                    }
-                }
-            } 
-            else {
-                nodes[y][x] = insert(heap, time + 1000 / mon->speed, mon->pos);
-                if (node) {
-                    free(node);
-                }
-                continue;
-            }   
-
-            if (dungeon[newY][newX].type == ROCK) {
-                if (dungeon[newY][newX].hardness > 85) {
-                    dungeon[newY][newX].hardness -= 85;
-                    nodes[y][x] = insert(heap, time + 1000 / mon->speed, mon->pos);
-                }
-                else {
-                    dungeon[newY][newX].hardness = 0;
-                    dungeon[newY][newX].type = CORRIDOR;
-
-                    mon->pos.x = newX;
-                    mon->pos.y = newY;
-                    monsterAt[y][x] = NULL;
-                    monsterAt[newY][newX] = mon;
-                    nodes[y][x] = NULL;
-                    nodes[newY][newX] = insert(heap, time + 1000 / mon->speed, mon->pos);
-                    if (!nodes[newY][newX]) {
-                        destroyFibHeap(heap);
-                        cleanup(numMonsters);
-                        return 1;
-                    }
-                }
-                generateDistances();
-            }
-            else {
-                if (monsterAt[newY][newX]) {
-                    FibHeap *tempHeap = createFibHeap();
-                    if (!tempHeap) {
-                        destroyFibHeap(heap);
-                        cleanup(numMonsters);
-                        return 1;
-                    }
-                    FibNode *tempNode = extractMin(heap);
-                    if (!tempNode) {
-                        destroyFibHeap(heap);
-                        cleanup(numMonsters);
-                        return 1;
-                    }
-                    if (!tempNode) {
-                        fprintf(stderr, "Error: Failed to create heap\n");
-                        destroyFibHeap(heap);
-                        cleanup(numMonsters);
-                        return 1;
-                    }
-                    while (tempNode->pos.x != monsterAt[newY][newX]->pos.x ||
-                            tempNode->pos.y != monsterAt[newY][newX]->pos.y) {
-                        insert(tempHeap, tempNode->key, tempNode->pos);
-                        free(tempNode); 
-                        tempNode = extractMin(heap);
-                        if (!tempNode) {
-                            break;
-                        }
-                    }
-                    if (tempNode) {
-                        free(tempNode);
-                    }
-                    while (tempHeap->min) {
-                        tempNode = extractMin(tempHeap);
-                        insert(heap, tempNode->key, tempNode->pos);
-                        free(tempNode);
-                    }
-                    destroyFibHeap(tempHeap);
-
-                    mon->pos.x = newX;
-                    mon->pos.y = newY;
-                    monsterAt[y][x] = NULL;
-                    monsterAt[newY][newX] = mon;
-                    nodes[y][x] = NULL;
-                    nodes[newY][newX] = insert(heap, time + 1000 / mon->speed, mon->pos);
-                    if (!nodes[newY][newX]) {
-                        destroyFibHeap(heap);
-                        cleanup(numMonsters);
-                        return 1;
-                    }
-                }
-                else if (newX == player.x && newY == player.y) {
-                    mon->pos.x = newX;
-                    mon->pos.y = newY;
-                    monsterAt[newY][newX] = mon;
-                    monsterAt[y][x] = NULL;
-                    nodes[y][x] = NULL;
-                    printDungeon();
-                    printf("Player killed by monster, gg\n");
-                    destroyFibHeap(heap);
-                    cleanup(numMonsters);
-                    return 1;
-                }
-                else {
-                    mon->pos.x = newX;
-                    mon->pos.y = newY;
-                    monsterAt[newY][newX] = mon;
-                    monsterAt[y][x] = NULL;
-                    nodes[y][x] = NULL;
-                    nodes[newY][newX] = insert(heap, time + 1000 / mon->speed, mon->pos);
-                    if (!nodes[newY][newX]) {
-                        destroyFibHeap(heap);
-                        cleanup(numMonsters);
-                        return 1;
-                    }
-                }
-            }
-        }
-        if (node) {
-            free(node);
-        }
-    }
-
+    endwin();
     return 0;
 }

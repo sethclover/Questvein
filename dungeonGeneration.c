@@ -1,12 +1,12 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "dungeon.h"
-#include "perlin.h"
+#include "errorHandle.h"
 #include "pathFinding.h"
-#include "fibonacciHeap.h"
+#include "perlin.h"
 
 Tile dungeon[MAX_HEIGHT][MAX_WIDTH];
 int roomCount;
@@ -60,7 +60,7 @@ void initDungeon() {
 void initRoom(Room *roomsLoaded) {
     rooms = malloc(roomCount * sizeof(Room));
     if (!rooms) {
-        fprintf(stderr, "Error: Failed to allocate memory for rooms\n");
+        errorHandle("Error: Failed to allocate memory for rooms");
         free(rooms);
         return;
     }
@@ -96,7 +96,7 @@ Room* buildRooms(int roomCount) {
 
     Room *rooms = malloc(roomCount * sizeof(Room));
     if (!rooms) {
-        fprintf(stderr, "Error: Failed to allocate memory for rooms\n");
+        errorHandle("Error: Failed to allocate memory for rooms");
         free(rooms);
         return NULL;
     }
@@ -116,7 +116,7 @@ Room* buildRooms(int roomCount) {
         }
     }
     
-    fprintf(stderr, "Error: Failed to build all rooms\n");
+    errorHandle("Error: Failed to build all rooms");
     free(rooms);
     return NULL;
 }
@@ -173,7 +173,7 @@ int buildStairs() {
     upStairsCount = 1;
     upStairs = malloc(upStairsCount * sizeof(Pos));
     if (!upStairs) {
-        fprintf(stderr, "Error: Failed to allocate memory for upStairs\n");
+        errorHandle("Error: Failed to allocate memory for upStairs");
         free(upStairs);
         return 1;
     }
@@ -187,7 +187,7 @@ int buildStairs() {
     downStairsCount = 1;
     downStairs = malloc(downStairsCount * sizeof(Pos));
     if (!downStairs) {
-        fprintf(stderr, "Error: Failed to allocate memory for downStairs\n");
+        errorHandle("Error: Failed to allocate memory for downStairs");
         free(upStairs);
         free(downStairs);
         return 1;
@@ -214,7 +214,7 @@ void spawnPlayer() {
 Mon *createMonsterWithMonType(char c, Pos pos) {
     Mon *monster = malloc(sizeof(Mon));
     if (!monster) {
-        fprintf(stderr, "Error: Failed to allocate memory for monster\n");
+        errorHandle("Error: Failed to allocate memory for monster");
         free(monster);
         return NULL;
     }
@@ -229,7 +229,7 @@ Mon *createMonsterWithMonType(char c, Pos pos) {
     } else if (c >= 'a' && c <= 'f') {
         num = c - 'a' + 10;
     } else {
-        printf("Error: Invalid hex character '%c'\n", c);
+        errorHandle("Error: Invalid hex character");
         free(monster);
         return NULL;
     }
@@ -245,7 +245,7 @@ Mon *createMonsterWithMonType(char c, Pos pos) {
 Mon *createMonster(Pos pos) {
     Mon *monster = malloc(sizeof(Mon));
     if (!monster) {
-        fprintf(stderr, "Error: Failed to allocate memory for monster\n");
+        errorHandle("Error: Failed to allocate memory for monster");
         free(monster);
         return NULL;
     }
@@ -263,7 +263,7 @@ Mon *createMonster(Pos pos) {
 int spawnMonsterWithMonType(char monType) {
     monsters = malloc(sizeof(Mon*));
     if (!monsters) {
-        fprintf(stderr, "Error: Failed to allocate memory for monsters\n");
+        errorHandle("Error: Failed to allocate memory for monsters");
         free(monsters);
         return 1;
     }
@@ -299,7 +299,7 @@ int spawnMonsterWithMonType(char monType) {
         }
     }
     if (monsters[0] == NULL) {
-        fprintf(stderr, "Error: Failed to spawn monster\n");
+        errorHandle("Error: Failed to spawn monster");
         free(monsters[0]);
         free(monsters);
         return 1;
@@ -311,7 +311,7 @@ int spawnMonsterWithMonType(char monType) {
 int spawnMonsters(int numMonsters) {
     monsters = malloc(numMonsters * sizeof(Mon*));
     if (!monsters) {
-        fprintf(stderr, "Error: Failed to allocate memory for monsters\n");
+        errorHandle("Error: Failed to allocate memory for monsters");
         free(monsters);
         return 1;
     }
@@ -340,8 +340,8 @@ int spawnMonsters(int numMonsters) {
                             for (int l = 0; l < i; l++) {
                                 free(monsters[l]);
                             }
+                            errorHandle("Error: Failed to create monster");
                             free(monsters);
-                            fprintf(stderr, "Error: Failed to create monster\n");
                             return 1;
                         }
                         monsterAt[y][x] = monsters[i];
@@ -356,7 +356,7 @@ int spawnMonsters(int numMonsters) {
             }
         }
         if (monsters[i] == NULL) {
-            fprintf(stderr, "Error: Failed to spawn monster\n");
+            errorHandle("Error: Failed to spawn monster");
             for (int k = 0; k < i; k++) {
                 free(monsters[k]);
             }
@@ -366,27 +366,6 @@ int spawnMonsters(int numMonsters) {
     }
 
     return 0;
-}
-
-void printDungeon() {
-    for (int i = 0; i < MAX_HEIGHT; i++) {
-        for (int j = 0; j < MAX_WIDTH; j++) {
-            if (monsterAt[i][j]) {
-                int personality = 1 * monsterAt[i][j]->intelligent +
-                                  2 * monsterAt[i][j]->telepathic +
-                                  4 * monsterAt[i][j]->tunneling +
-                                  8 * monsterAt[i][j]->erratic;
-                printf("%c", personality < 10 ? '0' + personality : 'A' + (personality - 10));
-            }
-            else if (player.x == j && player.y == i) {
-                printf("@");
-            }
-            else {
-                printf("%c", dungeon[i][j].type);
-            }
-        }
-        printf("\n");
-    }
 }
 
 void printHardness() {
@@ -524,7 +503,7 @@ int fillDungeon(int numMonsters) {
     return 0;
 }
 
-void cleanup(int numMonsters) {
+void freeAll(int numMonsters) {
     free(rooms);
     free(upStairs);
     free(downStairs);

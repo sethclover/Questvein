@@ -3,6 +3,17 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [unreleased] <!-- Spell Check -->
+
+### Added
+
+- Dungeon now prints in ncurses with message and status lines above and
+  below the dungeon space, respectively
+- --help/-h switch has been added to display the available switches and
+  their descriptions
+- PC can now be controlled with movement keys
+- typing Q will now quit the game with a goodbye message
+
 ## [4.0.0] - 2025-3-5
 
 ### Added
