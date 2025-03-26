@@ -42,7 +42,7 @@ typedef struct Monster {
     int erratic;
     int speed;
     Pos pos;
-    Pos lastSeen;
+    // Pos lastSeen; TODO
 } Mon;
 
 extern Tile dungeon[MAX_HEIGHT][MAX_WIDTH];

@@ -133,8 +133,6 @@ int loadDungeon(char *filename) {
         dungeon[downStairs[i].y][downStairs[i].x].type = STAIR_DOWN;
     }
 
-    dungeon[player.y][player.x].type = '@';
-
     printf("Dungeon loaded from %s\n", dungeon_file);
     fclose(file);
     free(dungeon_file);

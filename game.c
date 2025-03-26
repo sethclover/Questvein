@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "dungeon.h"
@@ -44,8 +45,99 @@ void printDungeon() {
             }
         }
     }
-    printLine(MESSAGE_LINE, "Press any key to continue...");
+    printLine(MESSAGE_LINE, "Press a key to continue...");
     refresh();
+}
+
+static char *personalityToString(int personality) {
+    static char buf[10]; // redo to space out evenly
+    buf[0] = '\0';
+    if (personality & 1) strcat(buf, "I ");
+    if (personality & 2) strcat(buf, "T ");
+    if (personality & 4) strcat(buf, "U ");
+    if (personality & 8) strcat(buf, "E ");
+    if (buf[0] != '\0') buf[strlen(buf) - 1] = '\0';
+    return buf;
+}
+
+int monsterList(int monstersAlive) {
+    Mon **monList = malloc(monstersAlive * sizeof(Mon*));
+    if (!monList) {
+        errorHandle("Error: Failed to allocate memory for monster list");
+        return 1;
+    }
+
+    int count = 0;
+    for (int i = 0; i < MAX_HEIGHT; i++) {
+        for (int j = 0; j < MAX_WIDTH; j++) {
+            if (monsterAt[i][j]) {
+                monList[count++] = monsterAt[i][j];
+            }
+        }
+    }
+
+    int cols = 40;
+    int rows = 24;
+    int top = 0;
+    int ch;
+    while (1) {
+        clear();
+
+        //center the window
+        mvaddch(0, 0, '+');
+        mvhline(0, 1, '-', cols - 2);
+        mvaddch(0, cols - 1, '+');
+        mvaddch(rows - 1, 0, '+');
+        mvhline(rows - 1, 1, '-', cols - 2);
+        mvaddch(rows - 1, cols - 1, '+');
+        for (int row = 1; row < rows - 1; row++) {
+            mvaddch(row, 0, '|');
+            mvaddch(row, cols - 1, '|');
+        }
+
+        char *title = "Monster List";
+        int titleCol = (cols - strlen(title)) / 2;
+        mvprintw(1, titleCol, "%s", title);
+        mvprintw(2, 1, "Monsters alive: %d", count);
+
+        int maxDisplay = rows - 4;
+        for (int i = top; i < top + maxDisplay && i < count; i++) {
+            Mon *mon = monList[i];
+            int personality = 1 * mon->intelligent +
+                              2 * mon->telepathic +
+                              4 * mon->tunneling +
+                              8 * mon->erratic;
+            char *traits = personalityToString(personality);
+            mvprintw(3 + (i - top), 1, "Type %c Monster at (%d, %d): %s", // should be offset from player
+                     personality < 10 ? '0' + personality : 'A' + (personality - 10),mon->pos.x, mon->pos.y, traits);
+        }
+
+        do {
+            ch = getch();
+        } while (ch != KEY_UP && ch != KEY_DOWN && ch != 27);
+        
+        switch (ch) {
+            case KEY_UP:
+                if (top > 0) {
+                    top--;
+                }
+                refresh();
+                break;
+
+            case KEY_DOWN:
+                if (top + maxDisplay < count) {
+                    top++;
+                }
+                refresh();
+                break;
+            
+            case 27:
+                free(monList);
+                clear();
+                printDungeon();
+                return 0;
+        }
+    }
 }
 
 void cleanup(int numMonsters, FibHeap *heap) {
@@ -60,7 +152,6 @@ int playGame(int numMonsters, int autoFlag) {
     FibHeap *heap = createFibHeap();
     if (!heap) {
         endwin();
-        printf("1\n");
         return 1;
     }
     for (int i = 0; i < MAX_HEIGHT; i++) {
@@ -69,7 +160,6 @@ int playGame(int numMonsters, int autoFlag) {
                 nodes[i][j] = insert(heap, 1000 / monsterAt[i][j]->speed, (Pos){j, i});
                 if (!nodes[i][j]) {
                     cleanup(numMonsters, heap); 
-                    printf("2\n");
                     return 1;
                 }
             }
@@ -78,17 +168,15 @@ int playGame(int numMonsters, int autoFlag) {
     nodes[player.y][player.x] = insert(heap, 100, player);
     if (!nodes[player.y][player.x]) {
         cleanup(numMonsters, heap);
-        printf("3\n");
         return 1;
     }
 
-    printLine(MESSAGE_LINE, "Welcome adventurer! Press any key to continue...");
+    printLine(MESSAGE_LINE, "Welcome adventurer! Press any key to begin...");
     getch();
     while (1) {
         FibNode *node = extractMin(heap);
         if (!node) {
             cleanup(numMonsters, heap);
-            printf("4\n");
             return 1;
         }
         time = node->key;
@@ -99,9 +187,11 @@ int playGame(int numMonsters, int autoFlag) {
             while (!turnEnd) {
                 int xDir = 0;
                 int yDir = 0;
-                if (autoFlag) { //error i think
+                if (autoFlag) {
                     xDir = rand() % 3 - 1;
                     yDir = rand() % 3 - 1;
+                    usleep(1000000);
+                    turnEnd++;
                 }
                 else {
                     int ch = getch();
@@ -178,11 +268,11 @@ int playGame(int numMonsters, int autoFlag) {
                             break;
 
                         case '>':
-                            // "go down stairs"
+                            /* "go down stairs" */
                             break;
 
                         case '<':
-                            // "go up stairs"
+                            /* "go up stairs" */
                             break;
 
                         case 'c':
@@ -210,7 +300,7 @@ int playGame(int numMonsters, int autoFlag) {
                             break;
 
                         case 'm':
-                            // "display monster list"
+                            monsterList(monstersAlive);
                             break;
 
                         case 's':
@@ -254,7 +344,6 @@ int playGame(int numMonsters, int autoFlag) {
                             printLine(MESSAGE_LINE, "Goodbye!");
                             usleep(1000000);
                             cleanup(numMonsters, heap);
-                            printf("5\n");
                             return 0;
 
                         case 'T':
@@ -266,11 +355,16 @@ int playGame(int numMonsters, int autoFlag) {
                             break;
 
                         default:
-                            // needs to go back to the top of switch
+                            printLine(MESSAGE_LINE, "Invalid key: %d", ch); // ? help
+                            break;
+                            
                     }
                 }
                 
-                if (dungeon[player.y + yDir][player.x + xDir].hardness == 0) {
+                if (xDir == 0 && yDir == 0) {
+                    turnEnd = 0;
+                }
+                else if (dungeon[player.y + yDir][player.x + xDir].hardness == 0) {
                     int oldX = player.x;
                     int oldY = player.y;
                     player.x += xDir;
@@ -279,13 +373,11 @@ int playGame(int numMonsters, int autoFlag) {
                         FibHeap *tempHeap = createFibHeap();
                         if (!tempHeap) {
                             cleanup(numMonsters, heap);
-                            printf("6\n");
                             return 1;
                         }
                         FibNode *tempNode = extractMin(heap);
                         if (!tempNode) {
                             cleanup(numMonsters, heap);
-                            printf("7\n");
                             return 1;
                         }
                         while (tempNode->pos.x != monsterAt[player.y][player.x]->pos.x ||
@@ -310,21 +402,22 @@ int playGame(int numMonsters, int autoFlag) {
                         nodes[player.y][player.x] = insert(heap, time + 100, player);
                         if (!nodes[player.y][player.x]) {
                             cleanup(numMonsters, heap);
-                            printf("8\n");
                             return 1;
                         }
+
+                        monstersAlive--;
                         if (monstersAlive <= 0) {
                             printDungeon();
                             printLine(STATUS_LINE1, "Player killed all monsters!\n");
-                            printLine(STATUS_LINE2, "You win! (Press any key to exit)");
-                            getch();
+                            printLine(STATUS_LINE2, "You win! (Press 'Q' to exit)");
+                            while (getch() != 'Q')
+                                ;
 
                             cleanup(numMonsters, heap);
-                            printf("9");
                             return 0;
                         }
                         else {
-                            printLine(STATUS_LINE1, "Player killed monster, Monsters alive: %d\n", --monstersAlive);
+                            printLine(STATUS_LINE1, "Player killed monster, Monsters alive: %d\n", monstersAlive);
                         }
 
                     }
@@ -333,7 +426,6 @@ int playGame(int numMonsters, int autoFlag) {
                         nodes[player.y][player.x] = insert(heap, time + 100, player);
                         if (!nodes[player.y][player.x]) {
                             cleanup(numMonsters, heap);
-                            printf("10");
                             return 1;
                         }
                     }
@@ -348,8 +440,7 @@ int playGame(int numMonsters, int autoFlag) {
         else {
             Mon *mon = monsterAt[node->pos.y][node->pos.x];
             if (!mon) {
-                errorHandle("Error: Monster not found");
-                printf("11 eleven");
+                errorHandle("Error: Monster not found at %d, %d", node->pos.x, node->pos.y); /* error here somewhere */
                 return 1;
             }
 
@@ -405,7 +496,6 @@ int playGame(int numMonsters, int autoFlag) {
                             possibleDir = malloc(sizeof(int));
                             if (!possibleDir) {
                                 errorHandle("Error: Failed to allocate memory for possibleDir");
-                                printf("12");
                                 return 1;
                             }
                             minDist = (isTunneling) ? dungeon[newY][newX].tunnelingDist : dungeon[newY][newX].nonTunnelingDist;
@@ -417,7 +507,6 @@ int playGame(int numMonsters, int autoFlag) {
                             possibleDir = realloc(possibleDir, numPossible * sizeof(int));
                             if (!possibleDir) {
                                 errorHandle("Error: Failed to reallocate memory for possibleDir");
-                                printf("13");
                                 return 1;
                             }
                             possibleDir[numPossible - 1] = i;
@@ -461,7 +550,6 @@ int playGame(int numMonsters, int autoFlag) {
                         if (!nodes[y][x]) {
                             free(node);
                             cleanup(numMonsters, heap);
-                            printf("14");
                             return 1;
                         }
                         free(node);
@@ -494,7 +582,6 @@ int playGame(int numMonsters, int autoFlag) {
                     nodes[newY][newX] = insert(heap, time + 1000 / mon->speed, mon->pos);
                     if (!nodes[newY][newX]) {
                         cleanup(numMonsters, heap);
-                        printf("15");
                         return 1;
                     }
                 }
@@ -505,14 +592,12 @@ int playGame(int numMonsters, int autoFlag) {
                     FibHeap *tempHeap = createFibHeap();
                     if (!tempHeap) {
                         cleanup(numMonsters, heap);
-                        printf("16");
                         return 1;
                     }
                     FibNode *tempNode = extractMin(heap);
                     if (!tempNode) {
                         errorHandle("Error: Failed to extract min from heap");
                         cleanup(numMonsters, heap);
-                        printf("18");
                         return 1;
                     }
                     while (tempNode->pos.x != monsterAt[newY][newX]->pos.x ||
@@ -542,7 +627,6 @@ int playGame(int numMonsters, int autoFlag) {
                     nodes[newY][newX] = insert(heap, time + 1000 / mon->speed, mon->pos);
                     if (!nodes[newY][newX]) {
                         cleanup(numMonsters, heap);
-                        printf("19");
                         return 1;
                     }
                 }
@@ -554,12 +638,14 @@ int playGame(int numMonsters, int autoFlag) {
                     nodes[y][x] = NULL;
 
                     printDungeon();
+                    printLine(MESSAGE_LINE, "");
                     printLine(STATUS_LINE1, "Player killed by monster, gg");
-                    printLine(STATUS_LINE2, "You lose! (Press any key to exit)");
-                    getch();
+                    printLine(STATUS_LINE2, "You lose! (Press 'Q' to exit)");
+                    char ch;
+                    while ((ch = getch()) != 'Q')
+                        ;
 
                     cleanup(numMonsters, heap);
-                    printf("20");
                     return 0;
                 }
                 else {
@@ -571,7 +657,6 @@ int playGame(int numMonsters, int autoFlag) {
                     nodes[newY][newX] = insert(heap, time + 1000 / mon->speed, mon->pos);
                     if (!nodes[newY][newX]) {
                         cleanup(numMonsters, heap);
-                        printf("21");
                         return 1;
                     }
                 }
@@ -582,6 +667,5 @@ int playGame(int numMonsters, int autoFlag) {
         }
     }
 
-    printf("22");
     return 0;
 }

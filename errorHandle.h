@@ -2,4 +2,4 @@
 
 extern int ncursesFlag;
 
-void errorHandle(char *msg);
+void errorHandle(char *format, ...);
