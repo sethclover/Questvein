@@ -8,11 +8,8 @@
 #include "dungeon.h"
 #include "errorHandle.h"
 #include "fibonacciHeap.h"
+#include "game.h"
 #include "pathFinding.h"
-
-#define MESSAGE_LINE 0
-#define STATUS_LINE1 22
-#define STATUS_LINE2 23
 
 void printLine(int line, char *format, ...) {
     char buffer[MAX_WIDTH];
@@ -50,13 +47,17 @@ void printDungeon() {
 }
 
 static char *personalityToString(int personality) {
-    static char buf[10]; // redo to space out evenly
+    static char buf[8];
     buf[0] = '\0';
     if (personality & 1) strcat(buf, "I ");
+    else strcat(buf, "* ");
     if (personality & 2) strcat(buf, "T ");
+    else strcat(buf, "* ");
     if (personality & 4) strcat(buf, "U ");
-    if (personality & 8) strcat(buf, "E ");
-    if (buf[0] != '\0') buf[strlen(buf) - 1] = '\0';
+    else strcat(buf, "* ");
+    if (personality & 8) strcat(buf, "E");
+    else strcat(buf, "*");
+    buf[7] = '\0';
     return buf;
 }
 
@@ -76,31 +77,37 @@ int monsterList(int monstersAlive) {
         }
     }
 
-    int cols = 40;
+    int cols = 55;
     int rows = 24;
+    int leftCol = (MAX_WIDTH - cols) / 2;
+    if (leftCol < 0) leftCol = 0;
     int top = 0;
-    int ch;
-    while (1) {
-        clear();
 
-        //center the window
-        mvaddch(0, 0, '+');
-        mvhline(0, 1, '-', cols - 2);
-        mvaddch(0, cols - 1, '+');
-        mvaddch(rows - 1, 0, '+');
-        mvhline(rows - 1, 1, '-', cols - 2);
-        mvaddch(rows - 1, cols - 1, '+');
-        for (int row = 1; row < rows - 1; row++) {
-            mvaddch(row, 0, '|');
-            mvaddch(row, cols - 1, '|');
+    clear();
+    while (1) {
+        mvhline(0, leftCol, '-', cols);
+        mvaddch(0, leftCol + cols / 2, '+');
+        mvhline(rows - 1, leftCol, '-', cols);
+        mvaddch(rows - 1, leftCol + cols / 2, '+');
+        for (int row = 0; row < rows; row++) {
+            mvaddch(row, leftCol, '|');
+            mvaddch(row, leftCol + cols - 1, '|');
         }
 
         char *title = "Monster List";
-        int titleCol = (cols - strlen(title)) / 2;
+        int titleCol = leftCol + (cols - strlen(title)) / 2;
         mvprintw(1, titleCol, "%s", title);
-        mvprintw(2, 1, "Monsters alive: %d", count);
+        mvprintw(3, leftCol + 2, "Monsters alive: %d", count);
 
-        int maxDisplay = rows - 4;
+        move(4, leftCol + cols / 2);
+        if (top > 0) {
+            printw("^");
+        }
+        else {
+            printw(" ");
+        }
+
+        int maxDisplay = rows - 7;
         for (int i = top; i < top + maxDisplay && i < count; i++) {
             Mon *mon = monList[i];
             int personality = 1 * mon->intelligent +
@@ -108,33 +115,66 @@ int monsterList(int monstersAlive) {
                               4 * mon->tunneling +
                               8 * mon->erratic;
             char *traits = personalityToString(personality);
-            mvprintw(3 + (i - top), 1, "Type %c Monster at (%d, %d): %s", // should be offset from player
-                     personality < 10 ? '0' + personality : 'A' + (personality - 10),mon->pos.x, mon->pos.y, traits);
+
+            int x = mon->pos.x - player.x;
+            int y = mon->pos.y - player.y;
+            char* nsDir = (y >= 0) ? "South" : "North";
+            char* ewDir = (x >= 0) ? "East" : "West";
+            int nsDist = abs(y);
+            int ewDist = abs(x);
+
+            move(5 + (i - top), leftCol + 2);
+            clrtoeol();
+            if (nsDist == 0) {
+                printw("Monster of type %c (%s) is %d %s",
+                       personality < 10 ? '0' + personality : 'A' + (personality - 10),
+                       traits, ewDist, ewDir);
+            } 
+            else if (ewDist == 0) {
+                printw("Monster of type %c (%s) is %d %s",
+                       personality < 10 ? '0' + personality : 'A' + (personality - 10),
+                       traits, nsDist, nsDir);
+            } 
+            else {
+                printw("Monster of type %c (%s) is %d %s and %d %s",
+                       personality < 10 ? '0' + personality : 'A' + (personality - 10), 
+                       traits, nsDist, nsDir, ewDist, ewDir);
+            }
+            mvaddch(5 + (i - top), leftCol + cols - 1, '|');
         }
 
+        move(rows - 2, leftCol + cols / 2);
+        if (top + maxDisplay < count) {
+            printw("v");
+        }
+        else {
+            printw(" ");    
+        }
+
+        refresh();
+
+        int ch;
         do {
             ch = getch();
         } while (ch != KEY_UP && ch != KEY_DOWN && ch != 27);
-        
+
         switch (ch) {
             case KEY_UP:
                 if (top > 0) {
                     top--;
                 }
-                refresh();
                 break;
 
             case KEY_DOWN:
                 if (top + maxDisplay < count) {
                     top++;
                 }
-                refresh();
                 break;
-            
+
             case 27:
-                free(monList);
                 clear();
                 printDungeon();
+                free(monList);
                 return 0;
         }
     }
@@ -171,8 +211,6 @@ int playGame(int numMonsters, int autoFlag) {
         return 1;
     }
 
-    printLine(MESSAGE_LINE, "Welcome adventurer! Press any key to begin...");
-    getch();
     while (1) {
         FibNode *node = extractMin(heap);
         if (!node) {
@@ -185,16 +223,17 @@ int playGame(int numMonsters, int autoFlag) {
             printDungeon();
             int turnEnd = 0;
             while (!turnEnd) {
+                int ch = 0;
                 int xDir = 0;
                 int yDir = 0;
                 if (autoFlag) {
                     xDir = rand() % 3 - 1;
                     yDir = rand() % 3 - 1;
-                    usleep(1000000);
+                    usleep(500000);
                     turnEnd++;
                 }
                 else {
-                    int ch = getch();
+                    ch = getch();
                     switch (ch) {
                         case KEY_HOME:
                         case '7':
@@ -268,35 +307,75 @@ int playGame(int numMonsters, int autoFlag) {
                             break;
 
                         case '>':
-                            /* "go down stairs" */
+                            if (dungeon[player.y][player.x].type == STAIR_DOWN) {
+                                printLine(MESSAGE_LINE, "Going down stairs...");
+                                usleep(1000000);
+                                cleanup(numMonsters, heap);
+                                clear();
+                                initDungeon();
+                                fillDungeon(numMonsters);
+                                player.x = upStairs[0].x;
+                                player.y = upStairs[0].y;
+                                if (playGame(numMonsters, autoFlag)) {
+                                    return 1;
+                                }
+
+                                return 0;
+                            }
+                            else {
+                                printLine(MESSAGE_LINE, "There are no stairs down here.");
+                            }
                             break;
 
                         case '<':
-                            /* "go up stairs" */
+                            if (dungeon[player.y][player.x].type == STAIR_UP) {
+                                printLine(MESSAGE_LINE, "Going up stairs...");
+                                usleep(1000000);
+                                cleanup(numMonsters, heap);
+                                clear();
+                                initDungeon();
+                                fillDungeon(numMonsters);
+                                player.x = downStairs[0].x;
+                                player.y = downStairs[0].y;
+                                if (playGame(numMonsters, autoFlag)) {
+                                    return 1;
+                                }
+
+                                return 0;
+                            }
+                            else {
+                                printLine(MESSAGE_LINE, "There are no stairs up here.");
+                            }
                             break;
 
                         case 'c':
                             // "character info"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
                         
                         case 'd':
                             // "drop item"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
 
                         case 'e':
                             // "display equipment"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
                         
                         case 'f':
                             // "toggle fog of war"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
 
                         case 'g':
                             // "teleport (goto)"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
                         
                         case 'i':
                             // "display inventory"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
 
                         case 'm':
@@ -305,42 +384,50 @@ int playGame(int numMonsters, int autoFlag) {
 
                         case 's':
                             // "display the default (terrain) map"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
 
                         case 't':
                             // "take off item"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
 
                         case 'w':
                             // "wear item"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
 
                         case 'x':
                             // "expunge item"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
 
                         case 'D':
                             // "display the non-tunneling distance map"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
                         
                         case 'E':
                             // "inspect equipped item"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
 
                         case 'H':
                             // "display the hardness map"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
 
                         case 'I':
                             // "inspect inventory item"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
 
                         case 'L':
                             // "look at monster"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
 
                         case 'Q':
-                            // "quit"
                             printLine(MESSAGE_LINE, "Goodbye!");
                             usleep(1000000);
                             cleanup(numMonsters, heap);
@@ -348,20 +435,22 @@ int playGame(int numMonsters, int autoFlag) {
 
                         case 'T':
                             // "display the tunneling distance map"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
 
                         case '?':
                             // "displays key bindings"
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
                             break;
 
                         default:
-                            printLine(MESSAGE_LINE, "Invalid key: %d", ch); // ? help
+                            printLine(MESSAGE_LINE, "\"%c\" is an invalid key.", (char) ch); // ? help
                             break;
                             
                     }
                 }
                 
-                if (xDir == 0 && yDir == 0) {
+                if (xDir == 0 && yDir == 0 && !(ch == KEY_B2 || ch == ' ' || ch == '.' || ch == '5')) {
                     turnEnd = 0;
                 }
                 else if (dungeon[player.y + yDir][player.x + xDir].hardness == 0) {
@@ -629,6 +718,10 @@ int playGame(int numMonsters, int autoFlag) {
                         cleanup(numMonsters, heap);
                         return 1;
                     }
+
+                    if (newX != x || newY != y) {
+                        monstersAlive--;
+                    }
                 }
                 else if (newX == player.x && newY == player.y) {
                     mon->pos.x = newX;
@@ -660,12 +753,11 @@ int playGame(int numMonsters, int autoFlag) {
                         return 1;
                     }
                 }
+                generateDistances();
             }
         }
         if (node) {
             free(node);
         }
     }
-
-    return 0;
 }

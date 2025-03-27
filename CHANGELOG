@@ -3,7 +3,7 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
-## [unreleased] <!-- Spell Check -->
+## [5.0.0] - 2025-3-26
 
 ### Added
 
@@ -13,11 +13,21 @@ The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.
   their descriptions
 - PC can now be controlled with movement keys
 - Pressing Q will now quit the game with a goodbye message
-- Pressing m will now show a list of living monsters
+- Pressing m will now show a list of living monsters with their relative
+  positions and personalities
+- Stairs are now fully functional, generating a random dungeon each time
+  and spawning you on the stairs going the opposite direction
 
 ### Changed
 
 - Optimizations for performance and error handling
+
+### Fixed
+
+- Incorrectly generating the player-to-monster distances during monster's
+  turns
+- The monster counter was incorrectly displaying how many monsters were
+  still left in the dungeon
 
 ## [4.0.0] - 2025-3-5
 

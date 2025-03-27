@@ -18,9 +18,9 @@ void errorHandle(char *format, ...) {
         keypad(stdscr, TRUE);
     }
     move(0, 0);
-    clrtoeol();
-    printw("%s\n", buffer);
-    mvprintw(1, 0, "Press 'Q' to exit");
+    clear();
+    printw("%s\n"
+           "Press 'Q' to exit", buffer);
     while (getch() != 'Q')
         ;
     refresh();

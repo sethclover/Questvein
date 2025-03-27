@@ -219,8 +219,12 @@ int main(int argc, char *argv[]) {
     initscr();
     raw();
     noecho();
+    curs_set(0);
     keypad(stdscr, TRUE);
     ncursesFlag = 1;
+
+    printLine(MESSAGE_LINE, "Welcome adventurer! Press any key to begin...");
+    getch();
 
     if (playGame(numMonsters, autoFlag)) {
         return 1;
