@@ -37,12 +37,12 @@ typedef struct Position {
 
 typedef struct Monster {
     int intelligent;
-    int tunneling;
     int telepathic;
+    int tunneling;
     int erratic;
     int speed;
     Pos pos;
-    // Pos lastSeen; TODO
+    Pos lastSeen;
 } Mon;
 
 extern Tile dungeon[MAX_HEIGHT][MAX_WIDTH];

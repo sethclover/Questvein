@@ -4,25 +4,16 @@
 #include "dungeon.h"
 #include "fibonacciHeap.h"
 
-void initDistances() {
-    for (int i = 0; i < MAX_HEIGHT; i++) {
-        for (int j = 0; j < MAX_WIDTH; j++) {
-            dungeon[i][j].tunnelingDist = UNREACHABLE;
-            dungeon[i][j].nonTunnelingDist = UNREACHABLE;
-        }
-    }
-}
-
-int tunnelingDistances() {
+int tunnelingDistances(int x, int y) {
     FibHeap *heap = createFibHeap();
     if (!heap) {
         return 1;
     }
     FibNode *nodes[MAX_HEIGHT][MAX_WIDTH] = {NULL};
 
-    dungeon[player.y][player.x].tunnelingDist = 0;
-    nodes[player.y][player.x] = insert(heap, 0, player);
-    if (!nodes[player.y][player.x]) {
+    dungeon[y][x].tunnelingDist = 0;
+    nodes[y][x] = insert(heap, 0, (Pos){x, y});
+    if (!nodes[y][x]) {
         destroyFibHeap(heap);
         return 1;
     }
@@ -75,16 +66,16 @@ int tunnelingDistances() {
     return 0;
 }
 
-int nonTunnelingDistances() {
+int nonTunnelingDistances(int x, int y) {
     FibHeap *heap = createFibHeap();
     if (!heap) {
         return 1;
     }
     FibNode *nodes[MAX_HEIGHT][MAX_WIDTH] = {NULL};
 
-    dungeon[player.y][player.x].nonTunnelingDist = 0;
-    nodes[player.y][player.x] = insert(heap, 0, player);
-    if (!nodes[player.y][player.x]) {
+    dungeon[y][x].nonTunnelingDist = 0;
+    nodes[y][x] = insert(heap, 0, (Pos){x, y});
+    if (!nodes[y][x]) {
         destroyFibHeap(heap);
         return 1;
     }
@@ -136,12 +127,17 @@ int nonTunnelingDistances() {
     return 0;
 }
 
-int generateDistances() {
-    initDistances();
-    if (tunnelingDistances()) {
+int generateDistances(int x, int y) {
+    for (int i = 0; i < MAX_HEIGHT; i++) {
+        for (int j = 0; j < MAX_WIDTH; j++) {
+            dungeon[i][j].tunnelingDist = UNREACHABLE;
+            dungeon[i][j].nonTunnelingDist = UNREACHABLE;
+        }
+    }
+    if (tunnelingDistances(x, y)) {
         return 1;
     }
-    if (nonTunnelingDistances()) {
+    if (nonTunnelingDistances(x, y)) {
         return 1;
     }
 

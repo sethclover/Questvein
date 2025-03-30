@@ -180,6 +180,31 @@ int monsterList(int monstersAlive) {
     }
 }
 
+int checkCorridor(int x, int y, int visited[MAX_HEIGHT][MAX_WIDTH]) {
+    if (visited[y][x] || dungeon[y][x].type != CORRIDOR) {
+        return 0;
+    }
+    else if (player.x == x && player.y == y) {
+        return 1;
+    }
+    visited[y][x] = 1;
+
+    int directions[9][2] = {
+        {-1, 1}, {0, 1}, {1, 1},
+        {-1, 0}, {0, 0}, {1, 0},
+        {-1, -1}, {0, -1}, {1, -1}};
+
+    for (int i = 0; i < 9; i++) {
+        int newX = x + directions[i][0];
+        int newY = y + directions[i][1];
+        if (checkCorridor(newX, newY, visited)) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 void cleanup(int numMonsters, FibHeap *heap) {
     destroyFibHeap(heap);
     freeAll(numMonsters);
@@ -518,7 +543,6 @@ int playGame(int numMonsters, int autoFlag) {
                             return 1;
                         }
                     }
-                    generateDistances();
                 }
                 else {
                     printLine(MESSAGE_LINE, "There's a wall there, adventurer!");
@@ -529,7 +553,7 @@ int playGame(int numMonsters, int autoFlag) {
         else {
             Mon *mon = monsterAt[node->pos.y][node->pos.x];
             if (!mon) {
-                errorHandle("Error: Monster not found at %d, %d", node->pos.x, node->pos.y); /* error here somewhere */
+                errorHandle("Error: Monster not found at %d, %d", node->pos.x, node->pos.y);
                 return 1;
             }
 
@@ -545,7 +569,6 @@ int playGame(int numMonsters, int autoFlag) {
                 {-1, 1}, {0, 1}, {1, 1},
                 {-1, 0}, {0, 0}, {1, 0},
                 {-1, -1}, {0, -1}, {1, -1}};
-
             int sameRoom = 0;
             for (int i = 0; i < roomCount; i++) {
                 if (x >= rooms[i].x && x <= rooms[i].x + rooms[i].width - 1 &&
@@ -555,6 +578,16 @@ int playGame(int numMonsters, int autoFlag) {
                     sameRoom = 1;
                     break;
                 }
+            }
+            int visited[MAX_HEIGHT][MAX_WIDTH] = {0};
+
+            int sameCorridor = checkCorridor(x, y, visited);
+
+            int hasLastSeen = (mon->lastSeen.x != -1 && mon->lastSeen.y != -1);
+
+            int canSee = (isTelepathic || sameRoom || sameCorridor);
+            if (canSee) {
+                mon->lastSeen = player;
             }
 
             int newX = x;
@@ -571,7 +604,14 @@ int playGame(int numMonsters, int autoFlag) {
                     }
                 }
             }
-            else if (isTelepathic || sameRoom) {
+            else if (canSee || hasLastSeen) {
+                if (canSee) {
+                    generateDistances(player.x, player.y);
+                }
+                else {
+                    generateDistances(mon->lastSeen.x, mon->lastSeen.y);
+                }
+                
                 if (isIntelligent) {
                     int minDist = UNREACHABLE;
                     int *possibleDir = NULL;
@@ -608,29 +648,39 @@ int playGame(int numMonsters, int autoFlag) {
                     newY = y + directions[dir][1];
                 }
                 else {
-                    int xDist = abs(player.x - x);
-                    int yDist = abs(player.y - y);
+                    int targetX = mon->lastSeen.x;
+                    int targetY = mon->lastSeen.y;
+                    if (canSee) {
+                        targetX = player.x;
+                        targetY = player.y;
+                    }
+
+                    int xDist = abs(targetX - x);
+                    int yDist = abs(targetY - y);
 
                     int xDir = 0;
                     int yDir = 0;
-                    if (xDist >= 2 * yDist) {
-                        xDir = player.x > x ? 1 : -1;
-                    }
-                    else if (yDist >= 2 * xDist) {
-                        yDir = player.y > y ? 1 : -1;
-                    }
-                    else {
-                        if (x == player.x) {
-                            yDir = player.y > y ? 1 : -1;
+                    if (xDist > 0 || yDist > 0) {
+                        if (xDist >= 2 * yDist) {
+                            xDir = targetX > x ? 1 : -1;
                         }
-                        else if (y == player.y) {
-                            xDir = player.x > x ? 1 : -1;
+                        else if (yDist >= 2 * xDist) {
+                            yDir = targetY > y ? 1 : -1;
                         }
                         else {
-                            xDir = player.x > x ? 1 : -1;
-                            yDir = player.y > y ? 1 : -1;
+                            if (x == targetX) {
+                                yDir = targetY > y ? 1 : -1;
+                            }
+                            else if (y == targetY) {
+                                xDir = targetX > x ? 1 : -1;
+                            }
+                            else {
+                                xDir = targetX > x ? 1 : -1;
+                                yDir = targetY > y ? 1 : -1;
+                            }
                         }
                     }
+    
                     newX = x + xDir;
                     newY = y + yDir;
                     if ((isTunneling && dungeon[newY][newX].tunnelingDist == UNREACHABLE) ||
@@ -674,7 +724,6 @@ int playGame(int numMonsters, int autoFlag) {
                         return 1;
                     }
                 }
-                generateDistances();
             }
             else {
                 if (monsterAt[newY][newX]) {
@@ -753,7 +802,6 @@ int playGame(int numMonsters, int autoFlag) {
                         return 1;
                     }
                 }
-                generateDistances();
             }
         }
         if (node) {

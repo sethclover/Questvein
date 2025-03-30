@@ -27,7 +27,7 @@ static const SwitchInfo switches[] = {
     {"-s", "--save", "Save the dungeon to a file (requires filename)"},
     {"-l", "--load", "Load a dungeon from a file (requires filename)"},
     {"-n", "--nummon", "Set the number of monsters (requires positive integer)"},
-    {"-t", "--montype", "Set a specific monster type (requires a single Hex character)"},
+    {"-t", "--typemon", "Set a specific monster type (requires a single Hex character)"},
     {"-a", "--auto", "Run the game in automatic (random) movement mode"}
 };
 
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
 
             i++;
         }
-        else if (!strcmp(argv[i], "-t") || !strcmp(argv[i], "--montype")) {
+        else if (!strcmp(argv[i], "-t") || !strcmp(argv[i], "--typemon")) {
             if (i < argc - 1) {
                 if (strlen(argv[i + 1]) == 1) {
                     monType = argv[i + 1][0];
@@ -147,12 +147,12 @@ int main(int argc, char *argv[]) {
                     monTypeFlag = 1;
                 }
                 else {
-                    errorHandle("Error: Argument after '--montype/-t' must be a single character");
+                    errorHandle("Error: Argument after '--typemon/-t' must be a single character");
                     return 1;
                 }
             }
             else {
-                errorHandle("Error: Argument '--montype/-t' requires a single character");
+                errorHandle("Error: Argument '--typemon/-t' requires a single character");
                 return 1;
             }
 

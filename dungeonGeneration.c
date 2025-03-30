@@ -218,9 +218,7 @@ Mon *createMonsterWithMonType(char c, Pos pos) {
         free(monster);
         return NULL;
     }
-    monster->pos.x = pos.x;
-    monster->pos.y = pos.y;
-    monster->speed = rand() % 16 + 5;
+    
 
     int num;
     c = tolower(c);
@@ -238,6 +236,9 @@ Mon *createMonsterWithMonType(char c, Pos pos) {
     monster->telepathic = (num >> 1) & 1;   
     monster->tunneling = (num >> 2) & 1;
     monster->erratic = (num >> 3) & 1;
+    monster->speed = rand() % 16 + 5;
+    monster->pos = (Pos){pos.x, pos.y};
+    monster->lastSeen = (Pos){-1, -1};
 
     return monster;
 }
@@ -256,6 +257,7 @@ Mon *createMonster(Pos pos) {
     monster->erratic = rand() % 2;
     monster->speed = rand() % 16 + 5;
     monster->pos = pos;
+    monster->lastSeen = (Pos){-1, -1};
 
     return monster;
 }
@@ -430,9 +432,6 @@ void printNonTunnelingDistances() {
 }
 
 int populateDungeonWithMonType(char monType) {
-    if (generateDistances()) {
-        return 1;
-    }
     if (spawnMonsterWithMonType(monType)) {
         return 1;
     }
@@ -441,9 +440,6 @@ int populateDungeonWithMonType(char monType) {
 }
 
 int populateDungeon(int numMonsters) {
-    if (generateDistances()) {
-        return 1;
-    }
     if (spawnMonsters(numMonsters)) {
         return 1;
     }

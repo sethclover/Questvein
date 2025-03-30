@@ -3,6 +3,15 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [unreleased] <!-- Spelling -->
+
+### Added
+
+- Monsters (not telepathic) can now see the PC if they are both in the same
+  connected corridor
+- Monsters can now remember the last seen location of the PC and will
+  go towards it if they loose sight of the them
+
 ## [5.0.0] - 2025-3-26
 
 ### Added
