@@ -1,0 +1,15 @@
+### Assignment 1.05 README
+
+For this assignment, I implemented an ncurses-based user interface
+to control the player (@) with unbuffered input, replacing the
+random movement from last week. Players move using keys like 7/y
+(up-left), 8/k (up), etc., as specified, with > and < handling stair
+navigation. Stairs generate new, non-persistent dungeons with new
+monsters (7-20, settable via --nummon), and the PC spawns on the
+stairs they just used, however, going immediately back will still
+generate a random dungeon. Monsters retain their random personalities
+and roam, killing the PC on contact. The game ends with 'Q', PC death,
+or death of all monsters in the dungeon. The 'm' key displays a
+scrollable monster list with relative positions, using up/down arrows
+and ESC to return. The top line shows messages, while the bottom two
+show status, and the dungeon spans lines 1-21.
