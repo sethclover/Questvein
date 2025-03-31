@@ -200,13 +200,41 @@ int buildStairs() {
 }
 
 void spawnPlayer() {
-    int roomNum = rand() % roomCount;
     int x, y;
-    do {
-        x = rand() % (rooms[roomNum].width - 2) + rooms[roomNum].x + 1;
-        y = rand() % (rooms[roomNum].height - 2) + rooms[roomNum].y + 1;
-    } while (dungeon[y][x].type != FLOOR);
-    
+    int valid = 0;
+    while (!valid) {
+        x = rand() % (rooms[rand() % roomCount].width - 2) + rooms[rand() % roomCount].x + 1;
+        y = rand() % (rooms[rand() % roomCount].height - 2) + rooms[rand() % roomCount].y + 1;
+
+        if (dungeon[y][x].type == FLOOR) {
+            valid = 1;
+        }
+        else {
+            continue;
+        }
+
+        for (int i = 0; i < upStairsCount; i++) {
+            for (int j = 0; j < roomCount; j++) {
+                if (upStairs[i].x >= rooms[j].x && upStairs[i].x < rooms[j].x + rooms[j].width &&
+                    upStairs[i].y >= rooms[j].y && upStairs[i].y < rooms[j].y + rooms[j].height &&
+                    x >= rooms[j].x && x < rooms[j].x + rooms[j].width &&
+                    y >= rooms[j].y && y < rooms[j].y + rooms[j].height) {
+                        valid = 0;
+                    }
+            }
+        }
+        for (int i = 0; i < downStairsCount; i++) {
+            for (int j = 0; j < roomCount; j++) {
+                if (downStairs[i].x >= rooms[j].x && downStairs[i].x < rooms[j].x + rooms[j].width &&
+                    downStairs[i].y >= rooms[j].y && downStairs[i].y < rooms[j].y + rooms[j].height &&
+                    x >= rooms[j].x && x < rooms[j].x + rooms[j].width &&
+                    y >= rooms[j].y && y < rooms[j].y + rooms[j].height) {
+                        valid = 0;
+                    }
+            }
+        }
+    }
+
     player.x = x;
     player.y = y;
 }
@@ -310,15 +338,15 @@ int spawnMonsterWithMonType(char monType) {
     return 0;
 }
 
-int spawnMonsters(int numMonsters) {
-    monsters = malloc(numMonsters * sizeof(Mon*));
+int spawnMonsters(int numMonsters, int playerX, int playerY) {
+    monsters = calloc(numMonsters, sizeof(Mon*));
     if (!monsters) {
         errorHandle("Error: Failed to allocate memory for monsters");
         free(monsters);
         return 1;
     }
 
-    for (int i = 0; i < numMonsters; i++) {  
+    for (int i = 0; i < numMonsters; i++) {
         for (int j = 0; j < ATTEMPTS; j++) {
             int placed = 0;
             int x = rand() % MAX_WIDTH;
@@ -327,8 +355,8 @@ int spawnMonsters(int numMonsters) {
                 continue;
             }
             for (int k = 0; k < roomCount; k++) {
-                if ((player.x >= rooms[k].x && player.x <= rooms[k].x + rooms[k].width - 1 &&
-                    player.y >= rooms[k].y && player.y <= rooms[k].y + rooms[k].height - 1)) {
+                if ((playerX >= rooms[k].x && playerX <= rooms[k].x + rooms[k].width - 1 &&
+                    playerY >= rooms[k].y && playerY <= rooms[k].y + rooms[k].height - 1)) {
                     continue;
                 }
                 else if (x >= rooms[k].x && x <= rooms[k].x + rooms[k].width - 1 &&
@@ -358,7 +386,7 @@ int spawnMonsters(int numMonsters) {
             }
         }
         if (monsters[i] == NULL) {
-            errorHandle("Error: Failed to spawn monster");
+            errorHandle("Error: Failed to spawn monster. Maybe try less monsters...");
             for (int k = 0; k < i; k++) {
                 free(monsters[k]);
             }
@@ -431,68 +459,15 @@ void printNonTunnelingDistances() {
     }
 }
 
-int populateDungeonWithMonType(char monType) {
-    if (spawnMonsterWithMonType(monType)) {
-        return 1;
-    }
-
-    return 0;
-}
-
-int populateDungeon(int numMonsters) {
-    if (spawnMonsters(numMonsters)) {
-        return 1;
-    }
-
-    return 0;
-}
-
-int fillDungeonWithMonType(char monType) {
+int generateStructures(int numMonsters) {
     roomCount = rand() % 5 + 7;
     rooms = buildRooms(roomCount);
     if (!rooms) {
         return 1;
     }
-
     buildCorridors();
-
     if (buildStairs()) {
         free(rooms);
-        return 1;
-    }
-
-    spawnPlayer();
-
-    if (populateDungeonWithMonType(monType)) {
-        free(rooms);
-        free(upStairs);
-        free(downStairs);
-        return 1;
-    }
-
-    return 0;
-}
-
-int fillDungeon(int numMonsters) {
-    roomCount = rand() % 5 + 7;
-    rooms = buildRooms(roomCount);
-    if (!rooms) {
-        return 1;
-    }
-
-    buildCorridors();
-
-    if (buildStairs()) {
-        free(rooms);
-        return 1;
-    }
-
-    spawnPlayer();
-
-    if (populateDungeon(numMonsters)) {
-        free(rooms);
-        free(upStairs);
-        free(downStairs);
         return 1;
     }
 

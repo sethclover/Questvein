@@ -21,14 +21,15 @@ typedef struct SwitchInfo {
 
 static const SwitchInfo switches[] = {
     {"-h", "--help", "Display this help message and exit"},
-    {"-hb", "--printhardb", "Print hardness before dungeon generation"},
-    {"-ha", "--printharda", "Print hardness after dungeon generation"},
-    {"-d", "--printdist", "Print tunneling and non-tunneling distances"},
+    {"-hb", "--printhardb", "After the game ends, print the hardness map before the dungeon structures are added"},
+    {"-ha", "--printharda", "After the game ends, print the hardness map after dungeon structures are added"},
+    {"-d", "--printdist", "After the game ends, print tunneling and non-tunneling distances"},
     {"-s", "--save", "Save the dungeon to a file (requires filename)"},
     {"-l", "--load", "Load a dungeon from a file (requires filename)"},
     {"-n", "--nummon", "Set the number of monsters (requires positive integer)"},
     {"-t", "--typemon", "Set a specific monster type (requires a single Hex character)"},
-    {"-a", "--auto", "Run the game in automatic (random) movement mode"}
+    {"-a", "--auto", "Run the game in automatic (random) movement mode"},
+    {"-g", "--godmode", "Enable god mode (invincible player)"}
 };
 
 static const int numSwitches = sizeof(switches) / sizeof(SwitchInfo);
@@ -41,6 +42,7 @@ int main(int argc, char *argv[]) {
     int loadFlag = 0;
     int monTypeFlag = 0;
     int autoFlag = 0;
+    int godmodeFlag = 0;
 
     ncursesFlag = 0;    
 
@@ -161,6 +163,9 @@ int main(int argc, char *argv[]) {
         else if (!strcmp(argv[i], "-a") || !strcmp(argv[i], "--auto")) {
             autoFlag = 1;
         }
+        else if (!strcmp(argv[i], "-g") || !strcmp(argv[i], "--godmode")) {
+            godmodeFlag = 1;
+        }
         else {
             errorHandle("Error: Unrecognized argument, use '--help/-h' for usage information");
             return 1;
@@ -175,12 +180,12 @@ int main(int argc, char *argv[]) {
         loadDungeon(filename);
 
         if (monTypeFlag) {
-            if (populateDungeonWithMonType(monType)) {
+            if (spawnMonsterWithMonType(monType)) {
                 return 1;
             }
         }
         else {
-            if (populateDungeon(numMonsters)) {
+            if (spawnMonsters(numMonsters, player.x, player.y)) {
                 return 1;
             }
         }
@@ -191,13 +196,25 @@ int main(int argc, char *argv[]) {
             printHardness();
         }
 
+        if (generateStructures(numMonsters)) {
+            return 1;
+        }
+        spawnPlayer();
         if (monTypeFlag) {
-            if (fillDungeonWithMonType(monType)) {
+            if (spawnMonsterWithMonType(monType)) {
+                free(rooms);
+                free(upStairs);
+                free(downStairs);
+
                 return 1;
             }
         }
         else {
-            if (fillDungeon(numMonsters)) {
+            if (spawnMonsters(numMonsters, player.x, player.y)) {
+                free(rooms);
+                free(upStairs);
+                free(downStairs);
+
                 return 1;
             }
         }
@@ -212,11 +229,15 @@ int main(int argc, char *argv[]) {
     }
 
     if (printdistFlag) {
+        generateDistances(player.x, player.y);
         printTunnelingDistances();
         printNonTunnelingDistances();       
     }
 
     initscr();
+    if (autoFlag) {
+        nodelay(stdscr, TRUE);
+    }
     raw();
     noecho();
     curs_set(0);
@@ -226,7 +247,7 @@ int main(int argc, char *argv[]) {
     printLine(MESSAGE_LINE, "Welcome adventurer! Press any key to begin...");
     getch();
 
-    if (playGame(numMonsters, autoFlag)) {
+    if (playGame(numMonsters, autoFlag, godmodeFlag)) {
         return 1;
     }
 

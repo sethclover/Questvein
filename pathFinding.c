@@ -28,32 +28,29 @@ int tunnelingDistances(int x, int y) {
         Pos pos = minNode->pos;
         int dist = minNode->key;
 
-        if (dist == dungeon[pos.y][pos.x].tunnelingDist) {
-            nodes[pos.y][pos.x] = NULL;
+        nodes[pos.y][pos.x] = NULL;
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                int newX = pos.x + j;
+                int newY = pos.y + i;
 
-            for (int i = -1; i <= 1; i++) {
-                for (int j = -1; j <= 1; j++) {
-                    int newX = pos.x + j;
-                    int newY = pos.y + i;
+                if ((i == 0 && j == 0) || dungeon[newY][newX].hardness == 255) {
+                    continue;
+                }
+    
+                int newDist = dist + dungeon[newY][newX].hardness / 85 + 1;
+                if (newDist < dungeon[newY][newX].tunnelingDist) {
+                    dungeon[newY][newX].tunnelingDist = newDist;
 
-                    if ((i == 0 && j == 0) || dungeon[newY][newX].hardness == 255) {
-                        continue;
+                    if (nodes[newY][newX] == NULL) {
+                        nodes[newY][newX] = insert(heap, newDist, (Pos){newX, newY});
+                        if (!nodes[newY][newX]) {
+                            destroyFibHeap(heap);
+                            return 1;
+                        }
                     }
-        
-                    int newDist = dist + dungeon[newY][newX].hardness / 85 + 1;
-                    if (newDist < dungeon[newY][newX].tunnelingDist) {
-                        dungeon[newY][newX].tunnelingDist = newDist;
-
-                        if (nodes[newY][newX] == NULL) {
-                            nodes[newY][newX] = insert(heap, newDist, (Pos){newX, newY});
-                            if (!nodes[newY][newX]) {
-                                destroyFibHeap(heap);
-                                return 1;
-                            }
-                        }
-                        else {
-                            decreaseKey(heap, nodes[newY][newX], newDist);
-                        }
+                    else {
+                        decreaseKey(heap, nodes[newY][newX], newDist);
                     }
                 }
             }
@@ -89,32 +86,29 @@ int nonTunnelingDistances(int x, int y) {
         Pos pos = minNode->pos;
         int dist = minNode->key;
 
-        if (dist == dungeon[pos.y][pos.x].nonTunnelingDist) {
-            nodes[pos.y][pos.x] = NULL;
+        nodes[pos.y][pos.x] = NULL;
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                int newX = pos.x + j;
+                int newY = pos.y + i;
+                
+                if ((i == 0 && j == 0) || dungeon[newY][newX].hardness > 0) {
+                    continue;
+                }
+    
+                int newDist = dist + 1;
+                if (newDist < dungeon[newY][newX].nonTunnelingDist) {
+                    dungeon[newY][newX].nonTunnelingDist = newDist;
 
-            for (int i = -1; i <= 1; i++) {
-                for (int j = -1; j <= 1; j++) {
-                    int newX = pos.x + j;
-                    int newY = pos.y + i;
-                    
-                    if ((i == 0 && j == 0) || dungeon[newY][newX].hardness > 0) {
-                        continue;
+                    if (nodes[newY][newX] == NULL) {
+                        nodes[newY][newX] = insert(heap, newDist, (Pos){newX, newY});
+                        if (!nodes[newY][newX]) {
+                            destroyFibHeap(heap);
+                            return 1;
+                        }
                     }
-        
-                    int newDist = dist + 1;
-                    if (newDist < dungeon[newY][newX].nonTunnelingDist) {
-                        dungeon[newY][newX].nonTunnelingDist = newDist;
-
-                        if (nodes[newY][newX] == NULL) {
-                            nodes[newY][newX] = insert(heap, newDist, (Pos){newX, newY});
-                            if (!nodes[newY][newX]) {
-                                destroyFibHeap(heap);
-                                return 1;
-                            }
-                        }
-                        else {
-                            decreaseKey(heap, nodes[newY][newX], newDist);
-                        }
+                    else {
+                        decreaseKey(heap, nodes[newY][newX], newDist);
                     }
                 }
             }

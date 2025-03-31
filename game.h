@@ -5,4 +5,4 @@
 #define STATUS_LINE2 23
 
 void printLine(int line, char *format, ...);
-int playGame(int numMonsters, int autoFlag);
+int playGame(int numMonsters, int autoFlag, int godmodeFlag);

@@ -58,11 +58,11 @@ extern Mon **monsters;
 
 void initDungeon();
 void initRoom(Room *roomsLoaded);
+void spawnPlayer();
 void printHardness();
 void printTunnelingDistances();
 void printNonTunnelingDistances();
-int populateDungeonWithMonType(char monType);
-int populateDungeon(int numMonsters);
-int fillDungeonWithMonType(char monType);
-int fillDungeon(int numMonsters);
+int spawnMonsterWithMonType(char monType);
+int spawnMonsters(int numMonsters, int playerX, int playerY);
+int generateStructures(int numMonsters);
 void freeAll();

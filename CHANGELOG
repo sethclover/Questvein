@@ -3,14 +3,24 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
-## [unreleased] <!-- Spelling -->
+## [5.1.0] - 2025-3-31
 
 ### Added
 
+- Added a command help function with '?' that will show a list of
+  possible commands for the PC, similar to the monster list
 - Monsters (not telepathic) can now see the PC if they are both in the same
   connected corridor
 - Monsters can now remember the last seen location of the PC and will
-  go towards it if they loose sight of the them
+  go towards it if they lose sight of them
+- Added the ability to quit with 'Q' in automatic movement mode
+
+### Fixed
+
+- Fixed an issue where using stairs to generate a new dungeon could
+  cause the PC to spawn in a room with monsters, and possibly die
+  immediately (skill issue) 
+- Basic performance optimizations
 
 ## [5.0.0] - 2025-3-26
 
