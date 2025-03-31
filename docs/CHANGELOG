@@ -1,0 +1,287 @@
+# Changelog
+
+Notable changes to the Dungeon Roguelike Game will be documented here.
+The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+
+## [5.1.0] - 2025-3-31
+
+### Added
+
+- Added a command help function with '?' that will show a list of
+  possible commands for the PC, similar to the monster list
+- Monsters (not telepathic) can now see the PC if they are both in the same
+  connected corridor
+- Monsters can now remember the last seen location of the PC and will
+  go towards it if they lose sight of them
+- Added the ability to quit with 'Q' in automatic movement mode
+
+### Fixed
+
+- Fixed an issue where using stairs to generate a new dungeon could
+  cause the PC to spawn in a room with monsters, and possibly die
+  immediately (skill issue) 
+- Basic performance optimizations
+
+## [5.0.0] - 2025-3-26
+
+### Added
+
+- Dungeon now prints in ncurses with message and status lines above and
+  below the dungeon space, respectively
+- --help/-h switch has been added to display the available switches and
+  their descriptions
+- PC can now be controlled with movement keys
+- Pressing Q will now quit the game with a goodbye message
+- Pressing m will now show a list of living monsters with their relative
+  positions and personalities
+- Stairs are now fully functional, generating a random dungeon each time
+  and spawning you on the stairs going the opposite direction
+
+### Changed
+
+- Optimizations for performance and error handling
+
+### Fixed
+
+- Incorrectly generating the player-to-monster distances during monster's
+  turns
+- The monster counter was incorrectly displaying how many monsters were
+  still left in the dungeon
+
+## [4.0.0] - 2025-3-5
+
+### Added
+
+- The PC now aimlessly wanders the dungeon in search of an exit to the
+  neverending nightmare he cannot escape from
+- The dungeon now spawns monsters, between 7 and 20 by default 
+  unless specified by the --nummon switch, in a random location inside a 
+  room that the player is not in, excluding stairs
+- Monsters roam the dungeon based on their randomly generated personality
+- When a character walks where another character is, the character that
+  was already there now dies and prints that they have died and ends the
+  game if it was the player
+- Switch --montype which takes a char and will make a dungeon with only
+  one monster in it, which is that type
+- Exhaustive error checking and memory freeing, so now all heap blocks
+  are completely freed
+
+### Changed
+
+- Better error checking for switches and load/save functions
+- Printing the dungeon now displays the monster's location,
+  marked by its hex code equivalent of the binary value of its
+  attributes
+
+## [3.1.0] - 2025-2-26
+
+### Added
+
+- Separate header files for each C file, excluding main, in a complete
+  refactor of the header file setup, in order to manage dependencies
+
+### Changed
+
+- Updated .gitignore
+- Updated Makefile
+
+## [3.0.2] - 2025-2-24
+
+### Removed
+
+- README section from assignment 2
+
+## [3.0.1] - 2025-2-24
+
+### Changed
+
+- README is now properly updated to match specifications for assignment 3
+
+## [3.0.0] - 2025-2-24
+
+### Added
+
+- Distances for tunneling and non tunneling monsters are now calculated
+  for generated and loaded dungeons, which are stored in the array of
+  Tiles for the dungeon
+- Distances for both tunneling and non tunneling monsters are now
+  printed after the initial printing of the dungeon
+- Fibonacci heap nodes now keep track of their position, for
+  implementation of Dijkstra's algorithm
+- Proper destruction of a Fibonacci heap along with all of its nodes is
+  now possible
+
+### Changed
+
+- Inserting nodes now returns that node for Fibonacci heaps, for easier
+  implementation
+- Makefile has been updated to include the Fibonacci heap and path
+  finding files
+
+### Fixed
+
+- Printing for tunneling distances now displays the character location
+  and is not on one line, as intended
+
+## [2.1.0] - 2025-2-21
+
+### Added
+
+- Fibonacci heap implementation (from scratch) supporting insert, getMin,
+  extractMin, and decrease key, for use in Dijkstra's algorithm
+- Printing for the tunneling and non tunneling distance from the PC for later
+  use in displaying Dijkstra's algorithm results
+- Stubs for generating distance in dungeonGeneration and printing them in
+  main for future implementation purposes
+- the Tiles that make up the dungeon now also keep track of their relative
+  distance to the PC for tunneling and non tunneling monsters
+
+### Fixed
+
+- Declares struct names now so they are no longer anonymous
+
+## [2.0.2] - 2025-2-12
+
+- More addressing problems
+
+## [2.0.1] - 2025-2-12
+
+### Fixed
+
+- Incorrect addressing for save/load
+
+## [2.0.0] - 2025-2-12
+
+### Added
+
+- Two new switches for saving and loading dungeons in the .rlg327 folder
+- Functionality for switches to be used together, including -hb and -ha
+  for printing the hardness visuals both before and after fill, --load for
+  printing hardness visuals after loading a dungeon
+- Global structs containing X and Y coordinates for the PC, upward stairs, and
+  downward stairs
+- Error checking for malloc function calls
+
+### Changed
+
+- The main function now exists in its own main.c file instead of within
+  dungeonGeneration.c
+- Main in dungeonGeneration.c is now called fillDungeon, which builds
+  rooms, corridors, and stairs, and places the player
+- Makefile is updated to include the new saveLoad.c file for saving and
+  loading dungeons
+
+### Removed
+
+- Unnecessary passing of external variables into functions
+
+## [1.3.0] - 2025-2-11
+
+### Added
+
+- Player is now placed in a random location in a random room excluding
+  positions that are upward or downward stairs
+
+### Changed
+
+- The switch -h for printing the hardness of the dungeon has been
+  replaced with -hb and -ha for printing the hardness before the floors
+  and corridors are added and printing after the hardness has been added,
+  respectively
+- Instead of corridors connecting at the center point of a room, it
+  connects to a random point in the room that is not on the edge of the
+  room
+- The print function for hardness acts displays differently, as it now 
+  prints floor as empty space, max-hardness rock as '#', and lowest to 
+  highest hardness rock using '.', ';', '*', '%', respectively  
+
+### Fixed
+
+- Spelling and grammar in the changelog
+
+## [1.2.0] - 2025-2-10
+
+### Added
+
+- Perlin gradient noise for hardness determination, which
+  defines a grid of gradient vectors, computes the dot product,
+  and then interpolates their values
+- Definitions for border is now defined in the header file
+- Switch operation using -h for printing an additional board for
+  hardness values that shows a bolder character for a higher
+  hardness value and vice versa
+
+### Changed
+
+- The 2d dungeon array is now a Tile struct instead of char array,
+  and now contains a type of symbol and a hardness value from 0-255
+- buildPerimeter has been replaced with initDungeon and now sets the
+  hardness of the board based on the Perlin noise algorithm and then
+  sets the type as rock and the edges as max-hardness border rock
+- Instead of length for X and width for Y, now fits the convention of
+  using width for X and height for Y values
+- Makefile updated to include perlin.c
+
+## [1.1.0] - 2025-2-7
+
+### Added
+
+- Header file containing definitions and structs, the global dungeon,
+  and methods
+
+### Changed
+
+- Makefile now uses CC and CFLAGS instead of hardcoding
+- Makefile was updated to check if the header file has changed during make
+- Random room count has been updated from 6-8 to 7-12 for more filled
+  space and variability
+
+### Fixed
+
+- Make clean works properly to remove output files
+
+## [1.0.1] - 2025-2-7
+
+### Added
+
+- Git Repo is for the project has been made, link below
+- Heading in README for which assignment it refers to
+
+## [1.0.0] - 2025-2-4
+
+### Added
+
+- Created README
+- Created Makefile
+
+### Changed
+
+- Logic for building corridors now has an 80% chance of building in the X
+  direction and a 20% chance to build in the Y direction to increase
+  the number of iterations it takes for the Y's to line up
+
+## [0.2.0] - 2025-2-3
+
+### Added
+
+- Enums for floor, corridor, upward and downward stairs, and rock
+- Print statements for failure to allocate memory or build rooms
+
+### Fixed
+
+- Rooms incorrectly checking for overlapping rooms, resulting in large
+  rooms completely enveloping smaller rooms, making them practically
+  invisible
+
+## [0.1.0] - 2025-2-3
+
+### Added
+
+- Building the perimeter for the dungeon (80x21)
+- Generating between 6 and 8 randomly sized and located
+  rooms to be placed in the dungeon
+- Connecting each room with a random other room with corridors
+- Building upward and downward stairs in two different rooms
+- Printing the dungeon
+
+https://github.com/sethclover/dungeonGame

@@ -1,33 +1,24 @@
-CC = gcc -g # -g for debugging
-CFLAGS = -Wall -Werror
-OBJECTS = dungeonGeneration.o errorHandle.o fibonacciHeap.o game.o main.o pathFinding.o perlin.o saveLoad.o
+CC = gcc # -g for debugging
+CFLAGS = -Wall -Werror -Iinclude
+LDFLAGS = -lm -lncurses
 
-dungeon: $(OBJECTS)
-	$(CC) $(OBJECTS) -o dungeon $(CFLAGS) -lm -lncurses
+SRC_DIR = src
+BUILD_DIR = build
 
-dungeonGeneration.o: dungeonGeneration.c dungeon.h errorHandle.h pathFinding.h perlin.h
-	$(CC) -c dungeonGeneration.c -o dungeonGeneration.o $(CFLAGS)
+SOURCES = $(wildcard $(SRC_DIR)/*.c)
+OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
+EXEC = $(BUILD_DIR)/dungeon
 
-errorHandle.o: errorHandle.c errorHandle.h
-	$(CC) -c errorHandle.c -o errorHandle.o $(CFLAGS)
+all: $(EXEC)
 
-fibonacciHeap.o: fibonacciHeap.c dungeon.h errorHandle.h fibonacciHeap.h
-	$(CC) -c fibonacciHeap.c -o fibonacciHeap.o $(CFLAGS)
+$(EXEC): $(OBJECTS)
+	$(CC) $(OBJECTS) -o $@ $(LDFLAGS) $(CFLAGS)
 
-game.o: game.c dungeon.h errorHandle.h fibonacciHeap.h
-	$(CC) -c game.c -o game.o $(CFLAGS)
-
-main.o: main.c dungeon.h errorHandle.h game.h pathFinding.h saveLoad.h
-	$(CC) -c main.c -o main.o $(CFLAGS)
-
-pathFinding.o: pathFinding.c dungeon.h fibonacciHeap.h
-	$(CC) -c pathFinding.c -o pathFinding.o $(CFLAGS)
-
-perlin.o: perlin.c dungeon.h
-	$(CC) -c perlin.c -o perlin.o $(CFLAGS)
-
-saveLoad.o: saveLoad.c dungeon.h errorHandle.h
-	$(CC) -c saveLoad.c -o saveLoad.o $(CFLAGS)
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(BUILD_DIR)
+	$(CC) -c $< -o $@ $(CFLAGS)
 
 clean:
-	rm -f dungeon *.o *~
+	rm -f $(BUILD_DIR)/* *~
+
+.PHONY: all clean
