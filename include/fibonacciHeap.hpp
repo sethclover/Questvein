@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dungeon.h"
+#include "dungeon.hpp"
 
 typedef struct FibNode {
     Pos pos;

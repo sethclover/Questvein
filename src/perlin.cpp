@@ -1,12 +1,12 @@
 #define _USE_MATH_DEFINES
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 
-#include "dungeon.h"
+#include "dungeon.hpp"
 
-#define SCALE 0.12
+const int scale = 0.12;
 
 typedef struct Gradient {
     float x;
@@ -62,7 +62,7 @@ void generateHardness() {
 
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
-            float value = perlin(j * SCALE, i * SCALE);
+            float value = perlin(j * scale, i * scale);
 
             int sign = (value < 0) ? -1 : 1;
             value = (1 - (1 - fabs(value)) * (1 - fabs(value))) * sign;

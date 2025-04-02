@@ -1,15 +1,15 @@
-#include <ctype.h>
+#include <cctype>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
 #include <ncurses.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
 
-#include "dungeon.h"
-#include "errorHandle.h"
-#include "game.h"
-#include "pathFinding.h"
-#include "saveLoad.h"
+#include "dungeon.hpp"
+//#include "errorHandle.h"
+#include "game.hpp"
+#include "pathFinding.hpp"
+#include "saveLoad.hpp"
 
 int ncursesFlag;
 
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
         else if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--save")) {
             if (i < argc - 1) {
                 if (argv[i + 1][0] == '-') {
-                    errorHandle("Error: Argument after '--save/-s' must be file name");
+                    //errorHandle("Error: Argument after '--save/-s' must be file name");
                     return 1;
                 }
                 else {
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
                 }
             }
             else {
-                errorHandle("Error: Argument '--save/-s' requires a file name");
+                //errorHandle("Error: Argument '--save/-s' requires a file name");
                 return 1;
             }
 
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
         else if (!strcmp(argv[i], "-l") || !strcmp(argv[i], "--load")) {
             if (i < argc - 1) {
                 if (argv[i + 1][0] == '-') {
-                    errorHandle("Error: Argument after '--load/-l' must be file name");
+                    //errorHandle("Error: Argument after '--load/-l' must be file name");
                     return 1;
                 }
                 else {
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
                 } 
             }
             else {
-                errorHandle("Error: Argument '--load/-l' requires a file name");
+                //errorHandle("Error: Argument '--load/-l' requires a file name");
                 return 1;
             }
 
@@ -127,15 +127,15 @@ int main(int argc, char *argv[]) {
                 if (isNum && strlen(next) > 0) {
                     numMonsters = atoi(next);
                     if (numMonsters < 0) {
-                        errorHandle("Error: Number of monsters must be positive");
+                        //errorHandle("Error: Number of monsters must be positive");
                         return 1;
                     }
                 } else {
-                    errorHandle("Error: Argument after '--nummon/-n' must be a positive integer");
+                    //errorHandle("Error: Argument after '--nummon/-n' must be a positive integer");
                     return 1;
                 }
             } else {
-                errorHandle("Error: Argument '--nummon/-n' requires a positive integer");
+                //errorHandle("Error: Argument '--nummon/-n' requires a positive integer");
                 return 1;
             }
 
@@ -149,12 +149,12 @@ int main(int argc, char *argv[]) {
                     monTypeFlag = 1;
                 }
                 else {
-                    errorHandle("Error: Argument after '--typemon/-t' must be a single character");
+                    //errorHandle("Error: Argument after '--typemon/-t' must be a single character");
                     return 1;
                 }
             }
             else {
-                errorHandle("Error: Argument '--typemon/-t' requires a single character");
+                //errorHandle("Error: Argument '--typemon/-t' requires a single character");
                 return 1;
             }
 
@@ -167,14 +167,14 @@ int main(int argc, char *argv[]) {
             godmodeFlag = 1;
         }
         else {
-            errorHandle("Error: Unrecognized argument, use '--help/-h' for usage information");
+            //errorHandle("Error: Unrecognized argument, use '--help/-h' for usage information");
             return 1;
         }
     }
     
     if (loadFlag) {
         if (printhardbFlag) {
-            errorHandle("Error: Argument '--printhardb/-hb' cannot be used with '--load/-l'");
+            //errorHandle("Error: Argument '--printhardb/-hb' cannot be used with '--load/-l'");
             return 1;
         }
         loadDungeon(filename);
@@ -202,18 +202,18 @@ int main(int argc, char *argv[]) {
         spawnPlayer();
         if (monTypeFlag) {
             if (spawnMonsterWithMonType(monType)) {
-                free(rooms);
-                free(upStairs);
-                free(downStairs);
+                delete[] rooms;
+                delete[] upStairs;
+                delete[] downStairs;
 
                 return 1;
             }
         }
         else {
             if (spawnMonsters(numMonsters, player.x, player.y)) {
-                free(rooms);
-                free(upStairs);
-                free(downStairs);
+                delete[] rooms;
+                delete[] upStairs;
+                delete[] downStairs;
 
                 return 1;
             }

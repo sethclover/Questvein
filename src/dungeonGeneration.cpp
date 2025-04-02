@@ -1,12 +1,12 @@
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
-#include "dungeon.h"
-#include "errorHandle.h"
-#include "pathFinding.h"
-#include "perlin.h"
+#include "dungeon.hpp"
+//#include "errorHandle.h"
+#include "pathFinding.hpp"
+#include "perlin.hpp"
 
 Tile dungeon[MAX_HEIGHT][MAX_WIDTH];
 int roomCount;
@@ -58,12 +58,13 @@ void initDungeon() {
 }
 
 void initRoom(Room *roomsLoaded) {
-    rooms = malloc(roomCount * sizeof(Room));
-    if (!rooms) {
-        errorHandle("Error: Failed to allocate memory for rooms");
-        free(rooms);
-        return;
-    }
+    rooms = new Room[roomCount];
+    // if (!rooms) {
+    //     errorHandle("Error: Failed to allocate memory for rooms");
+    //     free(rooms);
+    //     return;
+    // }
+
     for (int i = 0; i < roomCount; i++) {
         rooms[i].width = roomsLoaded[i].width;
         rooms[i].height = roomsLoaded[i].height;
@@ -94,12 +95,12 @@ int placeRoom(Room room) {
 Room* buildRooms(int roomCount) {
     int roomsBuilt = 0;
 
-    Room *rooms = malloc(roomCount * sizeof(Room));
-    if (!rooms) {
-        errorHandle("Error: Failed to allocate memory for rooms");
-        free(rooms);
-        return NULL;
-    }
+    Room *rooms = new Room[roomCount];
+    // if (!rooms) {
+    //     errorHandle("Error: Failed to allocate memory for rooms");
+    //     free(rooms);
+    //     return NULL;
+    // }
 
     for (int i = 0; i < ATTEMPTS; i++) {
         rooms[roomsBuilt].width = rand() % 9 + 4;
@@ -116,8 +117,8 @@ Room* buildRooms(int roomCount) {
         }
     }
     
-    errorHandle("Error: Failed to build all rooms");
-    free(rooms);
+    //errorHandle("Error: Failed to build all rooms");
+    delete[] rooms;
     return NULL;
 }
 
@@ -171,12 +172,12 @@ int buildStairs() {
     int yUp = rand() % rooms[0].height + rooms[0].y;
 
     upStairsCount = 1;
-    upStairs = malloc(upStairsCount * sizeof(Pos));
-    if (!upStairs) {
-        errorHandle("Error: Failed to allocate memory for upStairs");
-        free(upStairs);
-        return 1;
-    }
+    upStairs = new Pos[upStairsCount];
+    // if (!upStairs) {
+    //     errorHandle("Error: Failed to allocate memory for upStairs");
+    //     free(upStairs);
+    //     return 1;
+    // }
     upStairs[0].x = xUp;
     upStairs[0].y = yUp;
     dungeon[yUp][xUp].type = STAIR_UP;
@@ -185,13 +186,13 @@ int buildStairs() {
     int yDown = rand() % rooms[roomCount - 1].height + rooms[roomCount - 1].y;
 
     downStairsCount = 1;
-    downStairs = malloc(downStairsCount * sizeof(Pos));
-    if (!downStairs) {
-        errorHandle("Error: Failed to allocate memory for downStairs");
-        free(upStairs);
-        free(downStairs);
-        return 1;
-    }
+    downStairs = new Pos[downStairsCount];
+    // if (!downStairs) {
+    //     errorHandle("Error: Failed to allocate memory for downStairs");
+    //     free(upStairs);
+    //     free(downStairs);
+    //     return 1;
+    // }
     downStairs[0].x = xDown;
     downStairs[0].y = yDown;
     dungeon[yDown][xDown].type = STAIR_DOWN;
@@ -240,25 +241,26 @@ void spawnPlayer() {
 }
 
 Mon *createMonsterWithMonType(char c, Pos pos) {
-    Mon *monster = malloc(sizeof(Mon));
-    if (!monster) {
-        errorHandle("Error: Failed to allocate memory for monster");
-        free(monster);
-        return NULL;
-    }
-    
+    Mon *monster = new Mon;
+    // if (!monster) {
+    //     errorHandle("Error: Failed to allocate memory for monster");
+    //     free(monster);
+    //     return NULL;
+    // }
 
     int num;
     c = tolower(c);
     if (c >= '0' && c <= '9') {
         num = c - '0';
-    } else if (c >= 'a' && c <= 'f') {
-        num = c - 'a' + 10;
-    } else {
-        errorHandle("Error: Invalid hex character");
-        free(monster);
-        return NULL;
     }
+    else if (c >= 'a' && c <= 'f') {
+        num = c - 'a' + 10;
+    }
+    // else {
+    //     errorHandle("Error: Invalid hex character");
+    //     free(monster);
+    //     return NULL;
+    // }
 
     monster->intelligent = num & 1;         
     monster->telepathic = (num >> 1) & 1;   
@@ -272,12 +274,12 @@ Mon *createMonsterWithMonType(char c, Pos pos) {
 }
 
 Mon *createMonster(Pos pos) {
-    Mon *monster = malloc(sizeof(Mon));
-    if (!monster) {
-        errorHandle("Error: Failed to allocate memory for monster");
-        free(monster);
-        return NULL;
-    }
+    Mon *monster = new Mon;
+    // if (!monster) {
+    //     errorHandle("Error: Failed to allocate memory for monster");
+    //     free(monster);
+    //     return NULL;
+    // }
 
     monster->intelligent = rand() % 2;
     monster->tunneling = rand() % 2;
@@ -291,12 +293,12 @@ Mon *createMonster(Pos pos) {
 }
 
 int spawnMonsterWithMonType(char monType) {
-    monsters = malloc(sizeof(Mon*));
-    if (!monsters) {
-        errorHandle("Error: Failed to allocate memory for monsters");
-        free(monsters);
-        return 1;
-    }
+    monsters = new Mon*[1];
+    // if (!monsters) {
+    //     errorHandle("Error: Failed to allocate memory for monsters");
+    //     free(monsters);
+    //     return 1;
+    // }
 
     for (int j = 0; j < ATTEMPTS; j++) {
         int placed = 0;
@@ -313,11 +315,12 @@ int spawnMonsterWithMonType(char monType) {
             else if (x >= rooms[k].x && x <= rooms[k].x + rooms[k].width - 1 &&
                         y >= rooms[k].y && y <= rooms[k].y + rooms[k].height - 1) {
                 monsters[0] = createMonsterWithMonType(monType, (Pos){x, y});
-                if (!monsters[0]) {
-                    free(monsters[0]);
-                    free(monsters);
-                    return 1;
-                }
+                // if (!monsters[0]) {
+                //     errorHandle("Error: Failed to create monster with type %c", monType);
+                //     free(monsters[0]);
+                //     free(monsters);
+                //     return 1;
+                // }
                 monsterAt[y][x] = monsters[0];
                 placed = 1;
                 break;
@@ -328,23 +331,23 @@ int spawnMonsterWithMonType(char monType) {
             break;
         }
     }
-    if (monsters[0] == NULL) {
-        errorHandle("Error: Failed to spawn monster");
-        free(monsters[0]);
-        free(monsters);
-        return 1;
-    }
+    // if (monsters[0] == NULL) {
+    //     errorHandle("Error: Failed to spawn monster");
+    //     free(monsters[0]);
+    //     free(monsters);
+    //     return 1;
+    // }
 
     return 0;
 }
 
 int spawnMonsters(int numMonsters, int playerX, int playerY) {
-    monsters = calloc(numMonsters, sizeof(Mon*));
-    if (!monsters) {
-        errorHandle("Error: Failed to allocate memory for monsters");
-        free(monsters);
-        return 1;
-    }
+    monsters = new Mon*[numMonsters]();
+    // if (!monsters) {
+    //     errorHandle("Error: Failed to allocate memory for monsters");
+    //     free(monsters);
+    //     return 1;
+    // }
 
     for (int i = 0; i < numMonsters; i++) {
         for (int j = 0; j < ATTEMPTS; j++) {
@@ -366,14 +369,14 @@ int spawnMonsters(int numMonsters, int playerX, int playerY) {
                     }
                     else {
                         monsters[i] = createMonster((Pos){x, y});
-                        if (!monsters[i]) {
-                            for (int l = 0; l < i; l++) {
-                                free(monsters[l]);
-                            }
-                            errorHandle("Error: Failed to create monster");
-                            free(monsters);
-                            return 1;
-                        }
+                        // if (!monsters[i]) {
+                        //     for (int l = 0; l < i; l++) {
+                        //         free(monsters[l]);
+                        //     }
+                        //     errorHandle("Error: Failed to create monster");
+                        //     free(monsters);
+                        //     return 1;
+                        // }
                         monsterAt[y][x] = monsters[i];
                         placed = 1;
                         break;
@@ -385,14 +388,14 @@ int spawnMonsters(int numMonsters, int playerX, int playerY) {
                 break;
             }
         }
-        if (monsters[i] == NULL) {
-            errorHandle("Error: Failed to spawn monster. Maybe try less monsters...");
-            for (int k = 0; k < i; k++) {
-                free(monsters[k]);
-            }
-            free(monsters);
-            return 1;
-        }
+        // if (monsters[i] == NULL) {
+        //     errorHandle("Error: Failed to spawn monster. Maybe try less monsters...");
+        //     for (int k = 0; k < i; k++) {
+        //         free(monsters[k]);
+        //     }
+        //     free(monsters);
+        //     return 1;
+        // }
     }
 
     return 0;
@@ -467,7 +470,7 @@ int generateStructures(int numMonsters) {
     }
     buildCorridors();
     if (buildStairs()) {
-        free(rooms);
+        delete[] rooms;
         return 1;
     }
 
@@ -475,15 +478,15 @@ int generateStructures(int numMonsters) {
 }
 
 void freeAll(int numMonsters) {
-    free(rooms);
-    free(upStairs);
-    free(downStairs);
+    delete[] rooms;
+    delete[] upStairs;
+    delete[] downStairs;
     for (int i = 0; i < numMonsters; i++) {
         if (monsters[i]) {
-            free(monsters[i]);
+            delete monsters[i];
         }
     }
-    free(monsters);
+    delete[] monsters;
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
             monsterAt[i][j] = NULL;

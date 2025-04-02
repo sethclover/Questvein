@@ -1,17 +1,18 @@
-#include <stdlib.h>
-#include <math.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cmath>
+#include <cstdio>
 
-#include "dungeon.h"
-#include "errorHandle.h"
-#include "fibonacciHeap.h"
+#include "dungeon.hpp"
+//#include "errorHandle.h"
+#include "fibonacciHeap.hpp"
 
 FibHeap *createFibHeap() {
-    FibHeap *heap = (FibHeap*)malloc(sizeof(FibHeap));
-    if (!heap) {
-        errorHandle("Error: Failed to allocate memory for Fibonacci heap");
-        return NULL;
-    }
+    FibHeap *heap = new FibHeap;
+    // if (!heap) {
+    //     errorHandle("Error: Failed to allocate memory for Fibonacci heap");
+    //     return NULL;
+    // }
+
     heap->numNodes = 0;
     heap->min = NULL;
 
@@ -19,11 +20,12 @@ FibHeap *createFibHeap() {
 }
 
 FibNode *createFibNode(int key, Pos pos) {
-    FibNode *node = (FibNode*)malloc(sizeof(FibNode));
-    if (!node) {
-        errorHandle("Error: Failed to allocate memory for Fibonacci node");
-        return NULL;
-    }
+    FibNode *node = new FibNode;
+    // if (!node) {
+    //     errorHandle("Error: Failed to allocate memory for Fibonacci node");
+    //     return NULL;
+    // }
+
     node->pos = pos;
     node->key = key;
     node->degree = 0;
@@ -72,24 +74,24 @@ int consolidate(FibHeap *heap) {
     else {
         maxDegree = (int)(log(heap->numNodes - 1) / log(2)) + 1;
     }
-    FibNode **A = (FibNode**)calloc(maxDegree, sizeof(FibNode*));
-    if (!A) {
-        errorHandle("Error: Failed to allocate memory for consolidation array");
-        return 1;
-    }
+    FibNode **A = new FibNode*[maxDegree]();
+    // if (!A) {
+    //     errorHandle("Error: Failed to allocate memory for consolidation array");
+    //     return 1;
+    // }
 
-    FibNode **nodes = (FibNode**)malloc(heap->numNodes * sizeof(FibNode*));
-    if (!nodes) {
-        errorHandle("Error: Failed to allocate memory for nodes array");
-        free(A);
-        free(nodes);
-        return 1;
-    }
+    FibNode **nodes = new FibNode*[heap->numNodes]();
+    // if (!nodes) {
+    //     errorHandle("Error: Failed to allocate memory for nodes array");
+    //     free(A);
+    //     free(nodes);
+    //     return 1;
+    // }
+
     int count = 0;
-
     if (heap->min) {
         FibNode *curr = heap->min;
-        int safetyCounter = 0;
+        int safetyCounter = 0; //perhaps remove
         int maxCount = heap->numNodes;
         
         do {
@@ -98,9 +100,9 @@ int consolidate(FibHeap *heap) {
             safetyCounter++;
             
             if (safetyCounter > maxCount) {
-                errorHandle("Error: Possible circular reference issue detected");
-                free(A);
-                free(nodes);
+                //errorHandle("Error: Possible circular reference issue detected");
+                delete[] A;
+                delete[] nodes;
                 return 1;
             }
         } while (curr != heap->min);
@@ -164,8 +166,8 @@ int consolidate(FibHeap *heap) {
         }
     }
 
-    free(A);
-    free(nodes);
+    delete[] A;
+    delete[] nodes;
     return 0;
 }
 
@@ -293,7 +295,7 @@ void destroyFibNode(FibNode *node) {
         }
     }
 
-    free(node);
+    delete node;
 }
 
 void destroyFibHeap(FibHeap *heap) {
@@ -305,5 +307,5 @@ void destroyFibHeap(FibHeap *heap) {
         heap->min = NULL;
     }
 
-    free(heap);
+    delete heap;
 }
