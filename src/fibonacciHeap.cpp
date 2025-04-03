@@ -1,44 +1,10 @@
-#include <cstdlib>
 #include <cmath>
-#include <cstdio>
 
 #include "dungeon.hpp"
 #include "fibonacciHeap.hpp"
 
-FibHeap *createFibHeap() {
-    FibHeap *heap = new FibHeap;
-    // if (!heap) {
-    //     errorHandle("Error: Failed to allocate memory for Fibonacci heap");
-    //     return NULL;
-    // }
-
-    heap->numNodes = 0;
-    heap->min = NULL;
-
-    return heap;
-}
-
-FibNode *createFibNode(int key, Pos pos) {
-    FibNode *node = new FibNode;
-    // if (!node) {
-    //     errorHandle("Error: Failed to allocate memory for Fibonacci node");
-    //     return NULL;
-    // }
-
-    node->pos = pos;
-    node->key = key;
-    node->degree = 0;
-    node->parent = NULL;
-    node->child = NULL;
-    node->left = node;
-    node->right = node;
-    node->marked = 0;
-
-    return node;
-}
-
 FibNode *insert(FibHeap *heap, int key, Pos pos) {
-    FibNode *node = createFibNode(key, pos);
+    FibNode *node = new FibNode(key, pos);
     if (!node) {
         return NULL;
     }
@@ -59,10 +25,6 @@ FibNode *insert(FibHeap *heap, int key, Pos pos) {
 
     heap->numNodes++;
     return node;
-}
-
-FibNode *getMin(FibHeap *heap) {
-    return heap->min;
 }
 
 int consolidate(FibHeap *heap) {
@@ -90,20 +52,9 @@ int consolidate(FibHeap *heap) {
     int count = 0;
     if (heap->min) {
         FibNode *curr = heap->min;
-        //int safetyCounter = 0; //perhaps remove
-        //int maxCount = heap->numNodes;
-        
         do {
             nodes[count++] = curr;
             curr = curr->right;
-            //safetyCounter++;
-            
-            // if (safetyCounter > maxCount) {
-            //     errorHandle("Error: Possible circular reference issue detected");
-            //     delete[] A;
-            //     delete[] nodes;
-            //     return 1;
-            // }
         } while (curr != heap->min);
     }
 

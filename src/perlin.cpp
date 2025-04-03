@@ -1,12 +1,9 @@
 #define _USE_MATH_DEFINES
 
 #include <cmath>
-#include <cstdio>
 #include <cstdlib>
 
 #include "dungeon.hpp"
-
-const float scale = 0.12;
 
 class Gradient {
 public:
@@ -63,6 +60,7 @@ void generateHardness() {
 
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
+            float scale = 0.12;
             float value = perlin(j * scale, i * scale);
 
             int sign = (value < 0) ? -1 : 1;

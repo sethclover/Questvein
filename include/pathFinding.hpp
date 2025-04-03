@@ -1,3 +1,3 @@
 #pragma once
 
-int generateDistances(int x, int y);
+int generateDistances(const int x, const int y);

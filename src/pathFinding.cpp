@@ -1,11 +1,8 @@
-#include <cstdio>
-#include <cstdlib>
-
 #include "dungeon.hpp"
 #include "fibonacciHeap.hpp"
 
-int tunnelingDistances(int x, int y) {
-    FibHeap *heap = createFibHeap();
+int tunnelingDistances(const int x, const int y) {
+    FibHeap *heap = new FibHeap();
     if (!heap) {
         return 1;
     }
@@ -63,8 +60,8 @@ int tunnelingDistances(int x, int y) {
     return 0;
 }
 
-int nonTunnelingDistances(int x, int y) {
-    FibHeap *heap = createFibHeap();
+int nonTunnelingDistances(const int x, const int y) {
+    FibHeap *heap = new FibHeap();
     if (!heap) {
         return 1;
     }
@@ -121,7 +118,7 @@ int nonTunnelingDistances(int x, int y) {
     return 0;
 }
 
-int generateDistances(int x, int y) {
+int generateDistances(const int x, const int y) {
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
             dungeon[i][j].tunnelingDist = UNREACHABLE;

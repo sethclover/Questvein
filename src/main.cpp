@@ -35,7 +35,7 @@ static const SwitchInfo switches[] = {
 static const int numSwitches = sizeof(switches) / sizeof(SwitchInfo);
 
 int main(int argc, char *argv[]) {
-    srand(time(NULL));
+    srand(time(nullptr));
 
     bool printhardbFlag = false;
     bool printhardaFlag = false;

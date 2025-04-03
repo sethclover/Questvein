@@ -1,36 +1,24 @@
 #include <cstdint>
-#include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <endian.h>
+#include <iostream>
+#include <string>
 
 #include "dungeon.hpp"
 
-char *dungeonFile;
+std::string dungeonFile;
 
-int setupDungeonFile(char *filename) {
+int  setupDungeonFile(char *filename) {
     char *homeDir = getenv("HOME");
-    int dungeonFileLength = strlen(homeDir) + strlen("/.rlg327/") + strlen(filename) + 1;
+    if (!homeDir) return 1;
 
-    dungeonFile = new char[dungeonFileLength];
-    // if (!dungeonFile) {
-    //     errorHandle("Error: Memory allocation failed for dungeonFile");
-    //     return 1;
-    // }
-
-    strcpy(dungeonFile, homeDir);
-    strcat(dungeonFile, "/.rlg327/");
-    strcat(dungeonFile, filename);
-    return 0;
+    dungeonFile = std::string(homeDir) + "/.rlg327/" + std::string(filename);
+    return 0 ;
 }
 
 int loadDungeon(char *filename) {
     setupDungeonFile(filename);
-    FILE *file = fopen(dungeonFile, "r");
-    // if (!file) {
-    //     errorHandle("Error: Failed to open file");
-    //     return 1;
-    // }
+    FILE *file = fopen(dungeonFile.c_str(), "r");
 
     char marker[12];
     fread(marker, 1, 12, file);
@@ -120,19 +108,14 @@ int loadDungeon(char *filename) {
         dungeon[downStairs[i].y][downStairs[i].x].type = STAIR_DOWN;
     }
 
-    printf("Dungeon loaded from %s\n", dungeonFile);
+    std::cout << "Dungeon loaded from" << dungeonFile << std::endl;
     fclose(file);
-    delete dungeonFile;
     return 0;
 }
 
 int saveDungeon(char *filename) {
     setupDungeonFile(filename);
-    FILE *file = fopen(dungeonFile, "w");
-    // if (!file) {
-    //     errorHandle("Error: Failed to open file");
-    //     return 1;
-    // }
+    FILE *file = fopen(dungeonFile.c_str(), "w");
 
     fwrite("RLG327-S2025", 1, 12, file);
 
@@ -180,8 +163,7 @@ int saveDungeon(char *filename) {
         fwrite(downStairsPos, 2, 1, file);
     }
 
-    printf("Dungeon saved to %s\n", dungeonFile);
+    std::cout << "Dungeon saved to" << dungeonFile << std::endl;
     fclose(file);
-    delete dungeonFile;
     return 0;
 }

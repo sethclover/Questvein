@@ -62,7 +62,7 @@ int playGame(int numMonsters, bool autoFlag, bool godmodeFlag, bool supportsColo
     int monstersAlive = numMonsters;
     FibNode *nodes[MAX_HEIGHT][MAX_WIDTH] = {NULL};
 
-    FibHeap *heap = createFibHeap();
+    FibHeap *heap = new FibHeap();
     if (!heap) {
         return 1;
     }
@@ -441,7 +441,7 @@ int playGame(int numMonsters, bool autoFlag, bool godmodeFlag, bool supportsColo
                                 mvaddch(y + 1, x, '@');
 
                                 if (monsterAt[player.pos.y][player.pos.x]) {
-                                    FibHeap *tempHeap = createFibHeap();
+                                    FibHeap *tempHeap = new FibHeap();
                                     if (!tempHeap) {
                                         cleanup(numMonsters, heap);
                                         delete node;
@@ -582,7 +582,7 @@ int playGame(int numMonsters, bool autoFlag, bool godmodeFlag, bool supportsColo
                     player.pos.x += xDir;
                     player.pos.y += yDir;
                     if (monsterAt[player.pos.y][player.pos.x]) {
-                        FibHeap *tempHeap = createFibHeap();
+                        FibHeap *tempHeap = new FibHeap();
                         if (!tempHeap) {
                             cleanup(numMonsters, heap);
                             delete node;
@@ -823,7 +823,7 @@ int playGame(int numMonsters, bool autoFlag, bool godmodeFlag, bool supportsColo
             }
             else {
                 if (monsterAt[newY][newX]) {
-                    FibHeap *tempHeap = createFibHeap();
+                    FibHeap *tempHeap = new FibHeap();
                     if (!tempHeap) {
                         cleanup(numMonsters, heap);
                         delete node;
