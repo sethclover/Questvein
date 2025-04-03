@@ -133,16 +133,15 @@ void printDungeon() {
             attroff(COLOR_PAIR(1));
         }
         else {
-            mvaddch(0, 0, '+');
-            mvhline(0, 1, '-', MAX_WIDTH - 2);
-            mvaddch(0, MAX_WIDTH - 1, '+');
-            for (int i = 1; i < MAX_HEIGHT - 2; i++) {
-                mvaddch(i, 0, '|');
-                mvaddch(i, MAX_WIDTH - 1, '|');
-            }
-            mvaddch(MAX_HEIGHT - 1, 0, '+');
-            mvhline(MAX_HEIGHT - 1, 1, '-', MAX_WIDTH - 2);
-            mvaddch(MAX_HEIGHT - 1, MAX_WIDTH - 1, '+');
+            mvhline(1, 0, '-', MAX_WIDTH - 1);
+            mvhline(MAX_HEIGHT, 0, '-', MAX_WIDTH - 1);
+            mvvline(1, 0, '|', MAX_HEIGHT - 1);
+            mvvline(1, MAX_WIDTH - 1, '|', MAX_HEIGHT - 1);
+
+            mvaddch(1, 0, '+');
+            mvaddch(1, MAX_WIDTH - 1, '+');
+            mvaddch(MAX_HEIGHT, 0, '+');
+            mvaddch(MAX_HEIGHT, MAX_WIDTH - 1, '+');
         }
 
         for (int i = 1; i < MAX_HEIGHT - 1; i++) {
@@ -203,13 +202,33 @@ int monsterList(int monstersAlive) {
 
     clear();
     while (1) {
-        mvhline(0, leftCol, '-', cols);
-        mvaddch(0, leftCol + cols / 2, '+');
-        mvhline(rows - 1, leftCol, '-', cols);
-        mvaddch(rows - 1, leftCol + cols / 2, '+');
-        for (int row = 0; row < rows; row++) {
-            mvaddch(row, leftCol, '|');
-            mvaddch(row, leftCol + cols - 1, '|');
+        if (has_colors()) {
+            start_color();
+            init_pair(1, COLOR_MAGENTA, COLOR_BLACK);
+            attron(COLOR_PAIR(1));
+
+            mvhline(0, leftCol, '-', cols);
+            mvhline(rows - 1, leftCol, '-', cols);
+            mvvline(0, leftCol, '|', rows);
+            mvvline(0, leftCol + cols - 1, '|', rows);
+
+            mvaddch(0, leftCol + cols / 2, '+');
+            mvaddch(0, leftCol, '+');
+            mvaddch(rows - 1, leftCol + cols / 2, '+');
+            mvaddch(rows - 1, leftCol, '+');
+
+            attroff(COLOR_PAIR(1));
+        }
+        else {
+            mvhline(0, leftCol, '-', cols);
+            mvhline(rows - 1, leftCol, '-', cols);
+            mvvline(0, leftCol, '|', rows);
+            mvvline(0, leftCol + cols - 1, '|', rows);
+
+            mvaddch(0, leftCol + cols / 2, '+');
+            mvaddch(0, leftCol, '+');
+            mvaddch(rows - 1, leftCol + cols / 2, '+');
+            mvaddch(rows - 1, leftCol, '+');
         }
 
         const char title[13] = "Monster List";
@@ -227,6 +246,8 @@ int monsterList(int monstersAlive) {
 
         int maxDisplay = rows - 7;
         for (int i = top; i < top + maxDisplay && i < count; i++) {
+            int row = 5 + (i - top);
+
             Monster *mon = monList[i];
             int personality = 1 * mon->intelligent +
                               2 * mon->telepathic +
@@ -241,7 +262,7 @@ int monsterList(int monstersAlive) {
             int nsDist = abs(y);
             int ewDist = abs(x);
 
-            move(5 + (i - top), leftCol + 2);
+            move(row, leftCol + 2);
             clrtoeol();
             if (nsDist == 0) {
                 printw("Monster of type %c (%s) is %d %s",
@@ -258,7 +279,18 @@ int monsterList(int monstersAlive) {
                        personality < 10 ? '0' + personality : 'A' + (personality - 10), 
                        traits, nsDist, nsDir, ewDist, ewDir);
             }
-            mvaddch(5 + (i - top), leftCol + cols - 1, '|');
+            if (has_colors()) {
+                start_color();
+                init_pair(1, COLOR_MAGENTA, COLOR_BLACK);
+                attron(COLOR_PAIR(1));
+
+                mvaddch(row, leftCol + cols - 1, '|');
+
+                attroff(COLOR_PAIR(1));
+            }
+            else {
+                mvaddch(row, leftCol + cols - 1, '|');
+            }
         }
 
         move(rows - 2, leftCol + cols / 2);
@@ -308,13 +340,33 @@ void commandList() {
 
     clear();
     while (1) {
-        mvhline(0, leftCol, '-', cols);
-        mvaddch(0, leftCol + cols / 2, '+');
-        mvhline(rows - 1, leftCol, '-', cols);
-        mvaddch(rows - 1, leftCol + cols / 2, '+');
-        for (int row = 0; row < rows; row++) {
-            mvaddch(row, leftCol, '|');
-            mvaddch(row, leftCol + cols - 1, '|');
+        if (has_colors()) {
+            start_color();
+            init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+            attron(COLOR_PAIR(1));
+
+            mvhline(0, leftCol, '-', cols);
+            mvhline(rows - 1, leftCol, '-', cols);
+            mvvline(0, leftCol, '|', rows);
+            mvvline(0, leftCol + cols - 1, '|', rows);
+
+            mvaddch(0, leftCol + cols / 2, '+');
+            mvaddch(0, leftCol, '+');
+            mvaddch(rows - 1, leftCol + cols / 2, '+');
+            mvaddch(rows - 1, leftCol, '+');
+
+            attroff(COLOR_PAIR(1));
+        }
+        else {
+            mvhline(0, leftCol, '-', cols);
+            mvhline(rows - 1, leftCol, '-', cols);
+            mvvline(0, leftCol, '|', rows);
+            mvvline(0, leftCol + cols - 1, '|', rows);
+
+            mvaddch(0, leftCol + cols / 2, '+');
+            mvaddch(0, leftCol, '+');
+            mvaddch(rows - 1, leftCol + cols / 2, '+');
+            mvaddch(rows - 1, leftCol, '+');
         }
 
         const char title[13] = "Command List";
@@ -335,7 +387,19 @@ void commandList() {
             move(row, leftCol + 2);
             clrtoeol();
             mvprintw(row, leftCol + 8, "%18s - %s", switches[i].buttons, switches[i].desc);
-            mvaddch(row, leftCol + cols - 1, '|');
+
+            if (has_colors()) {
+                start_color();
+                init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+                attron(COLOR_PAIR(1));
+
+                mvaddch(row, leftCol + cols - 1, '|');
+
+                attroff(COLOR_PAIR(1));
+            }
+            else {
+                mvaddch(row, leftCol + cols - 1, '|');
+            }
         }
 
         move(rows - 2, leftCol + cols / 2);
@@ -447,6 +511,10 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
         cleanup(numMonsters, heap);
 
         return 1;
+    }
+
+    if (autoFlag) {
+        fogOfWarToggle = 0;
     }
      
     while (1) {
@@ -651,10 +719,16 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
 
                         case 'g':
                             {
+                                int replaceFogOfWar = fogOfWarToggle;
+                                fogOfWarToggle = 0;
+                                printDungeon();
+
                                 int drop = 0;
-                                int x = player.pos.y;
+                                int x = player.pos.x;
                                 int y = player.pos.y;
                                 while (!drop) {
+                                    int oldX = x;
+                                    int oldY = y;
                                     mvaddch(y + 1, x, '!');
                                     refresh();
                             
@@ -665,9 +739,11 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                                             x = rand() % (MAX_WIDTH - 2) + 1;
                                             y = rand() % (MAX_HEIGHT - 2) + 1;
                                             drop = 1;
+                                            break;
                             
                                         case 'g':
                                             drop = 1;
+                                            break;
                             
                                         case KEY_HOME:
                                         case '7':
@@ -773,11 +849,11 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                                             printLine(MESSAGE_LINE, "Use movement keys to move and 'g' to finalize, or 'r' to be placed randomly.");
                                             break;
                                     }
-                                    if (monsterAt[y][x]) {
-                                        mvaddch(y + 1, x, personalityToChar(monsterAt[y][x]));
+                                    if (monsterAt[oldY][oldX]) {
+                                        mvaddch(oldY + 1, oldX, personalityToChar(monsterAt[oldY][oldX]));
                                     }
                                     else {
-                                        mvaddch(y + 1, x, dungeon[y][x].type);
+                                        mvaddch(oldY + 1, oldX, dungeon[oldY][oldX].type);
                                     }
                                 }
                             
@@ -785,8 +861,11 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                                     dungeon[y][x].hardness = 0;
                                     dungeon[y][x].type = CORRIDOR;
                                 }
+
                                 player.pos.x = x;
                                 player.pos.y = y;
+                                mvaddch(y + 1, x, '@');
+
                                 if (monsterAt[player.pos.y][player.pos.x]) {
                                     FibHeap *tempHeap = createFibHeap();
                                     if (!tempHeap) {
@@ -817,7 +896,7 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                                         delete tempNode;
                                     }
                                     destroyFibHeap(tempHeap);
-            
+
                                     monsterAt[player.pos.y][player.pos.x] = NULL;
             
                                     monstersAlive--;
@@ -834,9 +913,12 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                                         return 0;
                                     }
                                     else {
-                                        printLine(STATUS_LINE1, "Player killed monster, Monsters alive: %d\n", monstersAlive);
+                                        printLine(STATUS_LINE1, "Player stomped monster, Monsters alive: %d\n", monstersAlive);
                                     }
                                 }
+                                fogOfWarToggle = replaceFogOfWar;
+                                updateAroundPlayer();
+                                printDungeon();
                             }
                             break;
                         

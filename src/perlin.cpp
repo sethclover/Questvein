@@ -6,12 +6,13 @@
 
 #include "dungeon.hpp"
 
-const int scale = 0.12;
+const float scale = 0.12;
 
-typedef struct Gradient {
+class Gradient {
+public:
     float x;
     float y;
-} Gradient;
+};
 
 Gradient grads[MAX_HEIGHT][MAX_WIDTH];
 

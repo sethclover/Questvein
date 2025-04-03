@@ -3,6 +3,15 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [6.0.1] - 2025-4-2
+
+### Fixed
+
+- Visual bug with teleport that did not properly update the screen
+  has been fixed
+- Fixed possible crashes when you teleport onto and crush a poor,
+  unsuspecting monster
+
 ## [6.0.0] - 2025-4-2
 
 ### Added
