@@ -3,7 +3,6 @@
 #include <cstdio>
 
 #include "dungeon.hpp"
-//#include "errorHandle.h"
 #include "fibonacciHeap.hpp"
 
 FibHeap *createFibHeap() {
@@ -91,20 +90,20 @@ int consolidate(FibHeap *heap) {
     int count = 0;
     if (heap->min) {
         FibNode *curr = heap->min;
-        int safetyCounter = 0; //perhaps remove
-        int maxCount = heap->numNodes;
+        //int safetyCounter = 0; //perhaps remove
+        //int maxCount = heap->numNodes;
         
         do {
             nodes[count++] = curr;
             curr = curr->right;
-            safetyCounter++;
+            //safetyCounter++;
             
-            if (safetyCounter > maxCount) {
-                //errorHandle("Error: Possible circular reference issue detected");
-                delete[] A;
-                delete[] nodes;
-                return 1;
-            }
+            // if (safetyCounter > maxCount) {
+            //     errorHandle("Error: Possible circular reference issue detected");
+            //     delete[] A;
+            //     delete[] nodes;
+            //     return 1;
+            // }
         } while (curr != heap->min);
     }
 

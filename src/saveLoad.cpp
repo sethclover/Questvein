@@ -5,7 +5,6 @@
 #include <endian.h>
 
 #include "dungeon.hpp"
-//#include "errorHandle.h"
 
 char *dungeonFile;
 
@@ -46,8 +45,8 @@ int loadDungeon(char *filename) {
 
     uint8_t pos[2];
     fread(pos, 2, 1, file);
-    player.x = (int) pos[0];
-    player.y = (int) pos[1];
+    player.pos.x = (int) pos[0];
+    player.pos.y = (int) pos[1];
 
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
@@ -60,18 +59,6 @@ int loadDungeon(char *filename) {
             }
         }
     }
-    for (int i = 1; i < MAX_WIDTH - 1; i++) {
-        dungeon[0][i].type = '-';
-        dungeon[MAX_HEIGHT - 1][i].type = '-';
-    }
-    for (int i = 1; i < MAX_HEIGHT - 1; i++) {
-        dungeon[i][0].type = '|';
-        dungeon[i][MAX_WIDTH - 1].type = '|';
-    }
-    dungeon[0][0].type = CORNER;
-    dungeon[0][MAX_WIDTH - 1].type = '+';
-    dungeon[MAX_HEIGHT - 1][0].type = '+';
-    dungeon[MAX_HEIGHT - 1][MAX_WIDTH - 1].type = '+';
 
     uint16_t r = 0;
     fread(&r, 2, 1, file);
@@ -155,7 +142,7 @@ int saveDungeon(char *filename) {
     uint32_t size = htobe32(sizeof(1712 + roomCount * 4));
     fwrite(&size, 4, 1, file);
 
-    uint8_t pos[2] = {(uint8_t) player.x, (uint8_t) player.y};
+    uint8_t pos[2] = {(uint8_t) player.pos.x, (uint8_t) player.pos.y};
     fwrite(pos, 2, 1, file);
 
     for (int i = 0; i < MAX_HEIGHT; i++) {

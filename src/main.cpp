@@ -6,7 +6,6 @@
 #include <ncurses.h>
 
 #include "dungeon.hpp"
-//#include "errorHandle.h"
 #include "game.hpp"
 #include "pathFinding.hpp"
 #include "saveLoad.hpp"
@@ -35,6 +34,8 @@ static const SwitchInfo switches[] = {
 static const int numSwitches = sizeof(switches) / sizeof(SwitchInfo);
 
 int main(int argc, char *argv[]) {
+    srand(time(NULL));
+
     int printhardbFlag = 0;
     int printhardaFlag = 0;
     int printdistFlag = 0;
@@ -45,8 +46,6 @@ int main(int argc, char *argv[]) {
     int godmodeFlag = 0;
 
     ncursesFlag = 0;    
-
-    srand(time(NULL));
 
     char filename[256];
     char monType = '0';
@@ -185,7 +184,7 @@ int main(int argc, char *argv[]) {
             }
         }
         else {
-            if (spawnMonsters(numMonsters, player.x, player.y)) {
+            if (spawnMonsters(numMonsters, player.pos.x, player.pos.y)) {
                 return 1;
             }
         }
@@ -210,7 +209,7 @@ int main(int argc, char *argv[]) {
             }
         }
         else {
-            if (spawnMonsters(numMonsters, player.x, player.y)) {
+            if (spawnMonsters(numMonsters, player.pos.x, player.pos.y)) {
                 delete[] rooms;
                 delete[] upStairs;
                 delete[] downStairs;
@@ -229,7 +228,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (printdistFlag) {
-        generateDistances(player.x, player.y);
+        generateDistances(player.pos.x, player.pos.y);
         printTunnelingDistances();
         printNonTunnelingDistances();       
     }

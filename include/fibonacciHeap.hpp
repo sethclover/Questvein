@@ -2,21 +2,23 @@
 
 #include "dungeon.hpp"
 
-typedef struct FibNode {
+class FibNode {
+public:
     Pos pos;
     int key;
     int degree;
-    struct FibNode *parent;
-    struct FibNode *child;
-    struct FibNode *left;
-    struct FibNode *right;
+    FibNode *parent;
+    FibNode *child;
+    FibNode *left;
+    FibNode *right;
     int marked;
-} FibNode;
+};
 
-typedef struct FibHeap {
+class FibHeap {
+public:
     int numNodes;
     FibNode *min;
-} FibHeap;
+};
 
 FibHeap *createFibHeap();
 FibNode *insert(FibHeap *heap, int key, Pos pos);

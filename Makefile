@@ -1,4 +1,4 @@
-CC = g++ # -g for debugging
+CC = g++ -g # -g for debugging
 CFLAGS = -Wall -Werror -Iinclude -std=c++17 -MMD
 LDFLAGS = -lm -lncurses
 
