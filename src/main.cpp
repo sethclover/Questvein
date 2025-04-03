@@ -11,7 +11,6 @@
 #include "pathFinding.hpp"
 #include "saveLoad.hpp"
 
-static int ncursesFlag;
 
 class SwitchInfo {
 public:
@@ -38,16 +37,16 @@ static const int numSwitches = sizeof(switches) / sizeof(SwitchInfo);
 int main(int argc, char *argv[]) {
     srand(time(NULL));
 
-    int printhardbFlag = 0;
-    int printhardaFlag = 0;
-    int printdistFlag = 0;
-    int saveFlag = 0;
-    int loadFlag = 0;
-    int monTypeFlag = 0;
-    int autoFlag = 0;
-    int godmodeFlag = 0;
+    bool printhardbFlag = false;
+    bool printhardaFlag = false;
+    bool printdistFlag = false;
+    bool saveFlag = false;
+    bool loadFlag = false;
+    bool monTypeFlag = false;
+    bool autoFlag = false;
+    bool godmodeFlag = false;
 
-    ncursesFlag = 0;    
+    bool supportsColor = false;
 
     char filename[256];
     char monType = '0';
@@ -67,13 +66,13 @@ int main(int argc, char *argv[]) {
             return 0;
         }
         else if (!strcmp(argv[i], "-hb") || !strcmp(argv[i], "--printhardb")) {
-            printhardbFlag = 1;
+            printhardbFlag = true;
         }
         else if (!strcmp(argv[i], "-ha") || !strcmp(argv[i], "--printharda")) {
-            printhardaFlag = 1;
+            printhardaFlag = true;
         }
         else if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--printdist")) {
-            printdistFlag = 1;
+            printdistFlag = true;
         }
         else if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--save")) {
             if (i < argc - 1) {
@@ -84,7 +83,7 @@ int main(int argc, char *argv[]) {
                 else {
                     strncpy(filename, argv[i + 1], sizeof(filename) - 1);
                     filename[sizeof(filename) - 1] = '\0';
-                    saveFlag = 1;
+                    saveFlag = true;
                 }
             }
             else {
@@ -103,7 +102,7 @@ int main(int argc, char *argv[]) {
                 else {
                     strncpy(filename, argv[i + 1], sizeof(filename) - 1);
                     filename[sizeof(filename) - 1] = '\0';
-                    loadFlag = 1;
+                    loadFlag = true;
                 } 
             }
             else {
@@ -147,7 +146,7 @@ int main(int argc, char *argv[]) {
                 if (strlen(argv[i + 1]) == 1) {
                     monType = argv[i + 1][0];
                     numMonsters = 1;
-                    monTypeFlag = 1;
+                    monTypeFlag = true;
                 }
                 else {
                     std::cout << "Error: Argument after '--typemon/-t' must be a single character" << std::endl;
@@ -162,10 +161,10 @@ int main(int argc, char *argv[]) {
             i++;
         }
         else if (!strcmp(argv[i], "-a") || !strcmp(argv[i], "--auto")) {
-            autoFlag = 1;
+            autoFlag = true;
         }
         else if (!strcmp(argv[i], "-g") || !strcmp(argv[i], "--godmode")) {
-            godmodeFlag = 1;
+            godmodeFlag = true;
         }
         else {
             std::cout << "Error: Unrecognized argument, use '--help/-h' for usage information" << std::endl;
@@ -239,16 +238,22 @@ int main(int argc, char *argv[]) {
     if (autoFlag) {
         nodelay(stdscr, TRUE);
     }
+    if (has_colors()) {
+        start_color();
+        supportsColor = true;
+
+        init_pair(1, COLOR_MAGENTA, COLOR_BLACK);
+        init_pair(2, COLOR_YELLOW, COLOR_BLACK);
+    }
     raw();
     noecho();
     curs_set(0);
     keypad(stdscr, TRUE);
-    ncursesFlag = 1;
 
     printLine(MESSAGE_LINE, "Welcome adventurer! Press any key to begin...");
     getch();
 
-    if (playGame(numMonsters, autoFlag, godmodeFlag)) {
+    if (playGame(numMonsters, autoFlag, godmodeFlag, supportsColor)) {
         return 1;
     }
 

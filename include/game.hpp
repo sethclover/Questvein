@@ -5,4 +5,4 @@ static const int STATUS_LINE1 = 22;
 static const int STATUS_LINE2 = 23;
 
 void printLine(int line, const char *format, ...);
-int playGame(int numMonsters, int autoFlag, int godmodeFlag);
+int playGame(int numMonsters, bool autoFlag, bool godmodeFlag, bool supportsColor);

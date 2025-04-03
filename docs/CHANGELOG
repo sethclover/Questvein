@@ -3,6 +3,13 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [unreleased] <!-- spell check -->
+
+### Added
+
+- Something I forgot to mention for 6.0.0, color has been added to
+  the dungeon, denoting fog, player FOV, etc.
+
 ## [6.0.1] - 2025-4-2
 
 ### Fixed
