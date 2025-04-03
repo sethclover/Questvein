@@ -3,6 +3,32 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [6.0.1] - 2025-4-2
+
+### Fixed
+
+- Visual bug with teleport that did not properly update the screen
+  has been fixed
+- Fixed possible crashes when you teleport onto and crush a poor,
+  unsuspecting monster
+
+## [6.0.0] - 2025-4-2
+
+### Added
+
+- Fog of war, which is on by default and toggleable with 'f', hides
+  what the player can see by showing fog, unless that PC is in a 
+  close radius, and shows what they remembered of the dungeon when
+  they leave that area
+- Teleport, used with 'g' (goto), shows a cursor of the PC's location
+  and can be moved with movement keys; pressing 'g' again places the
+  player there and pressing 'r' places the PC in a random location,
+  even in walls
+
+### Changed 
+
+- Ported everything into C++ from C
+
 ## [5.1.0] - 2025-3-31
 
 ### Added

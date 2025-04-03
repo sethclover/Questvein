@@ -1,8 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
-#include "dungeon.h"
-#include "fibonacciHeap.h"
+#include "dungeon.hpp"
+#include "fibonacciHeap.hpp"
 
 int tunnelingDistances(int x, int y) {
     FibHeap *heap = createFibHeap();
@@ -56,7 +56,7 @@ int tunnelingDistances(int x, int y) {
             }
         }
 
-        free(minNode);        
+        delete minNode;     
     }
 
     destroyFibHeap(heap);
@@ -114,7 +114,7 @@ int nonTunnelingDistances(int x, int y) {
             }
         }
 
-        free(minNode);        
+        delete minNode;       
     }
 
     destroyFibHeap(heap);

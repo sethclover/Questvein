@@ -1,19 +1,19 @@
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <ncurses.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include "dungeon.h"
-#include "errorHandle.h"
-#include "fibonacciHeap.h"
-#include "game.h"
-#include "pathFinding.h"
+#include "dungeon.hpp"
+#include "fibonacciHeap.hpp"
+#include "game.hpp"
+#include "pathFinding.hpp"
 
-typedef struct CommandInfo {
+class CommandInfo {
+public:
     const char *buttons;
     const char *desc;
-} CommandInfo;
+};
 
 static const CommandInfo switches[] = {
     {"HOME/ 7 / y", "Move up-left"},
@@ -27,11 +27,14 @@ static const CommandInfo switches[] = {
     {"B2 / SPACE / . / 5", "Rest"},
     {">", "Go down stairs"},
     {"<", "Go up stairs"},
+    {"f", "Toggle fog of war"},
     {"Q", "Quit the game"},
     {"?", "Show help"}
 };
 
-void printLine(int line, char *format, ...) {
+static int fogOfWarToggle = 1;
+
+void printLine(int line, const char* format, ...) {
     char buffer[MAX_WIDTH];
     va_list args;
     va_start(args, format);
@@ -44,29 +47,7 @@ void printLine(int line, char *format, ...) {
     refresh();
 }
 
-void printDungeon() {
-    for (int i = 0; i < MAX_HEIGHT; i++) {
-        for (int j = 0; j < MAX_WIDTH; j++) {
-            if (monsterAt[i][j]) {
-                int personality = 1 * monsterAt[i][j]->intelligent +
-                                  2 * monsterAt[i][j]->telepathic +
-                                  4 * monsterAt[i][j]->tunneling +
-                                  8 * monsterAt[i][j]->erratic;
-                mvaddch(i + 1, j, personality < 10 ? '0' + personality : 'A' + (personality - 10));
-            }
-            else if (player.x == j && player.y == i) {
-                mvaddch(i + 1, j, '@');
-            }
-            else {
-                mvaddch(i + 1, j, dungeon[i][j].type);
-            }
-        }
-    }
-    printLine(MESSAGE_LINE, "Press a key to continue...");
-    refresh();
-}
-
-static char *personalityToString(int personality) {
+char *personalityToString(int personality) {
     static char buf[8];
     buf[0] = '\0';
     if (personality & 1) strcat(buf, "I ");
@@ -81,12 +62,128 @@ static char *personalityToString(int personality) {
     return buf;
 }
 
-int monsterList(int monstersAlive) {
-    Mon **monList = malloc(monstersAlive * sizeof(Mon*));
-    if (!monList) {
-        errorHandle("Error: Failed to allocate memory for monster list");
-        return 1;
+const char personalityToChar(Monster *mon) {
+    int personality = 1 * mon->intelligent +
+                      2 * mon->telepathic +
+                      4 * mon->tunneling +
+                      8 * mon->erratic;
+    return (personality < 10) ? '0' + personality : 'A' + (personality - 10);
+}
+
+void printDungeon() {
+    if (fogOfWarToggle) {
+        for (int i = 0; i < MAX_HEIGHT; i++) {
+            for (int j = 0; j < MAX_WIDTH; j++) {
+                if (((i >= player.pos.y - 2 && i <= player.pos.y + 2) && (j >= player.pos.x - 2 && j <= player.pos.x + 2)) &&
+                   !((i == player.pos.y - 2 || i == player.pos.y + 2) && (j == player.pos.x - 2 || j == player.pos.x + 2))) {
+                    Monster *mon = monsterAt[i][j];
+                    if (mon) {
+                        mvaddch(i + 1, j, personalityToChar(mon));
+                    }
+                    else {
+                        if (has_colors()) {
+                            start_color();
+                            init_pair(2, COLOR_YELLOW, COLOR_BLACK);
+                            attron(COLOR_PAIR(2));
+
+                            mvaddch(i + 1, j, dungeon[i][j].visible);
+
+                            attroff(COLOR_PAIR(2));
+                        }
+                        else {
+                            mvaddch(i + 1, j, dungeon[i][j].visible);
+                        }
+                    }
+                }
+                else {
+                    if (has_colors()) {
+                        start_color();
+                        init_pair(1, COLOR_MAGENTA, COLOR_BLACK);
+                        attron(COLOR_PAIR(1));
+
+                        mvaddch(i + 1, j, dungeon[i][j].visible);
+
+                        attroff(COLOR_PAIR(1));
+                    }
+                    else {
+                        mvaddch(i + 1, j, dungeon[i][j].visible);
+                    }
+                    
+                }
+            }
+        }
+        mvaddch(player.pos.y + 1, player.pos.x, '@');
     }
+    else {
+        if (has_colors()) {
+            start_color();
+            init_pair(1, COLOR_MAGENTA, COLOR_BLACK);
+            attron(COLOR_PAIR(1));
+
+            mvhline(1, 0, '-', MAX_WIDTH - 1);
+            mvhline(MAX_HEIGHT, 0, '-', MAX_WIDTH - 1);
+            mvvline(1, 0, '|', MAX_HEIGHT - 1);
+            mvvline(1, MAX_WIDTH - 1, '|', MAX_HEIGHT - 1);
+
+            mvaddch(1, 0, '+');
+            mvaddch(1, MAX_WIDTH - 1, '+');
+            mvaddch(MAX_HEIGHT, 0, '+');
+            mvaddch(MAX_HEIGHT, MAX_WIDTH - 1, '+');
+
+            attroff(COLOR_PAIR(1));
+        }
+        else {
+            mvhline(1, 0, '-', MAX_WIDTH - 1);
+            mvhline(MAX_HEIGHT, 0, '-', MAX_WIDTH - 1);
+            mvvline(1, 0, '|', MAX_HEIGHT - 1);
+            mvvline(1, MAX_WIDTH - 1, '|', MAX_HEIGHT - 1);
+
+            mvaddch(1, 0, '+');
+            mvaddch(1, MAX_WIDTH - 1, '+');
+            mvaddch(MAX_HEIGHT, 0, '+');
+            mvaddch(MAX_HEIGHT, MAX_WIDTH - 1, '+');
+        }
+
+        for (int i = 1; i < MAX_HEIGHT - 1; i++) {
+            for (int j = 1; j < MAX_WIDTH - 1; j++) {
+                if (monsterAt[i][j]) {
+                    int personality = 1 * monsterAt[i][j]->intelligent +
+                                      2 * monsterAt[i][j]->telepathic +
+                                      4 * monsterAt[i][j]->tunneling +
+                                      8 * monsterAt[i][j]->erratic;
+                    mvaddch(i + 1, j, personality < 10 ? '0' + personality : 'A' + (personality - 10));
+                }
+                else if (player.pos.x == j && player.pos.y == i) {
+                    mvaddch(i + 1, j, '@');
+                }
+                else {
+                    if (has_colors()) {
+                        start_color();
+                        init_pair(1, COLOR_MAGENTA, COLOR_BLACK);
+                        attron(COLOR_PAIR(1));
+
+                        mvaddch(i + 1, j, dungeon[i][j].type);
+                        
+                        attroff(COLOR_PAIR(1));
+                    }
+                    else {
+                        mvaddch(i + 1, j, dungeon[i][j].type);
+                    }
+                }
+            }
+        }
+    }
+    
+    printLine(MESSAGE_LINE, "Press a key to continue...");
+
+    move(23, 0);
+    clrtoeol();
+
+    refresh();
+}
+
+int monsterList(int monstersAlive) {
+    Monster *monList[monstersAlive];
 
     int count = 0;
     for (int i = 0; i < MAX_HEIGHT; i++) {
@@ -105,16 +202,36 @@ int monsterList(int monstersAlive) {
 
     clear();
     while (1) {
-        mvhline(0, leftCol, '-', cols);
-        mvaddch(0, leftCol + cols / 2, '+');
-        mvhline(rows - 1, leftCol, '-', cols);
-        mvaddch(rows - 1, leftCol + cols / 2, '+');
-        for (int row = 0; row < rows; row++) {
-            mvaddch(row, leftCol, '|');
-            mvaddch(row, leftCol + cols - 1, '|');
+        if (has_colors()) {
+            start_color();
+            init_pair(1, COLOR_MAGENTA, COLOR_BLACK);
+            attron(COLOR_PAIR(1));
+
+            mvhline(0, leftCol, '-', cols);
+            mvhline(rows - 1, leftCol, '-', cols);
+            mvvline(0, leftCol, '|', rows);
+            mvvline(0, leftCol + cols - 1, '|', rows);
+
+            mvaddch(0, leftCol + cols / 2, '+');
+            mvaddch(0, leftCol, '+');
+            mvaddch(rows - 1, leftCol + cols / 2, '+');
+            mvaddch(rows - 1, leftCol, '+');
+
+            attroff(COLOR_PAIR(1));
+        }
+        else {
+            mvhline(0, leftCol, '-', cols);
+            mvhline(rows - 1, leftCol, '-', cols);
+            mvvline(0, leftCol, '|', rows);
+            mvvline(0, leftCol + cols - 1, '|', rows);
+
+            mvaddch(0, leftCol + cols / 2, '+');
+            mvaddch(0, leftCol, '+');
+            mvaddch(rows - 1, leftCol + cols / 2, '+');
+            mvaddch(rows - 1, leftCol, '+');
         }
 
-        char *title = "Monster List";
+        const char title[13] = "Monster List";
         int titleCol = leftCol + (cols - strlen(title)) / 2;
         mvprintw(1, titleCol, "%s", title);
         mvprintw(3, leftCol + 2, "Monsters alive: %d", count);
@@ -129,21 +246,23 @@ int monsterList(int monstersAlive) {
 
         int maxDisplay = rows - 7;
         for (int i = top; i < top + maxDisplay && i < count; i++) {
-            Mon *mon = monList[i];
+            int row = 5 + (i - top);
+
+            Monster *mon = monList[i];
             int personality = 1 * mon->intelligent +
                               2 * mon->telepathic +
                               4 * mon->tunneling +
                               8 * mon->erratic;
             char *traits = personalityToString(personality);
 
-            int x = mon->pos.x - player.x;
-            int y = mon->pos.y - player.y;
-            char* nsDir = (y >= 0) ? "South" : "North";
-            char* ewDir = (x >= 0) ? "East" : "West";
+            int x = mon->pos.x - player.pos.x;
+            int y = mon->pos.y - player.pos.y;
+            const char* nsDir = (y >= 0) ? "South" : "North";
+            const char* ewDir = (x >= 0) ? "East" : "West";
             int nsDist = abs(y);
             int ewDist = abs(x);
 
-            move(5 + (i - top), leftCol + 2);
+            move(row, leftCol + 2);
             clrtoeol();
             if (nsDist == 0) {
                 printw("Monster of type %c (%s) is %d %s",
@@ -160,7 +279,18 @@ int monsterList(int monstersAlive) {
                        personality < 10 ? '0' + personality : 'A' + (personality - 10), 
                        traits, nsDist, nsDir, ewDist, ewDir);
             }
-            mvaddch(5 + (i - top), leftCol + cols - 1, '|');
+            if (has_colors()) {
+                start_color();
+                init_pair(1, COLOR_MAGENTA, COLOR_BLACK);
+                attron(COLOR_PAIR(1));
+
+                mvaddch(row, leftCol + cols - 1, '|');
+
+                attroff(COLOR_PAIR(1));
+            }
+            else {
+                mvaddch(row, leftCol + cols - 1, '|');
+            }
         }
 
         move(rows - 2, leftCol + cols / 2);
@@ -194,7 +324,6 @@ int monsterList(int monstersAlive) {
             case 27:
                 clear();
                 printDungeon();
-                free(monList);
                 return 0;
         }
     }
@@ -211,16 +340,36 @@ void commandList() {
 
     clear();
     while (1) {
-        mvhline(0, leftCol, '-', cols);
-        mvaddch(0, leftCol + cols / 2, '+');
-        mvhline(rows - 1, leftCol, '-', cols);
-        mvaddch(rows - 1, leftCol + cols / 2, '+');
-        for (int row = 0; row < rows; row++) {
-            mvaddch(row, leftCol, '|');
-            mvaddch(row, leftCol + cols - 1, '|');
+        if (has_colors()) {
+            start_color();
+            init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+            attron(COLOR_PAIR(1));
+
+            mvhline(0, leftCol, '-', cols);
+            mvhline(rows - 1, leftCol, '-', cols);
+            mvvline(0, leftCol, '|', rows);
+            mvvline(0, leftCol + cols - 1, '|', rows);
+
+            mvaddch(0, leftCol + cols / 2, '+');
+            mvaddch(0, leftCol, '+');
+            mvaddch(rows - 1, leftCol + cols / 2, '+');
+            mvaddch(rows - 1, leftCol, '+');
+
+            attroff(COLOR_PAIR(1));
+        }
+        else {
+            mvhline(0, leftCol, '-', cols);
+            mvhline(rows - 1, leftCol, '-', cols);
+            mvvline(0, leftCol, '|', rows);
+            mvvline(0, leftCol + cols - 1, '|', rows);
+
+            mvaddch(0, leftCol + cols / 2, '+');
+            mvaddch(0, leftCol, '+');
+            mvaddch(rows - 1, leftCol + cols / 2, '+');
+            mvaddch(rows - 1, leftCol, '+');
         }
 
-        char *title = "Command List";
+        const char title[13] = "Command List";
         int titleCol = leftCol + (cols - strlen(title)) / 2;
         mvprintw(1, titleCol, "%s", title);
 
@@ -238,7 +387,19 @@ void commandList() {
             move(row, leftCol + 2);
             clrtoeol();
             mvprintw(row, leftCol + 8, "%18s - %s", switches[i].buttons, switches[i].desc);
-            mvaddch(row, leftCol + cols - 1, '|');
+
+            if (has_colors()) {
+                start_color();
+                init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+                attron(COLOR_PAIR(1));
+
+                mvaddch(row, leftCol + cols - 1, '|');
+
+                attroff(COLOR_PAIR(1));
+            }
+            else {
+                mvaddch(row, leftCol + cols - 1, '|');
+            }
         }
 
         move(rows - 2, leftCol + cols / 2);
@@ -278,10 +439,13 @@ void commandList() {
 }
 
 int checkCorridor(int x, int y, int visited[MAX_HEIGHT][MAX_WIDTH]) {
-    if (visited[y][x] || dungeon[y][x].type != CORRIDOR) {
+    if (x < 0 || x >= MAX_WIDTH || y < 0 || y >= MAX_HEIGHT) {
         return 0;
     }
-    else if (player.x == x && player.y == y) {
+    else if ((visited[y][x] || dungeon[y][x].type != CORRIDOR)) {
+        return 0;
+    }
+    else if (player.pos.x == x && player.pos.y == y) {
         return 1;
     }
     visited[y][x] = 1;
@@ -300,6 +464,18 @@ int checkCorridor(int x, int y, int visited[MAX_HEIGHT][MAX_WIDTH]) {
     }
 
     return 0;
+}
+
+void updateAroundPlayer() {
+    for (int i = player.pos.y - 2; i <= player.pos.y + 2; i++) {
+        for (int j = player.pos.x - 2; j <= player.pos.x + 2; j++) {
+            if (((i == player.pos.y - 2 || i == player.pos.y + 2) && (j == player.pos.x - 2 || j == player.pos.x + 2)) ||
+                (i < 0 || i >= MAX_HEIGHT || j < 0 || j >= MAX_WIDTH)) {
+                continue;
+                }
+            dungeon[i][j].visible = dungeon[i][j].type;
+        }
+    }
 }
 
 void cleanup(int numMonsters, FibHeap *heap) {
@@ -326,15 +502,21 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                     return 1;
                 }
             }
+            
+            dungeon[i][j].visible = FOG;
         }
     }
-    nodes[player.y][player.x] = insert(heap, 100, player);
-    if (!nodes[player.y][player.x]) {
+    nodes[player.pos.y][player.pos.x] = insert(heap, 100, player.pos);
+    if (!nodes[player.pos.y][player.pos.x]) {
         cleanup(numMonsters, heap);
 
         return 1;
     }
 
+    if (autoFlag) {
+        fogOfWarToggle = 0;
+    }
+     
     while (1) {
         FibNode *node = extractMin(heap);
         if (!node) {
@@ -344,7 +526,8 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
         }
         time = node->key;
 
-        if (node->pos.x == player.x && node->pos.y == player.y) {
+        if (node->pos.x == player.pos.x && node->pos.y == player.pos.y) {
+            updateAroundPlayer();
             printDungeon();
             int turnEnd = 0;
             while (!turnEnd) {
@@ -357,7 +540,7 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                         printLine(MESSAGE_LINE, "Goodbye!");
                         napms(1000);
                         cleanup(numMonsters, heap);
-                        free(node);
+                        delete node;
 
                         return 0;
                     }
@@ -442,23 +625,23 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                             break;
 
                         case '>':
-                            if (dungeon[player.y][player.x].type == STAIR_DOWN) {
+                            if (dungeon[player.pos.y][player.pos.x].type == STAIR_DOWN) {
                                 printLine(MESSAGE_LINE, "Going down stairs...");
                                 napms(1000);
                                 cleanup(numMonsters, heap);
-                                free(node);
+                                delete node;
 
                                 clear();
                                 initDungeon();
                                 if (generateStructures(numMonsters)) {
                                     return 1;
                                 }
-                                player.x = upStairs[0].x;
-                                player.y = upStairs[0].y;
-                                if (spawnMonsters(numMonsters, player.x, player.y)) {
-                                    free(rooms);
-                                    free(upStairs);
-                                    free(downStairs);
+                                player.pos.x = upStairs[0].x;
+                                player.pos.y = upStairs[0].y;
+                                if (spawnMonsters(numMonsters, player.pos.x, player.pos.y)) {
+                                    delete[] rooms;
+                                    delete[] upStairs;
+                                    delete[] downStairs;
 
                                     return 1;
                                 }
@@ -476,23 +659,23 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                             break;
 
                         case '<':
-                            if (dungeon[player.y][player.x].type == STAIR_UP) {
+                            if (dungeon[player.pos.y][player.pos.x].type == STAIR_UP) {
                                 printLine(MESSAGE_LINE, "Going up stairs...");
                                 napms(1000);
                                 cleanup(numMonsters, heap);
-                                free(node);
+                                delete node;
 
                                 clear();
                                 initDungeon();
                                 if (generateStructures(numMonsters)) {
                                     return 1;
                                 }
-                                player.x = downStairs[0].x;
-                                player.y = downStairs[0].y;
-                                if (spawnMonsters(numMonsters, player.x, player.y)) {
-                                    free(rooms);
-                                    free(upStairs);
-                                    free(downStairs);
+                                player.pos.x = downStairs[0].x;
+                                player.pos.y = downStairs[0].y;
+                                if (spawnMonsters(numMonsters, player.pos.x, player.pos.y)) {
+                                    delete[] rooms;
+                                    delete[] upStairs;
+                                    delete[] downStairs;
 
                                     return 1;
                                 }
@@ -525,13 +708,218 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                             break;
                         
                         case 'f':
-                            // "toggle fog of war"
-                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
+                            fogOfWarToggle = !fogOfWarToggle;
+                            printDungeon();
+                            {
+                                const char* fogStatus = fogOfWarToggle ? "on" : "off";
+                                printLine(STATUS_LINE2, "Fog of war toggled %s", fogStatus);
+                            }
+                                
                             break;
 
                         case 'g':
-                            // "teleport (goto)"
-                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
+                            {
+                                int replaceFogOfWar = fogOfWarToggle;
+                                fogOfWarToggle = 0;
+                                printDungeon();
+
+                                int drop = 0;
+                                int x = player.pos.x;
+                                int y = player.pos.y;
+                                while (!drop) {
+                                    int oldX = x;
+                                    int oldY = y;
+                                    mvaddch(y + 1, x, '!');
+                                    refresh();
+                            
+                                    int ch;
+                                    ch = getch();
+                                    switch (ch) {
+                                        case 'r':
+                                            x = rand() % (MAX_WIDTH - 2) + 1;
+                                            y = rand() % (MAX_HEIGHT - 2) + 1;
+                                            drop = 1;
+                                            break;
+                            
+                                        case 'g':
+                                            drop = 1;
+                                            break;
+                            
+                                        case KEY_HOME:
+                                        case '7':
+                                        case 'y':
+                                            x -= 1;
+                                            if (x == 0) {
+                                                x++;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            y -= 1;
+                                            if (y == 0) {
+                                                y++;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            break;
+                            
+                                        case KEY_UP:
+                                        case '8':
+                                        case 'k':
+                                            y -= 1;
+                                            if (y == 0) {
+                                                y++;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            break;
+                                        
+                                        case KEY_PPAGE:
+                                        case '9':
+                                        case 'u':
+                                            x += 1;
+                                            if (x == MAX_WIDTH - 1) {
+                                                x--;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            } 
+                                            y -= 1;
+                                            if (y == 0) {
+                                                y++;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            break;
+                            
+                                        case KEY_RIGHT:
+                                        case '6':
+                                        case 'l':
+                                            x += 1;
+                                            if (x == MAX_WIDTH - 1) {
+                                                x--;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            break;
+                            
+                                        case KEY_NPAGE:
+                                        case '3':
+                                        case 'n':
+                                            x += 1;
+                                            if (x == MAX_WIDTH - 1) {
+                                                x--;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            y += 1;
+                                            if (y == MAX_HEIGHT - 1) {
+                                                y--;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            break;
+                            
+                                        case KEY_DOWN:
+                                        case '2':
+                                        case 'j':
+                                            y += 1;
+                                            if (y == MAX_HEIGHT - 1) {
+                                                y--;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            break;
+                            
+                                        case KEY_END:
+                                        case '1':
+                                        case 'b':
+                                            x -= 1;
+                                            if (x == 0) {
+                                                x++;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            y += 1;
+                                            if (y == MAX_HEIGHT - 1) {
+                                                y--;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            break;
+                            
+                                        case KEY_LEFT:
+                                        case '4':
+                                        case 'h':
+                                            x -= 1;
+                                            if (x == 0) {
+                                                x++;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            break;
+                            
+                                        default:
+                                            printLine(MESSAGE_LINE, "Use movement keys to move and 'g' to finalize, or 'r' to be placed randomly.");
+                                            break;
+                                    }
+                                    if (monsterAt[oldY][oldX]) {
+                                        mvaddch(oldY + 1, oldX, personalityToChar(monsterAt[oldY][oldX]));
+                                    }
+                                    else {
+                                        mvaddch(oldY + 1, oldX, dungeon[oldY][oldX].type);
+                                    }
+                                }
+                            
+                                if (dungeon[y][x].type == ROCK) {
+                                    dungeon[y][x].hardness = 0;
+                                    dungeon[y][x].type = CORRIDOR;
+                                }
+
+                                player.pos.x = x;
+                                player.pos.y = y;
+                                mvaddch(y + 1, x, '@');
+
+                                if (monsterAt[player.pos.y][player.pos.x]) {
+                                    FibHeap *tempHeap = createFibHeap();
+                                    if (!tempHeap) {
+                                        cleanup(numMonsters, heap);
+                                        delete node;
+            
+                                        return 1;
+                                    }
+                                    FibNode *tempNode = extractMin(heap);
+                                    if (!tempNode) {
+                                        cleanup(numMonsters, heap);
+                                        delete node;
+            
+                                        return 1;
+                                    }
+                                    while (tempNode->pos.x != monsterAt[player.pos.y][player.pos.x]->pos.x ||
+                                            tempNode->pos.y != monsterAt[player.pos.y][player.pos.x]->pos.y) {
+                                        insert(tempHeap, tempNode->key, tempNode->pos);
+                                        delete tempNode;
+                                        tempNode = extractMin(heap);
+                                    }
+                                    if (tempNode) {
+                                        delete tempNode;
+                                    }
+                                    while (tempHeap->min) {
+                                        tempNode = extractMin(tempHeap);
+                                        insert(heap, tempNode->key, tempNode->pos);
+                                        delete tempNode;
+                                    }
+                                    destroyFibHeap(tempHeap);
+
+                                    monsterAt[player.pos.y][player.pos.x] = NULL;
+            
+                                    monstersAlive--;
+                                    if (monstersAlive <= 0) {
+                                        printDungeon();
+                                        printLine(STATUS_LINE1, "Player killed all monsters!\n");
+                                        printLine(STATUS_LINE2, "You win! (Press 'Q' to exit)");
+                                        while (getch() != 'Q')
+                                            ;
+            
+                                        cleanup(numMonsters, heap);
+                                        delete node;
+            
+                                        return 0;
+                                    }
+                                    else {
+                                        printLine(STATUS_LINE1, "Player stomped monster, Monsters alive: %d\n", monstersAlive);
+                                    }
+                                }
+                                fogOfWarToggle = replaceFogOfWar;
+                                updateAroundPlayer();
+                                printDungeon();
+                            }
                             break;
                         
                         case 'i':
@@ -592,7 +980,7 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                             printLine(MESSAGE_LINE, "Goodbye!");
                             napms(1000);
                             cleanup(numMonsters, heap);
-                            free(node);
+                            delete node;
                             return 0;
 
                         case 'T':
@@ -605,7 +993,7 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                             break;
 
                         default:
-                            printLine(MESSAGE_LINE,  "Invalid key... Press '?' for help.");
+                            printLine(MESSAGE_LINE, "Invalid key... Press '?' for help.");
                             break;
                             
                     }
@@ -614,49 +1002,49 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                 if (xDir == 0 && yDir == 0 && !(ch == KEY_B2 || ch == ' ' || ch == '.' || ch == '5')) {
                     turnEnd = 0;
                 }
-                else if (dungeon[player.y + yDir][player.x + xDir].hardness == 0) {
-                    int oldX = player.x;
-                    int oldY = player.y;
-                    player.x += xDir;
-                    player.y += yDir;
-                    if (monsterAt[player.y][player.x]) {
+                else if (dungeon[player.pos.y + yDir][player.pos.x + xDir].hardness == 0) {
+                    int oldX = player.pos.x;
+                    int oldY = player.pos.y;
+                    player.pos.x += xDir;
+                    player.pos.y += yDir;
+                    if (monsterAt[player.pos.y][player.pos.x]) {
                         FibHeap *tempHeap = createFibHeap();
                         if (!tempHeap) {
                             cleanup(numMonsters, heap);
-                            free(node);
+                            delete node;
 
                             return 1;
                         }
                         FibNode *tempNode = extractMin(heap);
                         if (!tempNode) {
                             cleanup(numMonsters, heap);
-                            free(node);
+                            delete node;
 
                             return 1;
                         }
-                        while (tempNode->pos.x != monsterAt[player.y][player.x]->pos.x ||
-                                tempNode->pos.y != monsterAt[player.y][player.x]->pos.y) {
+                        while (tempNode->pos.x != monsterAt[player.pos.y][player.pos.x]->pos.x ||
+                                tempNode->pos.y != monsterAt[player.pos.y][player.pos.x]->pos.y) {
                             insert(tempHeap, tempNode->key, tempNode->pos);
-                            free(tempNode);
+                            delete tempNode;
                             tempNode = extractMin(heap);
                         }
                         if (tempNode) {
-                            free(tempNode);
+                            delete tempNode;
                         }
                         while (tempHeap->min) {
                             tempNode = extractMin(tempHeap);
                             insert(heap, tempNode->key, tempNode->pos);
-                            free(tempNode);
+                            delete tempNode;
                         }
                         destroyFibHeap(tempHeap);
 
-                        monsterAt[player.y][player.x] = NULL;
+                        monsterAt[player.pos.y][player.pos.x] = NULL;
 
                         nodes[oldY][oldX] = NULL;
-                        nodes[player.y][player.x] = insert(heap, time + 100, player);
-                        if (!nodes[player.y][player.x]) {
+                        nodes[player.pos.y][player.pos.x] = insert(heap, time + 100, player.pos);
+                        if (!nodes[player.pos.y][player.pos.x]) {
                             cleanup(numMonsters, heap);
-                            free(node);
+                            delete node;
 
                             return 1;
                         }
@@ -670,7 +1058,7 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                                 ;
 
                             cleanup(numMonsters, heap);
-                            free(node);
+                            delete node;
 
                             return 0;
                         }
@@ -681,10 +1069,10 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                     }
                     else {
                         nodes[oldY][oldX] = NULL;
-                        nodes[player.y][player.x] = insert(heap, time + 100, player);
-                        if (!nodes[player.y][player.x]) {
+                        nodes[player.pos.y][player.pos.x] = insert(heap, time + 100, player.pos);
+                        if (!nodes[player.pos.y][player.pos.x]) {
                             cleanup(numMonsters, heap);
-                            free(node);
+                            delete node;
 
                             return 1;
                         }
@@ -697,11 +1085,7 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
             }
         }
         else {
-            Mon *mon = monsterAt[node->pos.y][node->pos.x];
-            if (!mon) {
-                errorHandle("Error: Monster not found at %d, %d", node->pos.x, node->pos.y);
-                return 1;
-            }
+            Monster *mon = monsterAt[node->pos.y][node->pos.x];
 
             int isIntelligent = mon->intelligent;
             int isTunneling = mon->tunneling;
@@ -719,8 +1103,8 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
             for (int i = 0; i < roomCount; i++) {
                 if (x >= rooms[i].x && x <= rooms[i].x + rooms[i].width - 1 &&
                     y >= rooms[i].y && y <= rooms[i].y + rooms[i].height - 1 &&
-                    player.x >= rooms[i].x && player.x <= rooms[i].x + rooms[i].width - 1 &&
-                    player.y >= rooms[i].y && player.y <= rooms[i].y + rooms[i].height - 1) {
+                    player.pos.x >= rooms[i].x && player.pos.x <= rooms[i].x + rooms[i].width - 1 &&
+                    player.pos.y >= rooms[i].y && player.pos.y <= rooms[i].y + rooms[i].height - 1) {
                     sameRoom = 1;
                     break;
                 }
@@ -733,7 +1117,7 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
 
             int canSee = (isTelepathic || sameRoom || sameCorridor);
             if (canSee) {
-                mon->lastSeen = player;
+                mon->lastSeen = player.pos;
             }
 
             int newX = x;
@@ -752,7 +1136,7 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
             }
             else if (canSee || hasLastSeen) {
                 if (canSee) {
-                    generateDistances(player.x, player.y);
+                    generateDistances(player.pos.x, player.pos.y);
                 }
                 else {
                     generateDistances(mon->lastSeen.x, mon->lastSeen.y);
@@ -786,8 +1170,8 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                     int targetX = mon->lastSeen.x;
                     int targetY = mon->lastSeen.y;
                     if (canSee) {
-                        targetX = player.x;
-                        targetY = player.y;
+                        targetX = player.pos.x;
+                        targetY = player.pos.y;
                     }
 
                     int xDist = abs(targetX - x);
@@ -823,11 +1207,11 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                         nodes[y][x] = insert(heap, time + 1000 / mon->speed, mon->pos);
                         if (!nodes[y][x]) {
                             cleanup(numMonsters, heap);
-                            free(node);
+                            delete node;
 
                             return 1;
                         }
-                        free(node);
+                        delete node;
                         continue;
                     }
                 }
@@ -835,7 +1219,7 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
             else {
                 nodes[y][x] = insert(heap, time + 1000 / mon->speed, mon->pos);
                 if (node) {
-                    free(node);
+                    delete node;
                 }
                 continue;
             }   
@@ -857,7 +1241,7 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                     nodes[newY][newX] = insert(heap, time + 1000 / mon->speed, mon->pos);
                     if (!nodes[newY][newX]) {
                         cleanup(numMonsters, heap);
-                        free(node);
+                        delete node;
 
                         return 1;
                     }
@@ -868,34 +1252,27 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                     FibHeap *tempHeap = createFibHeap();
                     if (!tempHeap) {
                         cleanup(numMonsters, heap);
-                        free(node);
+                        delete node;
 
                         return 1;
                     }
                     FibNode *tempNode = extractMin(heap);
-                    if (!tempNode) {
-                        errorHandle("Error: Failed to extract min from heap");
-                        cleanup(numMonsters, heap);
-                        free(node);
-
-                        return 1;
-                    }
                     while (tempNode->pos.x != monsterAt[newY][newX]->pos.x ||
                             tempNode->pos.y != monsterAt[newY][newX]->pos.y) {
                         insert(tempHeap, tempNode->key, tempNode->pos);
-                        free(tempNode); 
+                        delete tempNode;
                         tempNode = extractMin(heap);
                         if (!tempNode) {
                             break;
                         }
                     }
                     if (tempNode) {
-                        free(tempNode);
+                        delete tempNode;
                     }
                     while (tempHeap->min) {
                         tempNode = extractMin(tempHeap);
                         insert(heap, tempNode->key, tempNode->pos);
-                        free(tempNode);
+                        delete tempNode;
                     }
                     destroyFibHeap(tempHeap);
 
@@ -907,7 +1284,7 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                     nodes[newY][newX] = insert(heap, time + 1000 / mon->speed, mon->pos);
                     if (!nodes[newY][newX]) {
                         cleanup(numMonsters, heap);
-                        free(node);
+                        delete node;
 
                         return 1;
                     }
@@ -916,13 +1293,14 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                         monstersAlive--;
                     }
                 }
-                else if (newX == player.x && newY == player.y) {
+                else if (newX == player.pos.x && newY == player.pos.y) {
                     if (godmodeFlag) {
                         monsterAt[y][x] = NULL;
                         nodes[y][x] = NULL;
 
                         monstersAlive--;
                         if (monstersAlive <= 0) {
+                            updateAroundPlayer();
                             printDungeon();
                             printLine(STATUS_LINE1, "Player killed all monsters!\n");
                             printLine(STATUS_LINE2, "You win! (Press 'Q' to exit)");
@@ -930,7 +1308,7 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                                 ;
 
                             cleanup(numMonsters, heap);
-                            free(node);
+                            delete node;
 
                             return 0;
                         }
@@ -945,6 +1323,7 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                         monsterAt[y][x] = NULL;
                         nodes[y][x] = NULL;
     
+                        updateAroundPlayer();
                         printDungeon();
                         printLine(MESSAGE_LINE, "");
                         printLine(STATUS_LINE1, "Player killed by monster, gg");
@@ -954,7 +1333,7 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                             ;
     
                         cleanup(numMonsters, heap);
-                        free(node);
+                        delete node;
 
                         return 0;
                     }
@@ -969,13 +1348,13 @@ int playGame(int numMonsters, int autoFlag, int godmodeFlag) {
                     nodes[newY][newX] = insert(heap, time + 1000 / mon->speed, mon->pos);
                     if (!nodes[newY][newX]) {
                         cleanup(numMonsters, heap);
-                        free(node);
+                        delete node;
 
                         return 1;
                     }
                 }
             }
         }
-        free(node);
+        delete node;
     }
 }

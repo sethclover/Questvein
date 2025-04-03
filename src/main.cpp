@@ -1,23 +1,24 @@
-#include <ctype.h>
+#include <cctype>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
+#include <iostream>
 #include <ncurses.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
 
-#include "dungeon.h"
-#include "errorHandle.h"
-#include "game.h"
-#include "pathFinding.h"
-#include "saveLoad.h"
+#include "dungeon.hpp"
+#include "game.hpp"
+#include "pathFinding.hpp"
+#include "saveLoad.hpp"
 
-int ncursesFlag;
+static int ncursesFlag;
 
-typedef struct SwitchInfo {
+class SwitchInfo {
+public:
     const char *shortOp;
     const char *longOp;
     const char *desc;
-} SwitchInfo;
+};
 
 static const SwitchInfo switches[] = {
     {"-h", "--help", "Display this help message and exit"},
@@ -35,6 +36,8 @@ static const SwitchInfo switches[] = {
 static const int numSwitches = sizeof(switches) / sizeof(SwitchInfo);
 
 int main(int argc, char *argv[]) {
+    srand(time(NULL));
+
     int printhardbFlag = 0;
     int printhardaFlag = 0;
     int printdistFlag = 0;
@@ -45,8 +48,6 @@ int main(int argc, char *argv[]) {
     int godmodeFlag = 0;
 
     ncursesFlag = 0;    
-
-    srand(time(NULL));
 
     char filename[256];
     char monType = '0';
@@ -77,7 +78,7 @@ int main(int argc, char *argv[]) {
         else if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--save")) {
             if (i < argc - 1) {
                 if (argv[i + 1][0] == '-') {
-                    errorHandle("Error: Argument after '--save/-s' must be file name");
+                    std::cout << "Error: Argument after '--save/-s' must be file name" << std::endl;
                     return 1;
                 }
                 else {
@@ -87,7 +88,7 @@ int main(int argc, char *argv[]) {
                 }
             }
             else {
-                errorHandle("Error: Argument '--save/-s' requires a file name");
+                std::cout << "Error: Argument '--save/-s' requires a file name" << std::endl;
                 return 1;
             }
 
@@ -96,7 +97,7 @@ int main(int argc, char *argv[]) {
         else if (!strcmp(argv[i], "-l") || !strcmp(argv[i], "--load")) {
             if (i < argc - 1) {
                 if (argv[i + 1][0] == '-') {
-                    errorHandle("Error: Argument after '--load/-l' must be file name");
+                    std::cout << "Error: Argument after '--load/-l' must be file name" << std::endl;
                     return 1;
                 }
                 else {
@@ -106,7 +107,7 @@ int main(int argc, char *argv[]) {
                 } 
             }
             else {
-                errorHandle("Error: Argument '--load/-l' requires a file name");
+                std::cout << "Error: Argument '--load/-l' requires a file name" << std::endl;
                 return 1;
             }
 
@@ -127,15 +128,15 @@ int main(int argc, char *argv[]) {
                 if (isNum && strlen(next) > 0) {
                     numMonsters = atoi(next);
                     if (numMonsters < 0) {
-                        errorHandle("Error: Number of monsters must be positive");
+                        std::cout << "Error: Number of monsters must be positive" << std::endl;
                         return 1;
                     }
                 } else {
-                    errorHandle("Error: Argument after '--nummon/-n' must be a positive integer");
+                    std::cout << "Error: Argument after '--nummon/-n' must be a positive integer" << std::endl;
                     return 1;
                 }
             } else {
-                errorHandle("Error: Argument '--nummon/-n' requires a positive integer");
+                std::cout << "Error: Argument '--nummon/-n' requires a positive integer" << std::endl;
                 return 1;
             }
 
@@ -149,12 +150,12 @@ int main(int argc, char *argv[]) {
                     monTypeFlag = 1;
                 }
                 else {
-                    errorHandle("Error: Argument after '--typemon/-t' must be a single character");
+                    std::cout << "Error: Argument after '--typemon/-t' must be a single character" << std::endl;
                     return 1;
                 }
             }
             else {
-                errorHandle("Error: Argument '--typemon/-t' requires a single character");
+                std::cout << "Error: Argument '--typemon/-t' requires a single character" << std::endl;
                 return 1;
             }
 
@@ -167,14 +168,14 @@ int main(int argc, char *argv[]) {
             godmodeFlag = 1;
         }
         else {
-            errorHandle("Error: Unrecognized argument, use '--help/-h' for usage information");
+            std::cout << "Error: Unrecognized argument, use '--help/-h' for usage information" << std::endl;
             return 1;
         }
     }
     
     if (loadFlag) {
         if (printhardbFlag) {
-            errorHandle("Error: Argument '--printhardb/-hb' cannot be used with '--load/-l'");
+            std::cout << "Error: Argument '--printhardb/-hb' cannot be used with '--load/-l'" << std::endl;
             return 1;
         }
         loadDungeon(filename);
@@ -185,7 +186,7 @@ int main(int argc, char *argv[]) {
             }
         }
         else {
-            if (spawnMonsters(numMonsters, player.x, player.y)) {
+            if (spawnMonsters(numMonsters, player.pos.x, player.pos.y)) {
                 return 1;
             }
         }
@@ -202,18 +203,18 @@ int main(int argc, char *argv[]) {
         spawnPlayer();
         if (monTypeFlag) {
             if (spawnMonsterWithMonType(monType)) {
-                free(rooms);
-                free(upStairs);
-                free(downStairs);
+                delete[] rooms;
+                delete[] upStairs;
+                delete[] downStairs;
 
                 return 1;
             }
         }
         else {
-            if (spawnMonsters(numMonsters, player.x, player.y)) {
-                free(rooms);
-                free(upStairs);
-                free(downStairs);
+            if (spawnMonsters(numMonsters, player.pos.x, player.pos.y)) {
+                delete[] rooms;
+                delete[] upStairs;
+                delete[] downStairs;
 
                 return 1;
             }
@@ -229,7 +230,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (printdistFlag) {
-        generateDistances(player.x, player.y);
+        generateDistances(player.pos.x, player.pos.y);
         printTunnelingDistances();
         printNonTunnelingDistances();       
     }
