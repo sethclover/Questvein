@@ -1,13 +1,13 @@
-### Assignment 1.06 README
+### Assignment 1.07 README
 
-I ported my dungeon crawler from C to C++, renaming .c files to .cpp
-and updating the makefile to use the C++ compiler. Every struct
-became a class. I added a "Fog of War" system, where the PC’s light
-(radius 3 from the PC), remembering seen terrain while unseen areas
-render as rock. Monsters are visible only when lit, and unchanged
-memory persists if they alter unseen terrain. The new debugging
-commands include 'f' to toggle fog-free viewing and 'g' to enter
-teleport mode, moving a '+' cursor with keys, then teleporting with
-another 'g' or randomly with 'r'. The ncurses interface, controls
-('7'/'y', '8'/'k', etc.), stairs ('>' and '<'), and monster list
-('m') remain, ending with 'Q', death, or no monsters left unslain.
+This assignment adds parsing to the project. I implemented parsing
+for both objects and monsters. I used lex and yacc to parse the .txt
+files and distribute them into a list of object or monster type lists,
+which were defined in their own header file. There is a new switch
+for printing the parsing, --parse-monsters and --parse-objects, which
+will print the information parsed from the respective files to cout.
+The switches will automatically fetch the monster_desc.txt and
+object_desc.txt files from the .rlg327 folder in the home directory.
+The Makefile was updated to include the lexer.l and parser.y files,
+along with the parser.hpp header file. The changes are tracked, just
+like any other .cpp and .hpp, so make will detect the changes.

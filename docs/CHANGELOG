@@ -3,12 +3,16 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
-## [unreleased] <!-- spell check -->
+## [7.0.0] - 2025-4-8
 
 ### Added
 
+- Parsing for monsters and objects from their respective text files
+  in the .rlg327 directory in home (same place as load/save), which
+  will print the parsed contents to cout
 - Something I forgot to mention for 6.0.0, color has been added to
-  the dungeon, denoting fog, player FOV, etc.
+  the dungeon, denoting fog, player FOV, etc., and improved upon
+  since then
 
 ## [6.0.1] - 2025-4-2
 

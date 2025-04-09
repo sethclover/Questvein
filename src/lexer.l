@@ -1,7 +1,5 @@
 %{
-#include <stdlib.h>
 #include <string.h>
-#include <stdio.h> /// for printf
 
 #include "parser.tab.h"
 
@@ -12,59 +10,72 @@ int curr_context = 0; /* monster = 1, object = 2 */
 void yyerror(const char *s);
 %}
 
-%option noyywrap
+%option noyywrap nounput
 
-%x MONSTER_STATE OBJECT_STATE DESC_STATE FIELD_STATE
+%x MONSTER_STATE OBJECT_STATE LIST_STATE FIELD_STATE DESC_STATE BOOL_STATE
 
 %%
-"RLG327 MONSTER DESCRIPTION 1" { 
+"RLG327 MONSTER DESCRIPTION 1\n" { 
     curr_context = 1;
-    BEGIN(MONSTER_STATE);
-    printf("monster header ");
     return HEADER_MONSTER;
 }
-"RLG327 OBJECT DESCRIPTION 1" { 
+"RLG327 OBJECT DESCRIPTION 1\n" { 
     curr_context = 2;
-    BEGIN(OBJECT_STATE);
-    printf("object header ");
     return HEADER_OBJECT;
 }
+[ \t\n]+                                                                 ;
+<MONSTER_STATE,OBJECT_STATE,LIST_STATE,FIELD_STATE,DESC_STATE>[ \t]+     ;
+<MONSTER_STATE,OBJECT_STATE,FIELD_STATE>\n                               { return NEWLINE; }
 
-<MONSTER_STATE,FIELD_STATE,DESC_STATE>[ \t]+    { printf("ws "); }
-<MONSTER_STATE,FIELD_STATE,DESC_STATE>\n    { printf("new>\n"); return NEWLINE; }
+"BEGIN MONSTER\n"               { BEGIN(MONSTER_STATE); return BEGIN_MONSTER; }
+"BEGIN OBJECT\n"                {  BEGIN(OBJECT_STATE); return BEGIN_OBJECT; }
 
-<MONSTER_STATE>"BEGIN MONSTER"  { printf("begin monster "); return BEGIN_MONSTER; }
-<MONSTER_STATE>"NAME"           { printf("name "); BEGIN(FIELD_STATE); return NAME; }
-<MONSTER_STATE>"DESC"           { printf("desc "); BEGIN(DESC_STATE); return DESC; }
-<MONSTER_STATE>"COLOR"          { printf("color "); BEGIN(FIELD_STATE); return COLOR; }
-<MONSTER_STATE>"SPEED"          { printf("speed "); BEGIN(FIELD_STATE); return SPEED; }
-<MONSTER_STATE>"ABIL"           { printf("abil "); BEGIN(FIELD_STATE); return ABIL; }
-<MONSTER_STATE>"HP"             { printf("hp "); BEGIN(FIELD_STATE); return HP; }
-<MONSTER_STATE>"DAM"            { printf("dam "); BEGIN(FIELD_STATE); return DAM; }
-<MONSTER_STATE>"SYMB"           { printf("symb "); BEGIN(FIELD_STATE); return SYMB; }
-<MONSTER_STATE>"RRTY"           { printf("rrty "); BEGIN(FIELD_STATE); return RRTY; }
-<MONSTER_STATE>"END"            { printf("end "); return END_MONSTER; }
+<MONSTER_STATE,OBJECT_STATE>"DESC\n"         { BEGIN(DESC_STATE); return DESC; }
+<MONSTER_STATE,OBJECT_STATE>"NAME"           { BEGIN(FIELD_STATE); return NAME; }
+<MONSTER_STATE,OBJECT_STATE>"COLOR"          { BEGIN(LIST_STATE); return COLOR; }
+<MONSTER_STATE,OBJECT_STATE>"SPEED"          { BEGIN(FIELD_STATE); return SPEED; }
+<MONSTER_STATE,OBJECT_STATE>"DAM"            { BEGIN(FIELD_STATE); return DAM; }
+<MONSTER_STATE,OBJECT_STATE>"RRTY"           { BEGIN(FIELD_STATE); return RRTY; }
 
-<FIELD_STATE>"BLACK"|"RED"|"GREEN"|"YELLOW"|"BLUE"|"MAGENTA"|"CYAN"|"WHITE" { // must be able to get multipe colors
-    printf("color=%s ", yytext);
-    BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE);
+<MONSTER_STATE>"ABIL"           { BEGIN(LIST_STATE); return ABIL; }
+<MONSTER_STATE>"HP"             { BEGIN(FIELD_STATE); return HP; }
+<MONSTER_STATE>"SYMB"           { BEGIN(FIELD_STATE); return SYMB; }
+<MONSTER_STATE>"END"            { BEGIN(INITIAL); return END_MONSTER; }
+
+<OBJECT_STATE>"TYPE"            { BEGIN(LIST_STATE); return TYPE; }
+<OBJECT_STATE>"HIT"             { BEGIN(FIELD_STATE); return HIT; }
+<OBJECT_STATE>"DODGE"           { BEGIN(FIELD_STATE); return DODGE; }
+<OBJECT_STATE>"DEF"             { BEGIN(FIELD_STATE); return DEF; }
+<OBJECT_STATE>"WEIGHT"          { BEGIN(FIELD_STATE); return WEIGHT; }
+<OBJECT_STATE>"ATTR"            { BEGIN(FIELD_STATE); return ATTR; }
+<OBJECT_STATE>"VAL"             { BEGIN(FIELD_STATE); return VAL; }
+<OBJECT_STATE>"ART"             { BEGIN(BOOL_STATE); return ART; }
+<OBJECT_STATE>"END"             { BEGIN(INITIAL); return END_OBJECT; }
+
+<BOOL_STATE>"TRUE"              { BEGIN(OBJECT_STATE); return ART_VAL; }
+<BOOL_STATE>"FALSE"             { BEGIN(OBJECT_STATE); return ART_VAL; }
+
+<LIST_STATE>"BLACK"|"RED"|"GREEN"|"YELLOW"|"BLUE"|"MAGENTA"|"CYAN"|"WHITE" {
     yylval.str = strdup(yytext);
     return COLOR_VAL;
 }
-<FIELD_STATE>"SMART"|"TELE"|"TUNNEL"|"ERRATIC"|"PASS"|"PICKUP"|"DESTROY"|"UNIQ"|"BOSS" {
-    printf("abil=%s ", yytext);
-    BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE);
+<LIST_STATE>"SMART"|"TELE"|"TUNNEL"|"ERRATIC"|"PASS"|"PICKUP"|"DESTROY"|"UNIQ"|"BOSS" {
     yylval.str = strdup(yytext);
     return ABIL_VAL;
 }
-<FIELD_STATE>[1-9][0-9]?|100                { printf("rrty=%s ", yytext); BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); yylval.num = atoi(yytext); return RARITY; }         
-<FIELD_STATE>[0-9]+\+[0-9]+d[0-9]+          { printf("dice=%s ", yytext); BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); yylval.str = strdup(yytext); return DICE; }
-<FIELD_STATE>[&$%+=?/!^a-zA-Z0-9]           { printf("symb=%s ", yytext); BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); yylval.ch = yytext[0]; return SYMBOL; }
-<FIELD_STATE>[a-zA-Z][a-zA-Z0-9 -]*         { printf("string=%s ", yytext); BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); yylval.str = strdup(yytext); return STRING; }
+<LIST_STATE>"WEAPON"|"OFFHAND"|"RANGED"|"ARMOR"|"HELMET"|"CLOAK"|"GLOVES"|"BOOTS"|"RING"|"AMULET"|"LIGHT"|"SCROLL"|"BOOK"|"FLASK"|"GOLD"|"AMMUNITION"|"FOOD"|"WAND"|"CONTAINER" {
+    yylval.str = strdup(yytext);
+    return TYPE_VAL;
+}
+<LIST_STATE>\n      { BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); return NEWLINE; }
 
-<DESC_STATE>^\.  { printf("desc_period "); BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); return PERIOD; }
-<DESC_STATE>[^\n]+       { printf("desc_line "); yylval.str = strdup(yytext); return STRING; }
+<FIELD_STATE>[1-9][0-9]?|100                { BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); yylval.num = atoi(yytext); return RARITY; }         
+<FIELD_STATE>[0-9]+\+[0-9]+d[0-9]+          { BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); yylval.str = strdup(yytext); return DICE; }
+<FIELD_STATE>[&$%+=?/!^a-zA-Z0-9]           { BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); yylval.ch = yytext[0]; return SYMBOL; }
+<FIELD_STATE>[a-zA-Z].*                     { BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); yylval.str = strdup(yytext); return STRING; }
 
-<MONSTER_STATE,FIELD_STATE,DESC_STATE>.     { yyerror("Unknown character"); return ERROR; }
+<DESC_STATE>^\.\n           { BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); return PERIOD; }
+<DESC_STATE>.*\n            { yylval.str = strdup(yytext); return STRING; }
 
+<MONSTER_STATE,FIELD_STATE,DESC_STATE>.     { yyerror("Unknown character"); }
 %%

@@ -8,9 +8,9 @@
 
 #include "dungeon.hpp"
 #include "game.hpp"
+#include "parser.hpp"
 #include "pathFinding.hpp"
 #include "saveLoad.hpp"
-
 
 class SwitchInfo {
 public:
@@ -21,6 +21,8 @@ public:
 
 static const SwitchInfo switches[] = {
     {"-h", "--help", "Display this help message and exit"},
+    {"-pm", "--parse-monsters", "Parse monster file and print to stdout"},
+    {"-po", "--parse-objects", "Parse object file and print to stdout"},
     {"-hb", "--printhardb", "After the game ends, print the hardness map before the dungeon structures are added"},
     {"-ha", "--printharda", "After the game ends, print the hardness map after dungeon structures are added"},
     {"-d", "--printdist", "After the game ends, print tunneling and non-tunneling distances"},
@@ -63,6 +65,22 @@ int main(int argc, char *argv[]) {
                     "    ./dungeon --save test1.rlg327 -a\n"
                     "    ./dungeon -l test1.rlg327 --nummon 10 -d\n"
                     "\nTry the print hardness before option!\n\n");
+            return 0;
+        }
+        else if (!strcmp(argv[i], "-pm") || !strcmp(argv[i], "--parse-monsters")) {
+            char *homeDir = getenv("HOME");
+            if (!homeDir) return 1;
+
+            std::string monsterFile = std::string(homeDir) + "/.rlg327/monster_desc.txt";
+            parse(monsterFile.c_str());
+            return 0;
+        }
+        else if (!strcmp(argv[i], "-po") || !strcmp(argv[i], "--parse-objects")) {
+            char *homeDir = getenv("HOME");
+            if (!homeDir) return 1;
+
+            std::string objectFile = std::string(homeDir) + "/.rlg327/object_desc.txt";
+            parse(objectFile.c_str());
             return 0;
         }
         else if (!strcmp(argv[i], "-hb") || !strcmp(argv[i], "--printhardb")) {
