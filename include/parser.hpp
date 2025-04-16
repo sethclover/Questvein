@@ -16,11 +16,16 @@ public:
 
 class MonsterType {
 public:
-    std::string name, desc;
+    std::string name;
+    std::string desc;
+    std::vector<std::string> colors;
+    Dice speed;
+    std::vector<std::string> abils;
+    Dice hp;
+    Dice dam;
     char symbol = '\0';
-    std::vector<std::string> color, abils;
-    Dice speed, hp, dam;
     int rarity = 0;
+    bool eligible = true;
 
     bool valid = true;
     std::set<std::string> fields;
@@ -29,11 +34,11 @@ public:
     ~MonsterType() = default;
 };
 
-struct ObjectType {
+class ObjectType { // next
 public:
     std::string name, desc;
     char symbol = '\0';
-    std::vector<std::string> color, type;
+    std::vector<std::string> colors, type;
     Dice hit, dam, dodge, def, weight, speed, attr, val;
     bool art;
     int rarity = 0;
@@ -44,5 +49,8 @@ public:
     ObjectType() = default;
     ~ObjectType() = default;
 };
+
+extern std::vector<MonsterType> monsterTypeList;
+extern std::vector<ObjectType> objectTypeList;
 
 int parse(const char *filename);

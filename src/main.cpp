@@ -6,9 +6,9 @@
 #include <iostream>
 #include <ncurses.h>
 
+#include "display.hpp"
 #include "dungeon.hpp"
 #include "game.hpp"
-#include "parser.hpp"
 #include "pathFinding.hpp"
 #include "saveLoad.hpp"
 
@@ -21,15 +21,15 @@ public:
 
 static const SwitchInfo switches[] = {
     {"-h", "--help", "Display this help message and exit"},
-    {"-pm", "--parse-monsters", "Parse monster file and print to stdout"},
-    {"-po", "--parse-objects", "Parse object file and print to stdout"},
+    {"-pm", "--parse-monsters", "Print parsed monster file to stdout"},
+    {"-po", "--parse-objects", "Print parsed object file to stdout"},
     {"-hb", "--printhardb", "After the game ends, print the hardness map before the dungeon structures are added"},
     {"-ha", "--printharda", "After the game ends, print the hardness map after dungeon structures are added"},
     {"-d", "--printdist", "After the game ends, print tunneling and non-tunneling distances"},
     {"-s", "--save", "Save the dungeon to a file (requires filename)"},
     {"-l", "--load", "Load a dungeon from a file (requires filename)"},
     {"-n", "--nummon", "Set the number of monsters (requires positive integer)"},
-    {"-t", "--typemon", "Set a specific monster type (requires a single Hex character)"},
+    //{"-t", "--typemon", "Set a specific monster type (requires a single Hex character)"},
     {"-a", "--auto", "Run the game in automatic (random) movement mode"},
     {"-g", "--godmode", "Enable god mode (invincible player)"}
 };
@@ -44,14 +44,14 @@ int main(int argc, char *argv[]) {
     bool printdistFlag = false;
     bool saveFlag = false;
     bool loadFlag = false;
-    bool monTypeFlag = false;
+    //bool monTypeFlag = false;
     bool autoFlag = false;
     bool godmodeFlag = false;
 
     bool supportsColor = false;
 
     char filename[256];
-    char monType = '0';
+    //char monType = '0';
     int numMonsters = rand() % 14 + 7;
 
     for (int i = 1; i < argc; i++) {
@@ -73,6 +73,7 @@ int main(int argc, char *argv[]) {
 
             std::string monsterFile = std::string(homeDir) + "/.rlg327/monster_desc.txt";
             parse(monsterFile.c_str());
+            printParsedMonsters();
             return 0;
         }
         else if (!strcmp(argv[i], "-po") || !strcmp(argv[i], "--parse-objects")) {
@@ -81,6 +82,7 @@ int main(int argc, char *argv[]) {
 
             std::string objectFile = std::string(homeDir) + "/.rlg327/object_desc.txt";
             parse(objectFile.c_str());
+            printParsedObjects();
             return 0;
         }
         else if (!strcmp(argv[i], "-hb") || !strcmp(argv[i], "--printhardb")) {
@@ -159,25 +161,27 @@ int main(int argc, char *argv[]) {
 
             i++;
         }
-        else if (!strcmp(argv[i], "-t") || !strcmp(argv[i], "--typemon")) {
-            if (i < argc - 1) {
-                if (strlen(argv[i + 1]) == 1) {
-                    monType = argv[i + 1][0];
-                    numMonsters = 1;
-                    monTypeFlag = true;
-                }
-                else {
-                    std::cout << "Error: Argument after '--typemon/-t' must be a single character" << std::endl;
-                    return 1;
-                }
-            }
-            else {
-                std::cout << "Error: Argument '--typemon/-t' requires a single character" << std::endl;
-                return 1;
-            }
+        // going to break
+        //
+        // else if (!strcmp(argv[i], "-t") || !strcmp(argv[i], "--typemon")) {
+        //     if (i < argc - 1) {
+        //         if (strlen(argv[i + 1]) == 1) {
+        //             monType = argv[i + 1][0];
+        //             numMonsters = 1;
+        //             monTypeFlag = true;
+        //         }
+        //         else {
+        //             std::cout << "Error: Argument after '--typemon/-t' must be a single character" << std::endl;
+        //             return 1;
+        //         }
+        //     }
+        //     else {
+        //         std::cout << "Error: Argument '--typemon/-t' requires a single character" << std::endl;
+        //         return 1;
+        //     }
 
-            i++;
-        }
+        //     i++;
+        // }
         else if (!strcmp(argv[i], "-a") || !strcmp(argv[i], "--auto")) {
             autoFlag = true;
         }
@@ -190,6 +194,13 @@ int main(int argc, char *argv[]) {
         }
     }
     
+    char *homeDir = getenv("HOME");
+    if (!homeDir) return 1;
+    std::string objectFile = std::string(homeDir) + "/.rlg327/object_desc.txt";
+    parse(objectFile.c_str());
+    std::string monsterFile = std::string(homeDir) + "/.rlg327/monster_desc.txt";
+    parse(monsterFile.c_str());
+    
     if (loadFlag) {
         if (printhardbFlag) {
             std::cout << "Error: Argument '--printhardb/-hb' cannot be used with '--load/-l'" << std::endl;
@@ -197,16 +208,16 @@ int main(int argc, char *argv[]) {
         }
         loadDungeon(filename);
 
-        if (monTypeFlag) {
-            if (spawnMonsterWithMonType(monType)) {
-                return 1;
-            }
-        }
-        else {
+        // if (monTypeFlag) {
+        //     if (spawnMonsterWithMonType(monType)) {
+        //         return 1;
+        //     }
+        // }
+        // else {
             if (spawnMonsters(numMonsters, player.pos.x, player.pos.y)) {
                 return 1;
             }
-        }
+        //}
     }
     else {
         initDungeon();
@@ -214,20 +225,14 @@ int main(int argc, char *argv[]) {
             printHardness();
         }
 
-        if (generateStructures(numMonsters)) {
+        if (generateStructures()) {
             return 1;
         }
         spawnPlayer();
-        if (monTypeFlag) {
-            if (spawnMonsterWithMonType(monType)) {
-                delete[] rooms;
-                delete[] upStairs;
-                delete[] downStairs;
-
-                return 1;
-            }
-        }
-        else {
+        // if (monTypeFlag) {
+        //     spawnMonsterWithMonType(monType)
+        // }
+        // else {
             if (spawnMonsters(numMonsters, player.pos.x, player.pos.y)) {
                 delete[] rooms;
                 delete[] upStairs;
@@ -235,7 +240,7 @@ int main(int argc, char *argv[]) {
 
                 return 1;
             }
-        }
+        //}
     }
 
     if (printhardaFlag) {
@@ -260,8 +265,14 @@ int main(int argc, char *argv[]) {
         start_color();
         supportsColor = true;
 
-        init_pair(1, COLOR_MAGENTA, COLOR_BLACK);
-        init_pair(2, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(1, COLOR_WHITE, COLOR_BLACK);
+        init_pair(2, COLOR_RED, COLOR_BLACK);
+        init_pair(3, COLOR_GREEN, COLOR_BLACK);
+        init_pair(4, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(5, COLOR_BLUE, COLOR_BLACK);
+        init_pair(6, COLOR_MAGENTA, COLOR_BLACK);
+        init_pair(7, COLOR_CYAN, COLOR_BLACK);
+        init_pair(8, COLOR_WHITE, COLOR_BLACK);
     }
     raw();
     noecho();
@@ -271,9 +282,8 @@ int main(int argc, char *argv[]) {
     printLine(MESSAGE_LINE, "Welcome adventurer! Press any key to begin...");
     getch();
 
-    if (playGame(numMonsters, autoFlag, godmodeFlag, supportsColor)) {
-        return 1;
-    }
+    while (playGame(numMonsters, autoFlag, godmodeFlag, supportsColor))
+        ;
 
     endwin();
     return 0;

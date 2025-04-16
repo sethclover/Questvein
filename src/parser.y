@@ -11,13 +11,28 @@ extern "C" int yylex();
 extern "C" int yyparse();
 extern "C" FILE *yyin;
 
-std::vector<MonsterType> monsterList;
-std::vector<ObjectType> objectList;
+std::vector<MonsterType> monsterTypeList;
+std::vector<ObjectType> objectTypeList;
 MonsterType curr_monster;
 ObjectType curr_object;
 
-int parse(const char *filename);
-void yyerror(const char *s);
+int parse(const char *filename) {
+    yyin = fopen(filename, "r");
+    if (!yyin) {
+        std::cerr << "Cannot open file: " << filename << std::endl;
+        return 1;
+    }
+    yyparse();
+    if (yyin) {
+        fclose(yyin);
+    }
+
+    return 0;
+}
+
+void yyerror(const char *s) {
+    std::cerr << "Parse error: " << s << std::endl;
+}
 
 void reset_monster() {
     curr_monster = MonsterType();
@@ -25,61 +40,6 @@ void reset_monster() {
 
 void reset_object() {
     curr_object = ObjectType();
-}
-
-void print_monsters() {
-    std::cout << "MONSTER LIST:" << std::endl;
-    for (const auto& m : monsterList) {
-        if (m.valid) {
-            std::cout << "Name: " << m.name << std::endl;
-            std::cout << "Description: " << m.desc;
-            std::cout << "Color: ";
-            for (const auto& c : m.color) {
-                std::cout << c << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "Speed: " << m.speed.base << "+" << m.speed.rolls << "d" << m.speed.sides << std::endl;
-            std::cout << "Abilities: ";
-            for (const auto& a : m.abils) {
-                std::cout << a << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "Hitpoints: " << m.hp.base << "+" << m.hp.rolls << "d" << m.hp.sides << std::endl;
-            std::cout << "Attack Damage: " << m.dam.base << "+" << m.dam.rolls << "d" << m.dam.sides << std::endl;
-            std::cout << "Symbol: " << m.symbol << std::endl;
-            std::cout << "Rarity: " << m.rarity << std::endl << std::endl;
-        }
-    }
-}
-
-void print_objects() {
-    std::cout << "OBJECT LIST:" << std::endl;
-    for (const auto& o : objectList) {
-        if (o.valid) {
-            std::cout << "Name: " << o.name << std::endl;
-            std::cout << "Description: " << o.desc;
-            std::cout << "Type: ";
-            for (const auto& t : o.type) {
-                std::cout << t << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "Color: ";
-            for (const auto& c : o.color) {
-                std::cout << c << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "Hit bonus: " << o.hit.base << "+" << o.hit.rolls << "d" << o.hit.sides << std::endl;
-            std::cout << "Damage bonus: " << o.dam.base << "+" << o.dam.rolls << "d" << o.dam.sides << std::endl;
-            std::cout << "Dodge bonus: " << o.dodge.base << "+" << o.dodge.rolls << "d" << o.dodge.sides << std::endl;
-            std::cout << "Defense bonus: " << o.def.base << "+" << o.def.rolls << "d" << o.def.sides << std::endl;
-            std::cout << "Weight: " << o.weight.base << "+" << o.weight.rolls << "d" << o.weight.sides << std::endl;
-            std::cout << "Speed bonus: " << o.speed.base << "+" << o.speed.rolls << "d" << o.speed.sides << std::endl;
-            std::cout << "Special Attribute: " << o.attr.base << "+" << o.attr.rolls << "d" << o.attr.sides << std::endl;
-            std::cout << "Value: " << o.val.base << "+" << o.val.rolls << "d" << o.val.sides << std::endl;
-            std::cout << "Artifact status: " << (o.art ? "true" : "false") << std::endl;
-            std::cout << "Rarity: " << o.rarity << std::endl << std::endl;
-        }
-    }
 }
 %}
 
@@ -109,8 +69,8 @@ void print_objects() {
 
 %%
 
-file: HEADER_MONSTER monsters   { print_monsters(); }
-    | HEADER_OBJECT objects     { print_objects(); }
+file: HEADER_MONSTER monsters   ;
+    | HEADER_OBJECT objects     ;
 
 monsters:
         | monsters monster
@@ -134,7 +94,7 @@ monster: BEGIN_MONSTER monster_fields END_MONSTER {
                 std::cerr << "Parse error: Invalid monster (incomplete or duplicate), discarding" << std::endl;
             }
             else {
-                monsterList.push_back(curr_monster);
+                monsterTypeList.push_back(curr_monster);
             }
             reset_monster();
         }
@@ -144,7 +104,7 @@ object: BEGIN_OBJECT object_fields END_OBJECT {
                 curr_object.valid = false;
                 std::cerr << "Parse error: Invalid object" << std::endl;
             }
-            objectList.push_back(curr_object);
+            objectTypeList.push_back(curr_object);
             reset_object();
         }
 
@@ -168,7 +128,7 @@ monster_field: NAME STRING NEWLINE {
               }
               | COLOR color_content NEWLINE {
                   if (!curr_monster.fields.insert("COLOR").second) curr_monster.valid = false;
-                  curr_monster.color = *$2;
+                  curr_monster.colors = *$2;
                   delete $2;
               }
               | SPEED DICE NEWLINE {
@@ -234,7 +194,7 @@ object_field: NAME STRING NEWLINE {
               }
               | COLOR color_content NEWLINE {
                   if (!curr_object.fields.insert("COLOR").second) curr_object.valid = false;
-                  curr_object.color = *$2;
+                  curr_object.colors = *$2;
                   delete $2;
               }
               | HIT DICE NEWLINE {
@@ -344,7 +304,10 @@ color_content: COLOR_VAL {
              }
              ;
 
-abil_content: ABIL_VAL {
+abil_content:  /* empty */ {
+                $$ = new std::vector<std::string>();
+            }
+            | ABIL_VAL {
                 $$ = new std::vector<std::string>();
                 $$->push_back($1);
                 free($1);
@@ -367,21 +330,3 @@ val_content: TYPE_VAL {
                 free($2);
             }
 %%
-
-int parse(const char *filename) {
-    yyin = fopen(filename, "r");
-    if (!yyin) {
-        std::cerr << "Cannot open file: " << filename << std::endl;
-        return 1;
-    }
-    yyparse();
-    if (yyin) {
-        fclose(yyin);
-    }
-
-    return 0;
-}
-
-void yyerror(const char *s) {
-    std::cerr << "Parse error: " << s << std::endl;
-}

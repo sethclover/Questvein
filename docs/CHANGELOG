@@ -3,6 +3,26 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [unrelesed] <!-- Speel CHe;l -->
+
+### Added 
+
+- Monsters are now added to the dungeon from the parsed monster
+  file and have attributes according to their descriptions
+- Monsters now have color (or multiple) and have names and symbols
+  instead of hexcode representations of their abilities
+- Monsters now have a rarity, which will dtermine their spawn rate
+- The monster list now has more detail including name, symbol and
+  corresponding color, abilites, and location
+- Monsters can now be unique, which means they will not respawn
+  once they have been slain
+
+### Removed
+
+- The --typemon/-t switch for spawning a specific monster using the
+  hex value of their personality, because it does not work with the
+  new parsed monster types
+
 ## [7.0.0] - 2025-4-8
 
 ### Added

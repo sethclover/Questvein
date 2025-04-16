@@ -17,40 +17,7 @@ Pos *downStairs;
 int downStairsCount;
 
 Monster *monsterAt[MAX_HEIGHT][MAX_WIDTH] = {nullptr};
-Monster *monsters;
-
-Monster::Monster(Pos pos) {
-    intelligent = rand() % 2;
-    tunneling = rand() % 2;
-    telepathic = rand() % 2;
-    erratic = rand() % 2;
-    speed = rand() % 16 + 5;
-    this->pos = pos;
-    lastSeen = {-1, -1};
-}
-
-Monster::Monster(Pos pos, char monType) {
-    int num;
-    monType = tolower(monType);
-    if (monType >= '0' && monType <= '9') {
-        num = monType - '0';
-    }
-    else if (monType >= 'a' && monType <= 'f') {
-        num = monType - 'a' + 10;
-    }
-    else {
-        // error
-        return;
-    }
-
-    intelligent = num & 1;
-    telepathic = (num >> 1) & 1;
-    tunneling = (num >> 2) & 1;
-    erratic = (num >> 3) & 1;
-    speed = rand() % 16 + 5;
-    this->pos = pos;
-    lastSeen = {-1, -1};
-}
+std::vector<Monster> monsters;
 
 void initDungeon() {
     generateHardness();
@@ -248,56 +215,54 @@ void spawnPlayer() {
     player.pos.y = y;
 }
 
-int spawnMonsterWithMonType(char monType) {
-    monsters = new Monster[1];
-    // if (!monsters) {
-    //     errorHandle("Error: Failed to allocate memory for monsters");
-    //     free(monsters);
-    //     return 1;
-    // }
+// no worky worky with types
+//
+// int spawnMonsterWithMonType(char monType) {
+//     monsters = new Monster[1];
+//     // if (!monsters) {
+//     //     errorHandle("Error: Failed to allocate memory for monsters");
+//     //     free(monsters);
+//     //     return 1;
+//     // }
 
-    for (int j = 0; j < ATTEMPTS; j++) {
-        int placed = 0;
-        int x = rand() % MAX_WIDTH;
-        int y = rand() % MAX_HEIGHT;
-        if (dungeon[y][x].type != FLOOR) {
-            continue;
-        }
-        for (int k = 0; k < roomCount; k++) {
-            if ((player.pos.x >= rooms[k].x && player.pos.x <= rooms[k].x + rooms[k].width - 1 &&
-                player.pos.y >= rooms[k].y && player.pos.y <= rooms[k].y + rooms[k].height - 1)) {
-                continue;
-            }
-            else if (x >= rooms[k].x && x <= rooms[k].x + rooms[k].width - 1 &&
-                        y >= rooms[k].y && y <= rooms[k].y + rooms[k].height - 1) {
-                monsters[0] = Monster((Pos){x, y}, monType);
-                // if (!monsters[0]) {
-                //     errorHandle("Error: Failed to create monster with type %c", monType);
-                //     free(monsters[0]);
-                //     free(monsters);
-                //     return 1;
-                // }
-                monsterAt[y][x] = &monsters[0];
-                placed = 1;
-                break;
-            }
-        }
+//     for (int j = 0; j < ATTEMPTS; j++) {
+//         int placed = 0;
+//         int x = rand() % MAX_WIDTH;
+//         int y = rand() % MAX_HEIGHT;
+//         if (dungeon[y][x].type != FLOOR) {
+//             continue;
+//         }
+//         for (int k = 0; k < roomCount; k++) {
+//             if ((player.pos.x >= rooms[k].x && player.pos.x <= rooms[k].x + rooms[k].width - 1 &&
+//                 player.pos.y >= rooms[k].y && player.pos.y <= rooms[k].y + rooms[k].height - 1)) {
+//                 continue;
+//             }
+//             else if (x >= rooms[k].x && x <= rooms[k].x + rooms[k].width - 1 &&
+//                         y >= rooms[k].y && y <= rooms[k].y + rooms[k].height - 1) {
+//                 monsters[0] = Monster((Pos){x, y}, monType);
+//                 // if (!monsters[0]) {
+//                 //     errorHandle("Error: Failed to create monster with type %c", monType);
+//                 //     free(monsters[0]);
+//                 //     free(monsters);
+//                 //     return 1;
+//                 // }
+//                 monsterAt[y][x] = &monsters[0];
+//                 placed = 1;
+//                 break;
+//             }
+//         }
 
-        if (placed) {
-            break;
-        }
-    }
+//         if (placed) {
+//             break;
+//         }
+//     }
 
-    return 0;
-}
+//     return 0;
+// }
 
 int spawnMonsters(int numMonsters, int playerX, int playerY) {
-    monsters = new Monster[numMonsters];
-    // if (!monsters) {
-    //     errorHandle("Error: Failed to allocate memory for monsters");
-    //     free(monsters);
-    //     return 1;
-    // }
+    int monsterTypeListSize = monsterTypeList.size();
+    monsters.reserve(numMonsters);
 
     for (int i = 0; i < numMonsters; i++) {
         for (int j = 0; j < ATTEMPTS; j++) {
@@ -318,17 +283,21 @@ int spawnMonsters(int numMonsters, int playerX, int playerY) {
                         continue;
                     }
                     else {
-                        monsters[i] = Monster((Pos){x, y});
-                        // if (!monsters[i]) {
-                        //     for (int l = 0; l < i; l++) {
-                        //         free(monsters[l]);
-                        //     }
-                        //     errorHandle("Error: Failed to create monster");
-                        //     free(monsters);
-                        //     return 1;
-                        // }
-                        monsterAt[y][x] = &monsters[i];
+                        int monTypeIndex = rand() % monsterTypeListSize;
+                        MonsterType *monType = &monsterTypeList[monTypeIndex];
+                        int rarityCheck = rand() % 100;
+                        if (rarityCheck >= monType->rarity || !monType->eligible || !monType->valid) {
+                            continue;
+                        }
+                        
+                        monsters.emplace_back(Monster(monType, monTypeIndex, (Pos){x, y}));
+                        monsterAt[y][x] = &monsters.back();
                         placed = 1;
+
+                        if (monsters.back().isUnique() || monsters.back().isBoss()) {
+                            monsterTypeList[monTypeIndex].eligible = false;
+                        }
+
                         break;
                     }
                 }
@@ -404,7 +373,7 @@ void printNonTunnelingDistances() {
     }
 }
 
-int generateStructures(int numMonsters) {
+int generateStructures() {
     roomCount = rand() % 5 + 7;
     rooms = buildRooms(roomCount);
     if (!rooms) {
