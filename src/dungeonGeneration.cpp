@@ -19,6 +19,9 @@ int downStairsCount;
 Monster *monsterAt[MAX_HEIGHT][MAX_WIDTH] = {nullptr};
 std::vector<Monster> monsters;
 
+std::vector<Object*> objectAt[MAX_HEIGHT][MAX_WIDTH];
+std::vector<Object> objects;
+
 void initDungeon() {
     generateHardness();
 
@@ -211,8 +214,7 @@ void spawnPlayer() {
         }
     }
 
-    player.pos.x = x;
-    player.pos.y = y;
+    player.setPos((Pos){x, y});
 }
 
 // no worky worky with types
@@ -233,8 +235,8 @@ void spawnPlayer() {
 //             continue;
 //         }
 //         for (int k = 0; k < roomCount; k++) {
-//             if ((player.pos.x >= rooms[k].x && player.pos.x <= rooms[k].x + rooms[k].width - 1 &&
-//                 player.pos.y >= rooms[k].y && player.pos.y <= rooms[k].y + rooms[k].height - 1)) {
+//             if ((player.gePos().x >= rooms[k].x && player.getPos().x <= rooms[k].x + rooms[k].width - 1 &&
+//                 player.getPos().y >= rooms[k].y && player.getPos().y <= rooms[k].y + rooms[k].height - 1)) {
 //                 continue;
 //             }
 //             else if (x >= rooms[k].x && x <= rooms[k].x + rooms[k].width - 1 &&
@@ -282,24 +284,22 @@ int spawnMonsters(int numMonsters, int playerX, int playerY) {
                     if (monsterAt[y][x]) {
                         continue;
                     }
-                    else {
-                        int monTypeIndex = rand() % monsterTypeListSize;
-                        MonsterType *monType = &monsterTypeList[monTypeIndex];
-                        int rarityCheck = rand() % 100;
-                        if (rarityCheck >= monType->rarity || !monType->eligible || !monType->valid) {
-                            continue;
-                        }
-                        
-                        monsters.emplace_back(Monster(monType, monTypeIndex, (Pos){x, y}));
-                        monsterAt[y][x] = &monsters.back();
-                        placed = 1;
 
-                        if (monsters.back().isUnique() || monsters.back().isBoss()) {
-                            monsterTypeList[monTypeIndex].eligible = false;
-                        }
-
-                        break;
+                    int monTypeIndex = rand() % monsterTypeListSize;
+                    MonsterType *monType = &monsterTypeList[monTypeIndex];
+                    int rarityCheck = rand() % 100;
+                    if (rarityCheck >= monType->rarity || !monType->eligible || !monType->valid) {
+                        continue;
                     }
+                    
+                    monsters.emplace_back(Monster(monType, monTypeIndex, (Pos){x, y}));
+                    monsterAt[y][x] = &monsters.back();
+                    placed = 1;
+                    if (monsters.back().isUnique() || monsters.back().isBoss()) {
+                        monsterTypeList[monTypeIndex].eligible = false;
+                    }
+
+                    break;
                 }
             }
 
@@ -307,6 +307,40 @@ int spawnMonsters(int numMonsters, int playerX, int playerY) {
                 break;
             }
         }
+    }
+
+    return 0;
+}
+
+int spawnObjects(int numObjects) {
+    int objectTypeListSize = objectTypeList.size();
+    objects.reserve(numObjects);
+
+    for (int i = 0; i < numObjects; i++) {
+        for (int j = 0; j < ATTEMPTS; j++) {
+            int x = rand() % MAX_WIDTH;
+            int y = rand() % MAX_HEIGHT;
+            if (dungeon[y][x].type != FLOOR || (player.getPos().x == x && player.getPos().y == y)) {
+                continue;
+            }
+            
+            int objTypeIndex = rand() % objectTypeListSize;
+            ObjectType *objType = &objectTypeList[objTypeIndex];
+            int rarityCheck = rand() % 100;
+            if (rarityCheck >= objType->rarity || !objType->eligible || !objType->valid) {
+                continue;
+            }
+
+
+            objects.emplace_back(Object(objType, objTypeIndex, (Pos){x, y}));
+            objectAt[y][x].push_back(&objects.back());
+            if (objects.back().isArtifact()) {
+                objectTypeList[objTypeIndex].eligible = false;
+            }
+
+            break;
+        }
+
     }
 
     return 0;
@@ -388,13 +422,23 @@ int generateStructures() {
     return 0;
 }
 
-void freeAll(int numMonsters) {
+void freeAll() {
     delete[] rooms;
     delete[] upStairs;
     delete[] downStairs;
+
+    monsters.clear();
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
             monsterAt[i][j] = NULL;
         }
     }
+
+    objects.clear();
+    for (int i = 0; i < MAX_HEIGHT; i++) {
+        for (int j = 0; j < MAX_WIDTH; j++) {
+            objectAt[i][j].clear();
+        }
+    }
+
 }

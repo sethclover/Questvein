@@ -1,4 +1,4 @@
-CC = g++ -g
+CC = g++
 CFLAGS = -Wall -Werror -Iinclude -std=c++17 -MMD
 LDFLAGS = -lm -lncurses -lfl
 

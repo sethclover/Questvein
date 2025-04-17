@@ -61,7 +61,7 @@ void reset_object() {
 %token <str> COLOR_VAL ABIL_VAL TYPE_VAL DICE STRING
 %token <ch> SYMBOL
 %token <num> RARITY
-%token <bo> ART_VAL
+%token <bo> ART_VAL_TRUE ART_VAL_FALSE
 %token NEWLINE PERIOD 
 
 %type <str_vec> color_content abil_content val_content
@@ -189,7 +189,7 @@ object_field: NAME STRING NEWLINE {
               }
               | TYPE val_content NEWLINE {
                   if (!curr_object.fields.insert("TYPE").second) curr_object.valid = false;
-                  curr_object.type = *$2;
+                  curr_object.types = *$2;
                   delete $2;
               }
               | COLOR color_content NEWLINE {
@@ -269,9 +269,13 @@ object_field: NAME STRING NEWLINE {
                   }
                   free($2);
               }
-              | ART ART_VAL NEWLINE {
+              | ART ART_VAL_TRUE NEWLINE {
                   if (!curr_object.fields.insert("ART").second) curr_object.valid = false;
-                  curr_object.art = $2;
+                  curr_object.art = true;
+              }
+              | ART ART_VAL_FALSE NEWLINE {
+                  if (!curr_object.fields.insert("ART").second) curr_object.valid = false;
+                  curr_object.art = false;
               }
               | RRTY RARITY NEWLINE {
                   if (!curr_object.fields.insert("RRTY").second) curr_object.valid = false;

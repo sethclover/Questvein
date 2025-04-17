@@ -5,6 +5,7 @@
 
 FibNode *insert(FibHeap *heap, int key, Pos pos) {
     FibNode *node = new FibNode(key, pos);
+    heap->nodes.push_back(std::unique_ptr<FibNode>(node));
     if (!node) {
         return NULL;
     }
@@ -24,7 +25,7 @@ FibNode *insert(FibHeap *heap, int key, Pos pos) {
     }
 
     heap->numNodes++;
-    return node;
+    return heap->nodes.back().get();
 }
 
 int consolidate(FibHeap *heap) {
@@ -36,18 +37,8 @@ int consolidate(FibHeap *heap) {
         maxDegree = (int)(log(heap->numNodes - 1) / log(2)) + 1;
     }
     FibNode **A = new FibNode*[maxDegree]();
-    // if (!A) {
-    //     errorHandle("Error: Failed to allocate memory for consolidation array");
-    //     return 1;
-    // }
 
     FibNode **nodes = new FibNode*[heap->numNodes]();
-    // if (!nodes) {
-    //     errorHandle("Error: Failed to allocate memory for nodes array");
-    //     free(A);
-    //     free(nodes);
-    //     return 1;
-    // }
 
     int count = 0;
     if (heap->min) {
@@ -209,53 +200,4 @@ void decreaseKey(FibHeap *heap, FibNode *node, int newKey) {
     if (node->key < heap->min->key) {
         heap->min = node;
     }
-}
-
-void destroyFibNode(FibNode *node) {
-    if (node == NULL) {
-        return;
-    }
-    else if (node->child != NULL) {
-        FibNode *childStart = node->child;
-        FibNode *childCurr = childStart;
-        FibNode *childNext;
-        
-        do {
-            childNext = childCurr->right;
-            childCurr->left = NULL;
-            childCurr->right = NULL;
-            destroyFibNode(childCurr);
-            childCurr = childNext;
-        } while (childCurr != NULL && childCurr != childStart);
-    }
-
-    if (node->left && node->right && (node->left != node || node->right != node)) {
-        FibNode *curr = node->right;
-        FibNode *next;
-        
-        node->left->right = NULL;
-        node->right = NULL;
-        
-        while (curr != NULL) {
-            next = curr->right;
-            curr->left = NULL;
-            curr->right = NULL;
-            destroyFibNode(curr);
-            curr = next;
-        }
-    }
-
-    delete node;
-}
-
-void destroyFibHeap(FibHeap *heap) {
-    if (heap == NULL) {
-        return;
-    }
-    else if (heap->min != NULL) {
-        destroyFibNode(heap->min);
-        heap->min = NULL;
-    }
-
-    delete heap;
 }

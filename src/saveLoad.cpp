@@ -33,8 +33,7 @@ int loadDungeon(char *filename) {
 
     uint8_t pos[2];
     fread(pos, 2, 1, file);
-    player.pos.x = (int) pos[0];
-    player.pos.y = (int) pos[1];
+    player.setPos((Pos){(int)pos[0], (int)pos[1]});
 
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
@@ -54,10 +53,6 @@ int loadDungeon(char *filename) {
     roomCount = r;
 
     Room *roomsLoaded = new Room[r];
-    // if (!roomsLoaded) {
-    //     errorHandle("Error: Memory allocation failed for roomsLoaded");
-    //     return 1;
-    // }
     for (int i = 0; i < r; i++) {
         fread(&roomsLoaded[i].x, 1, 1, file);
         fread(&roomsLoaded[i].y, 1, 1, file);
@@ -66,13 +61,16 @@ int loadDungeon(char *filename) {
     }
     for (int i = 0; i < r; i++) {
         for (int j = roomsLoaded[i].y; j < roomsLoaded[i].y + roomsLoaded[i].height; j++) {
+
             for (int k = roomsLoaded[i].x; k < roomsLoaded[i].x + roomsLoaded[i].width; k++) {
                 dungeon[j][k].type = FLOOR;
             }
         }
     }
+
     initRoom(roomsLoaded);
     delete[] roomsLoaded;
+
 
     uint16_t u;
     fread(&u, 2, 1, file);
@@ -80,10 +78,6 @@ int loadDungeon(char *filename) {
     upStairsCount = u;
 
     Pos *upStairs = new Pos[u];
-    // if (!upStairs) {
-    //     errorHandle("Error: Memory allocation failed for upStairs");
-    //     return 1;
-    // }
     for (int i = 0; i < u; i++) {
         fread(&upStairs[i].x, 1, 1, file);
         fread(&upStairs[i].y, 1, 1, file);
@@ -97,10 +91,6 @@ int loadDungeon(char *filename) {
     downStairsCount = d;
 
     Pos *downStairs = new Pos[d];
-    // if (!downStairs) {
-    //     errorHandle("Error: Memory allocation failed for downStairs");
-    //     return 1;
-    // }
     for (int i = 0; i < d; i++) {
         fread(&downStairs[i].x, 1, 1, file);
         fread(&downStairs[i].y, 1, 1, file);
@@ -125,7 +115,7 @@ int saveDungeon(char *filename) {
     uint32_t size = htobe32(sizeof(1712 + roomCount * 4));
     fwrite(&size, 4, 1, file);
 
-    uint8_t pos[2] = {(uint8_t) player.pos.x, (uint8_t) player.pos.y};
+    uint8_t pos[2] = {(uint8_t) player.getPos().x, (uint8_t) player.getPos().y};
     fwrite(pos, 2, 1, file);
 
     for (int i = 0; i < MAX_HEIGHT; i++) {

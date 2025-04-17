@@ -23,8 +23,8 @@ public:
     std::vector<std::string> abils;
     Dice hp;
     Dice dam;
-    char symbol = '\0';
-    int rarity = 0;
+    char symbol;
+    int rarity;
     bool eligible = true;
 
     bool valid = true;
@@ -34,14 +34,23 @@ public:
     ~MonsterType() = default;
 };
 
-class ObjectType { // next
+class ObjectType {
 public:
-    std::string name, desc;
-    char symbol = '\0';
-    std::vector<std::string> colors, type;
-    Dice hit, dam, dodge, def, weight, speed, attr, val;
+    std::string name;
+    std::string desc;
+    std::vector<std::string> types;
+    std::vector<std::string> colors;
+    Dice hit;
+    Dice dam;
+    Dice dodge;
+    Dice def;
+    Dice weight;
+    Dice speed;
+    Dice attr;
+    Dice val;
     bool art;
-    int rarity = 0;
+    int rarity;
+    bool eligible = true;
 
     bool valid = true;
     std::set<std::string> fields;

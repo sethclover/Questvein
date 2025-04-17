@@ -1,26 +1,17 @@
+#include <memory>
+
 #include "dungeon.hpp"
 #include "fibonacciHeap.hpp"
 
 int tunnelingDistances(const int x, const int y) {
-    FibHeap *heap = new FibHeap();
-    if (!heap) {
-        return 1;
-    }
+    std::unique_ptr<FibHeap> heap = std::make_unique<FibHeap>();
     FibNode *nodes[MAX_HEIGHT][MAX_WIDTH] = {NULL};
 
     dungeon[y][x].tunnelingDist = 0;
-    nodes[y][x] = insert(heap, 0, (Pos){x, y});
-    if (!nodes[y][x]) {
-        destroyFibHeap(heap);
-        return 1;
-    }
+    nodes[y][x] = insert(heap.get(), 0, (Pos){x, y});
 
     while (heap->min != NULL) {
-        FibNode *minNode = extractMin(heap);
-        if (!minNode) {
-            destroyFibHeap(heap);
-            return 1;
-        }
+        FibNode *minNode = extractMin(heap.get());
 
         Pos pos = minNode->pos;
         int dist = minNode->key;
@@ -40,46 +31,30 @@ int tunnelingDistances(const int x, const int y) {
                     dungeon[newY][newX].tunnelingDist = newDist;
 
                     if (nodes[newY][newX] == NULL) {
-                        nodes[newY][newX] = insert(heap, newDist, (Pos){newX, newY});
-                        if (!nodes[newY][newX]) {
-                            destroyFibHeap(heap);
-                            return 1;
-                        }
+                        nodes[newY][newX] = insert(heap.get(), newDist, (Pos){newX, newY});
                     }
                     else {
-                        decreaseKey(heap, nodes[newY][newX], newDist);
+                        decreaseKey(heap.get(), nodes[newY][newX], newDist);
                     }
                 }
             }
         }
 
-        delete minNode;     
+        //delete minNode;     
     }
 
-    destroyFibHeap(heap);
     return 0;
 }
 
 int nonTunnelingDistances(const int x, const int y) {
-    FibHeap *heap = new FibHeap();
-    if (!heap) {
-        return 1;
-    }
+    std::unique_ptr<FibHeap> heap = std::make_unique<FibHeap>();
     FibNode *nodes[MAX_HEIGHT][MAX_WIDTH] = {NULL};
 
     dungeon[y][x].nonTunnelingDist = 0;
-    nodes[y][x] = insert(heap, 0, (Pos){x, y});
-    if (!nodes[y][x]) {
-        destroyFibHeap(heap);
-        return 1;
-    }
+    nodes[y][x] = insert(heap.get(), 0, (Pos){x, y});
 
-    while (heap->min != NULL) {
-        FibNode *minNode = extractMin(heap);
-        if (!minNode) {
-            destroyFibHeap(heap);
-            return 1;
-        }
+    while (heap.get()->min != NULL) {
+        FibNode *minNode = extractMin(heap.get());
         Pos pos = minNode->pos;
         int dist = minNode->key;
 
@@ -98,23 +73,18 @@ int nonTunnelingDistances(const int x, const int y) {
                     dungeon[newY][newX].nonTunnelingDist = newDist;
 
                     if (nodes[newY][newX] == NULL) {
-                        nodes[newY][newX] = insert(heap, newDist, (Pos){newX, newY});
-                        if (!nodes[newY][newX]) {
-                            destroyFibHeap(heap);
-                            return 1;
-                        }
+                        nodes[newY][newX] = insert(heap.get(), newDist, (Pos){newX, newY});
                     }
                     else {
-                        decreaseKey(heap, nodes[newY][newX], newDist);
+                        decreaseKey(heap.get(), nodes[newY][newX], newDist);
                     }
                 }
             }
         }
 
-        delete minNode;       
+        //delete minNode;       
     }
 
-    destroyFibHeap(heap);
     return 0;
 }
 
@@ -125,12 +95,8 @@ int generateDistances(const int x, const int y) {
             dungeon[i][j].nonTunnelingDist = UNREACHABLE;
         }
     }
-    if (tunnelingDistances(x, y)) {
-        return 1;
-    }
-    if (nonTunnelingDistances(x, y)) {
-        return 1;
-    }
+    tunnelingDistances(x, y);
+    nonTunnelingDistances(x, y);
 
     return 0;
 }

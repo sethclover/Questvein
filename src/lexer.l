@@ -5,9 +5,7 @@
 
 extern "C" int yylex();
 
-int curr_context = 0; /* monster = 1, object = 2 */
-
-void yyerror(const char *s);
+int curr_context = 0;
 %}
 
 %option noyywrap nounput
@@ -52,8 +50,8 @@ void yyerror(const char *s);
 <OBJECT_STATE>"ART"             { BEGIN(BOOL_STATE); return ART; }
 <OBJECT_STATE>"END"             { BEGIN(INITIAL); return END_OBJECT; }
 
-<BOOL_STATE>"TRUE"              { BEGIN(OBJECT_STATE); return ART_VAL; }
-<BOOL_STATE>"FALSE"             { BEGIN(OBJECT_STATE); return ART_VAL; }
+<BOOL_STATE>"TRUE"              { BEGIN(OBJECT_STATE); return ART_VAL_TRUE; }
+<BOOL_STATE>"FALSE"             { BEGIN(OBJECT_STATE); return ART_VAL_FALSE; }
 
 <LIST_STATE>"BLACK"|"RED"|"GREEN"|"YELLOW"|"BLUE"|"MAGENTA"|"CYAN"|"WHITE" {
     yylval.str = strdup(yytext);
@@ -76,6 +74,4 @@ void yyerror(const char *s);
 
 <DESC_STATE>^\.\n           { BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); return PERIOD; }
 <DESC_STATE>.*\n            { yylval.str = strdup(yytext); return STRING; }
-
-<MONSTER_STATE,FIELD_STATE,DESC_STATE>.     { yyerror("Unknown character"); }
 %%

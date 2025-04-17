@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "dungeon.hpp"
 
 class FibNode {
@@ -29,6 +31,7 @@ class FibHeap {
 public:
     int numNodes;
     FibNode *min;
+    std::vector<std::unique_ptr<FibNode>> nodes;
 
     FibHeap() : numNodes(0), min(nullptr) {}
     ~FibHeap() = default;
@@ -39,4 +42,3 @@ public:
 FibNode *insert(FibHeap *heap, int key, Pos pos);
 FibNode *extractMin(FibHeap *heap);
 void decreaseKey(FibHeap *heap, FibNode *node, int newKey);
-void destroyFibHeap(FibHeap *heap);

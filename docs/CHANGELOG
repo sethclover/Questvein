@@ -3,19 +3,45 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
-## [unrelesed] <!-- Speel CHe;l -->
+## [8.0.0] - 2025-4-16
 
 ### Added 
 
 - Monsters are now added to the dungeon from the parsed monster
   file and have attributes according to their descriptions
 - Monsters now have color (or multiple) and have names and symbols
-  instead of hexcode representations of their abilities
-- Monsters now have a rarity, which will dtermine their spawn rate
-- The monster list now has more detail including name, symbol and
-  corresponding color, abilites, and location
+  instead of hex code representations of their abilities
+- Monsters now have a rarity, which will determine their spawn rate
+- The monster list now has more detail, including name, symbol and
+  corresponding color, abilities, and location
 - Monsters can now be unique, which means they will not respawn
   once they have been slain
+- Objects have been added to the dungeon that will display on the
+  floor and under a character, and have a symbol that corresponds
+  to their type and a color according to the color(s) from the
+  parsed object file
+- There are 10-12 random objects added to each dungeon floor
+- Objects can be artifacts, which means when they are picked up
+  they will not spawn again
+- A new command 'o' that shows the list of all objects in the
+  dungeon along with their name, symbol and corresponding color,
+  and location
+- A new switch --numobj/-o that takes a positive integer and sets
+  the number of items in each dungeon floor is set to that value
+
+### Changed
+
+- The range of numbers of monsters that will spawn in a dungeon
+  has been lowered to 7-15 from 7-20 
+- The --nummon/-n switch has been replaced with --nummon/-m to
+  allow consistency with the new numobj/-o switch
+
+### Fixed
+
+- Corners in the monster list and command list were not displaying
+  correctly
+- Fixed a bug where every object was being parsed as an artifact (not
+  everyone can be special, sadly)
 
 ### Removed
 

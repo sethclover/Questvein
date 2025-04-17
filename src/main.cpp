@@ -28,7 +28,8 @@ static const SwitchInfo switches[] = {
     {"-d", "--printdist", "After the game ends, print tunneling and non-tunneling distances"},
     {"-s", "--save", "Save the dungeon to a file (requires filename)"},
     {"-l", "--load", "Load a dungeon from a file (requires filename)"},
-    {"-n", "--nummon", "Set the number of monsters (requires positive integer)"},
+    {"-m", "--nummon", "Set the number of monsters (requires positive integer)"},
+    {"-o", "--numobj", "Set the number of objects (requires positive integer)"},
     //{"-t", "--typemon", "Set a specific monster type (requires a single Hex character)"},
     {"-a", "--auto", "Run the game in automatic (random) movement mode"},
     {"-g", "--godmode", "Enable god mode (invincible player)"}
@@ -52,7 +53,8 @@ int main(int argc, char *argv[]) {
 
     char filename[256];
     //char monType = '0';
-    int numMonsters = rand() % 14 + 7;
+    int numMonsters = rand() % 9 + 7;
+    int numObjects = rand() % 3 + 10;
 
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
@@ -132,14 +134,14 @@ int main(int argc, char *argv[]) {
 
             i++;
         }
-        else if (!strcmp(argv[i], "-n") || !strcmp(argv[i], "--nummon")) {
+        else if (!strcmp(argv[i], "-m") || !strcmp(argv[i], "--nummon")) {
             if (i < argc - 1) {
                 char *next = argv[i + 1];
 
-                int isNum = 1;
+                bool isNum = true;
                 for (int j = 0; next[j] != '\0'; j++) {
                     if (!isdigit(next[j])) {
-                        isNum = 0;
+                        isNum = false;
                         break;
                     }
                 }
@@ -150,12 +152,45 @@ int main(int argc, char *argv[]) {
                         std::cout << "Error: Number of monsters must be positive" << std::endl;
                         return 1;
                     }
-                } else {
-                    std::cout << "Error: Argument after '--nummon/-n' must be a positive integer" << std::endl;
+                }
+                else {
+                    std::cout << "Error: Argument after '--nummon/-m' must be a positive integer" << std::endl;
                     return 1;
                 }
-            } else {
-                std::cout << "Error: Argument '--nummon/-n' requires a positive integer" << std::endl;
+            }
+            else {
+                std::cout << "Error: Argument '--nummon/-m' requires a positive integer" << std::endl;
+                return 1;
+            }
+
+            i++;
+        }
+        else if (!strcmp(argv[i], "-o") || !strcmp(argv[i], "--numobj")) {
+            if (i < argc - 1) {
+                char *next = argv[i + 1];
+
+                bool isNum = true;
+                for (int j = 0; next[j] != '\0'; j++) {
+                    if (!isdigit(next[j])) {
+                        isNum = false;
+                        break;
+                    }
+                }
+
+                if (isNum && strlen(next) > 0) {
+                    numObjects = atoi(next);
+                    if (numObjects < 0) {
+                        std::cout << "Error: Number of objects must be positive" << std::endl;
+                        return 1;
+                    }
+                }
+                else {
+                    std::cout << "Error: Argument after '--numobj/-o' must be a positive integer" << std::endl;
+                    return 1;
+                }
+            }
+            else {
+                std::cout << "Error: Argument '--numobj/-o' requires a positive integer" << std::endl;
                 return 1;
             }
 
@@ -207,40 +242,18 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         loadDungeon(filename);
-
-        // if (monTypeFlag) {
-        //     if (spawnMonsterWithMonType(monType)) {
-        //         return 1;
-        //     }
-        // }
-        // else {
-            if (spawnMonsters(numMonsters, player.pos.x, player.pos.y)) {
-                return 1;
-            }
-        //}
+        spawnMonsters(numMonsters, player.getPos().x, player.getPos().y);
+        spawnObjects(numObjects);
     }
     else {
         initDungeon();
         if (printhardbFlag) {
             printHardness();
         }
-
-        if (generateStructures()) {
-            return 1;
-        }
+        generateStructures();
         spawnPlayer();
-        // if (monTypeFlag) {
-        //     spawnMonsterWithMonType(monType)
-        // }
-        // else {
-            if (spawnMonsters(numMonsters, player.pos.x, player.pos.y)) {
-                delete[] rooms;
-                delete[] upStairs;
-                delete[] downStairs;
-
-                return 1;
-            }
-        //}
+        spawnMonsters(numMonsters, player.getPos().x, player.getPos().y);
+        spawnObjects(numObjects);
     }
 
     if (printhardaFlag) {
@@ -252,7 +265,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (printdistFlag) {
-        generateDistances(player.pos.x, player.pos.y);
+        generateDistances(player.getPos().x, player.getPos().y);
         printTunnelingDistances();
         printNonTunnelingDistances();       
     }
@@ -282,7 +295,7 @@ int main(int argc, char *argv[]) {
     printLine(MESSAGE_LINE, "Welcome adventurer! Press any key to begin...");
     getch();
 
-    while (playGame(numMonsters, autoFlag, godmodeFlag, supportsColor))
+    while (playGame(numMonsters, numObjects, autoFlag, godmodeFlag, supportsColor))
         ;
 
     endwin();

@@ -1,13 +1,13 @@
-### Assignment 1.07 README
+### Assignment 1.08 README
 
-This assignment adds parsing to the project. I implemented parsing
-for both objects and monsters. I used lex and yacc to parse the .txt
-files and distribute them into a list of object or monster type lists,
-which were defined in their own header file. There is a new switch
-for printing the parsing, --parse-monsters and --parse-objects, which
-will print the information parsed from the respective files to cout.
-The switches will automatically fetch the monster_desc.txt and
-object_desc.txt files from the .rlg327 folder in the home directory.
-The Makefile was updated to include the lexer.l and parser.y files,
-along with the parser.hpp header file. The changes are tracked, just
-like any other .cpp and .hpp, so make will detect the changes.
+For this assignment, I added monsters and objects to the dungeon from
+their corresponding parsed files (monster_desc.txt and object_desc.txt)
+Each monster and object is an instance of its parsed type. Monsters
+have fields for their name, description, colors, speed, abilities, hp,
+damage, symbol, and rarity. In contrast, objects have the fields name,
+description, type(s), symbol (derived from their type), colors, hit,
+damage, dodge, defense, weight, speed, attributes, value, artifact
+status, rarity. Characters show up on top of objects. Artifacts and
+Boss/Unique monsters will not spawn again after they are picked up
+or killed. If a monster/object has more than one color, each time it
+is reprinted, it will cycle to the next color in its list.

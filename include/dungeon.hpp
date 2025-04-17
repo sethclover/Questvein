@@ -52,18 +52,16 @@ public:
 };
 
 class Character {
-public:
+protected:
     Pos pos;
 };
 
-// private this
 class Player : public Character {
 public:
+    Pos getPos() { return pos; }
+    void setPos(Pos p) { pos = p; }
+
     Player() = default;
-    Player(int x, int y) {
-        pos.x = x;
-        pos.y = y;
-    }
     ~Player() = default;
 };
 
@@ -202,6 +200,159 @@ public:
     ~Monster() = default;  
 };
 
+class Object {
+private:
+    int objTypeIndex;
+
+    std::string name;
+
+    std::string description;
+
+    std::vector<std::string> types;
+
+    std::vector<Color> colors;
+    int colorCount;
+    int colorIndex;
+
+    int hitBonus;
+
+    int damageBonus;
+
+    int dodgeBonus;
+
+    int defenseBonus;
+
+    int weight;
+
+    int speedBonus;
+
+    int specialAttribute;
+
+    int value;
+
+    bool artifact;
+
+    char symbol;
+
+    int rarity;
+
+    Pos pos;
+
+public:
+    int getObjTypeIndex() { return objTypeIndex; }
+
+    std::string getName() { return name; }
+
+    std::string getDescription() { return description; }
+
+    std::vector<std::string> getTypes() { return types; }
+
+    Color getColor() {
+        if (colorIndex >= colorCount) {
+            colorIndex = 0;
+        }
+        return colors[colorIndex++];
+    }
+
+    int getHitBonus() { return hitBonus; }
+
+    int getDamageBonus() { return damageBonus; }
+
+    int getDodgeBonus() { return dodgeBonus; }
+
+    int getDefenseBonus() { return defenseBonus; }
+
+    int getWeight() { return weight; }
+
+    int getSpeedBonus() { return speedBonus; }
+
+    int getSpecialAttribute() { return specialAttribute; }
+
+    int getValue() { return value; }
+
+    bool isArtifact() { return artifact; }
+
+    char getSymbol() { return symbol; }
+
+    int getRarity() { return rarity; }
+
+    Pos getPos() { return pos; }
+    void setPos(Pos p) { pos = p; }
+
+    Object(ObjectType* objType, int objTypeIndex, Pos pos) {
+        this->objTypeIndex = objTypeIndex;
+
+        name = objType->name;
+
+        description = objType->desc;
+
+        types = objType->types;
+
+        for (const auto& color : objType->colors) {
+            if (color == "BLACK") { colors.push_back(Color::Black); }
+            else if (color == "RED") { colors.push_back(Color::Red); }
+            else if (color == "GREEN") { colors.push_back(Color::Green); }
+            else if (color == "YELLOW") { colors.push_back(Color::Yellow); }
+            else if (color == "BLUE") { colors.push_back(Color::Blue); }
+            else if (color == "MAGENTA") { colors.push_back(Color::Magenta); }
+            else if (color == "CYAN") { colors.push_back(Color::Cyan); }
+            else if (color == "WHITE") { colors.push_back(Color::White); }
+        }
+        colorCount = colors.size();
+        colorIndex = 0;
+
+        hitBonus = objType->hit.base + objType->hit.rolls * (rand() % objType->hit.sides + 1);
+
+        damageBonus = objType->dam.base + objType->dam.rolls * (rand() % objType->dam.sides + 1);
+
+        dodgeBonus = objType->dodge.base + objType->dodge.rolls * (rand() % objType->dodge.sides + 1);
+
+        defenseBonus = objType->def.base + objType->def.rolls * (rand() % objType->def.sides + 1);
+
+        weight = objType->weight.base + objType->weight.rolls * (rand() % objType->weight.sides + 1);
+
+        speedBonus = objType->speed.base + objType->speed.rolls * (rand() % objType->speed.sides + 1);
+
+        specialAttribute = objType->attr.base + objType->attr.rolls * (rand() % objType->attr.sides + 1);
+
+        value = objType->val.base + objType->val.rolls * (rand() % objType->val.sides + 1);
+
+        artifact = objType->art;
+
+        if (types.size() == 2) {
+            symbol = ')';
+        }
+        if (types.size() == 1) {
+            if (types.front() == "WEAPON") { symbol = '|'; }
+            else if (types.front() == "OFFHAND") { symbol = ')'; }
+            else if (types.front() == "RANGED") { symbol = '}'; }
+            else if (types.front() == "ARMOR") { symbol = '['; }
+            else if (types.front() == "HELMET") { symbol = ']'; }
+            else if (types.front() == "CLOAK") { symbol = '('; }
+            else if (types.front() == "GLOVES") { symbol = '{'; }
+            else if (types.front() == "BOOTS") { symbol = '\\'; }
+            else if (types.front() == "RING") { symbol = '='; }
+            else if (types.front() == "AMULET") { symbol = '"'; }
+            else if (types.front() == "LIGHT") { symbol = '_'; }
+            else if (types.front() == "SCROLL") { symbol = '~'; }
+            else if (types.front() == "BOOK") { symbol = '?'; }
+            else if (types.front() == "FLASK") { symbol = '!'; }
+            else if (types.front() == "GOLD") { symbol = '$'; }
+            else if (types.front() == "AMMUNITION") { symbol = '/'; }
+            else if (types.front() == "FOOD") { symbol = ','; }
+            else if (types.front() == "WAND") { symbol = '-'; }
+            else if (types.front() == "CONTAINER") { symbol = '%'; }
+            else { symbol = '*'; }
+        }
+
+        rarity = objType->rarity;
+
+        this->pos = pos;
+    }
+    Object() = delete;
+    ~Object() = default;
+};
+
 extern Tile dungeon[MAX_HEIGHT][MAX_WIDTH];
 extern int roomCount;
 extern Room *rooms;
@@ -215,6 +366,9 @@ extern Player player;
 extern Monster *monsterAt[MAX_HEIGHT][MAX_WIDTH];
 extern std::vector<Monster> monsters;
 
+extern std::vector<Object*> objectAt[MAX_HEIGHT][MAX_WIDTH];
+extern std::vector<Object> objects;
+
 void initDungeon();
 void initRoom(Room *roomsLoaded);
 void spawnPlayer();
@@ -223,5 +377,6 @@ void printTunnelingDistances();
 void printNonTunnelingDistances();
 int spawnMonsterWithMonType(char monType);
 int spawnMonsters(int numMonsters, int playerX, int playerY);
+int spawnObjects(int numObjects);
 int generateStructures();
-void freeAll(int numMonsters);
+void freeAll();
