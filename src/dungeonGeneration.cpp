@@ -9,12 +9,13 @@
 
 Tile dungeon[MAX_HEIGHT][MAX_WIDTH];
 int roomCount;
-Room *rooms;
-Player player;
-Pos *upStairs;
+std::vector<Room> rooms;
+std::vector<Pos> upStairs;
 int upStairsCount;
-Pos *downStairs;
+std::vector<Pos> downStairs;
 int downStairsCount;
+
+Player player;
 
 Monster *monsterAt[MAX_HEIGHT][MAX_WIDTH] = {nullptr};
 std::vector<Monster> monsters;
@@ -35,33 +36,17 @@ void initDungeon() {
     }
 }
 
-void initRoom(Room *roomsLoaded) {
-    rooms = new Room[roomCount];
-    // if (!rooms) {
-    //     errorHandle("Error: Failed to allocate memory for rooms");
-    //     free(rooms);
-    //     return;
-    // }
-
-    for (int i = 0; i < roomCount; i++) {
-        rooms[i].width = roomsLoaded[i].width;
-        rooms[i].height = roomsLoaded[i].height;
-        rooms[i].x = roomsLoaded[i].x;
-        rooms[i].y = roomsLoaded[i].y;
-    }
-}
-
-int placeRoom(Room room) {
-    for (int i = room.y - 1; i < room.y + room.height + 1; i++) {
-        for (int j = room.x - 1; j < room.x + room.width + 1; j++) {
+int placeRoom(Room& room) {
+    for (int i = room.getPos().y - 1; i < room.getPos().y + room.getHeight() + 1; i++) {
+        for (int j = room.getPos().x - 1; j < room.getPos().x + room.getWidth() + 1; j++) {
             if (dungeon[i][j].type == FLOOR) {
                 return 0;
             }
         }
     }
 
-    for (int i = room.y; i < room.y + room.height; i++) {
-        for (int j = room.x; j < room.x + room.width; j++) {
+    for (int i = room.getPos().y; i < room.getPos().y + room.getHeight(); i++) {
+        for (int j = room.getPos().x; j < room.getPos().x + room.getWidth(); j++) {
             dungeon[i][j].type = FLOOR;
             dungeon[i][j].hardness = 0;
         }
@@ -70,42 +55,31 @@ int placeRoom(Room room) {
     return 1;
 }
 
-Room* buildRooms(int roomCount) {
-    int roomsBuilt = 0;
-
-    Room *rooms = new Room[roomCount];
-    // if (!rooms) {
-    //     errorHandle("Error: Failed to allocate memory for rooms");
-    //     free(rooms);
-    //     return NULL;
-    // }
-
-    for (int i = 0; i < ATTEMPTS; i++) {
-        rooms[roomsBuilt].width = rand() % 9 + 4;
-        rooms[roomsBuilt].height = rand() % 10 + 3;
-        rooms[roomsBuilt].x = rand() % (MAX_WIDTH - rooms[roomsBuilt].width - 1) + 1;
-        rooms[roomsBuilt].y = rand() % (MAX_HEIGHT - rooms[roomsBuilt].height - 1) + 1;
-
-        if (placeRoom(rooms[roomsBuilt])) {
-            roomsBuilt++;
-        }
-
-        if (roomsBuilt >= roomCount) {
-            return rooms;
+int buildRooms() {
+    rooms.reserve(roomCount);
+    for (int i = 0; i < roomCount; i++) {
+        for (int j = 0; j < ATTEMPTS; j++) {
+            int width = rand() % 9 + 4;
+            int height = rand() % 10 + 3;
+            int x = rand() % (MAX_WIDTH - width - 1) + 1;
+            int y = rand() % (MAX_HEIGHT - height - 1) + 1;
+           
+            Room room = Room((Pos){x, y}, width, height);
+            if (placeRoom(room)) {
+                rooms.emplace_back(room);
+                break;
+            }
         }
     }
-    
-    //errorHandle("Error: Failed to build all rooms");
-    delete[] rooms;
-    return NULL;
+    return 0;
 }
 
 void buildCorridors() {
     for (int i = 0 ; i < roomCount - 1; i++) {
-        int x = rand() % (rooms[i].width - 2) + rooms[i].x + 1;
-        int y = rand() % (rooms[i].height - 2) + rooms[i].y + 1;
-        int x2 = rand() % (rooms[i + 1].width - 2) + rooms[i + 1].x + 1;
-        int y2 = rand() % (rooms[i + 1].height - 2) + rooms[i + 1].y + 1;
+        int x = rand() % (rooms[i].getWidth() - 2) + rooms[i].getPos().x + 1;
+        int y = rand() % (rooms[i].getHeight() - 2) + rooms[i].getPos().y + 1;
+        int x2 = rand() % (rooms[i + 1].getWidth() - 2) + rooms[i + 1].getPos().x + 1;
+        int y2 = rand() % (rooms[i + 1].getHeight() - 2) + rooms[i + 1].getPos().y + 1;
 
         int xDir = (x2 - x > 0) ? 1 : -1;
         int yDir = (y2 - y > 0) ? 1 : -1;
@@ -146,33 +120,16 @@ void buildCorridors() {
 }
 
 int buildStairs() {
-    int xUp = rand() % rooms[0].width + rooms[0].x;
-    int yUp = rand() % rooms[0].height + rooms[0].y;
-
+    int xUp = rand() % rooms.front().getWidth() + rooms.front().getPos().x;
+    int yUp = rand() % rooms.front().getHeight() + rooms.front().getPos().y;
     upStairsCount = 1;
-    upStairs = new Pos[upStairsCount];
-    // if (!upStairs) {
-    //     errorHandle("Error: Failed to allocate memory for upStairs");
-    //     free(upStairs);
-    //     return 1;
-    // }
-    upStairs[0].x = xUp;
-    upStairs[0].y = yUp;
+    upStairs.emplace_back((Pos){xUp, yUp});
     dungeon[yUp][xUp].type = STAIR_UP;
 
-    int xDown = rand() % rooms[roomCount - 1].width + rooms[roomCount - 1].x;
-    int yDown = rand() % rooms[roomCount - 1].height + rooms[roomCount - 1].y;
-
+    int xDown = rand() % rooms.back().getWidth() + rooms.back().getPos().x;
+    int yDown = rand() % rooms.back().getHeight() + rooms.back().getPos().y;
     downStairsCount = 1;
-    downStairs = new Pos[downStairsCount];
-    // if (!downStairs) {
-    //     errorHandle("Error: Failed to allocate memory for downStairs");
-    //     free(upStairs);
-    //     free(downStairs);
-    //     return 1;
-    // }
-    downStairs[0].x = xDown;
-    downStairs[0].y = yDown;
+    downStairs.emplace_back((Pos){xDown, yDown});
     dungeon[yDown][xDown].type = STAIR_DOWN;
 
     return 0;
@@ -180,13 +137,12 @@ int buildStairs() {
 
 void spawnPlayer() {
     int x, y;
-    int valid = 0;
+    bool valid = false;
     while (!valid) {
-        x = rand() % (rooms[rand() % roomCount].width - 2) + rooms[rand() % roomCount].x + 1;
-        y = rand() % (rooms[rand() % roomCount].height - 2) + rooms[rand() % roomCount].y + 1;
-
+        x = rand() % (rooms[rand() % roomCount].getWidth() - 2) + rooms[rand() % roomCount].getPos().x + 1;
+        y = rand() % (rooms[rand() % roomCount].getHeight() - 2) + rooms[rand() % roomCount].getPos().y + 1;
         if (dungeon[y][x].type == FLOOR) {
-            valid = 1;
+            valid = true;
         }
         else {
             continue;
@@ -194,21 +150,21 @@ void spawnPlayer() {
 
         for (int i = 0; i < upStairsCount; i++) {
             for (int j = 0; j < roomCount; j++) {
-                if (upStairs[i].x >= rooms[j].x && upStairs[i].x < rooms[j].x + rooms[j].width &&
-                    upStairs[i].y >= rooms[j].y && upStairs[i].y < rooms[j].y + rooms[j].height &&
-                    x >= rooms[j].x && x < rooms[j].x + rooms[j].width &&
-                    y >= rooms[j].y && y < rooms[j].y + rooms[j].height) {
-                        valid = 0;
+                if (upStairs[i].x >= rooms[j].getPos().x && upStairs[i].x < rooms[j].getPos().x + rooms[j].getWidth() &&
+                    upStairs[i].y >= rooms[j].getPos().y && upStairs[i].y < rooms[j].getPos().y + rooms[j].getHeight() &&
+                    x >= rooms[j].getPos().x && x < rooms[j].getPos().x + rooms[j].getWidth() &&
+                    y >= rooms[j].getPos().y && y < rooms[j].getPos().y + rooms[j].getHeight()) {
+                        valid = false;
                     }
             }
         }
         for (int i = 0; i < downStairsCount; i++) {
             for (int j = 0; j < roomCount; j++) {
-                if (downStairs[i].x >= rooms[j].x && downStairs[i].x < rooms[j].x + rooms[j].width &&
-                    downStairs[i].y >= rooms[j].y && downStairs[i].y < rooms[j].y + rooms[j].height &&
-                    x >= rooms[j].x && x < rooms[j].x + rooms[j].width &&
-                    y >= rooms[j].y && y < rooms[j].y + rooms[j].height) {
-                        valid = 0;
+                if (downStairs[i].x >= rooms[j].getPos().x && downStairs[i].x < rooms[j].getPos().x + rooms[j].getWidth() &&
+                    downStairs[i].y >= rooms[j].getPos().y && downStairs[i].y < rooms[j].getPos().y + rooms[j].getHeight() &&
+                    x >= rooms[j].getPos().x && x < rooms[j].getPos().x + rooms[j].getWidth() &&
+                    y >= rooms[j].getPos().y && y < rooms[j].getPos().y + rooms[j].getHeight()) {
+                        valid = false;
                     }
             }
         }
@@ -275,12 +231,12 @@ int spawnMonsters(int numMonsters, int playerX, int playerY) {
                 continue;
             }
             for (int k = 0; k < roomCount; k++) {
-                if ((playerX >= rooms[k].x && playerX <= rooms[k].x + rooms[k].width - 1 &&
-                    playerY >= rooms[k].y && playerY <= rooms[k].y + rooms[k].height - 1)) {
+                if ((playerX >= rooms[k].getPos().x && playerX <= rooms[k].getPos().x + rooms[k].getWidth() - 1 &&
+                    playerY >= rooms[k].getPos().y && playerY <= rooms[k].getPos().y + rooms[k].getHeight() - 1)) {
                     continue;
                 }
-                else if (x >= rooms[k].x && x <= rooms[k].x + rooms[k].width - 1 &&
-                         y >= rooms[k].y && y <= rooms[k].y + rooms[k].height - 1) {
+                else if (x >= rooms[k].getPos().x && x <= rooms[k].getPos().x + rooms[k].getWidth() - 1 &&
+                         y >= rooms[k].getPos().y && y <= rooms[k].getPos().y + rooms[k].getHeight() - 1) {
                     if (monsterAt[y][x]) {
                         continue;
                     }
@@ -373,60 +329,18 @@ void printHardness() {
     }
 }
 
-void printTunnelingDistances() {
-    for (int i = 0; i < MAX_HEIGHT; i++) {
-        for (int j = 0; j < MAX_WIDTH; j++) {
-            if (dungeon[i][j].tunnelingDist == UNREACHABLE) {
-                printf(" ");
-            }
-            else if (dungeon[i][j].tunnelingDist == 0) {
-                printf("@");
-            }
-            else {
-                printf("%d", dungeon[i][j].tunnelingDist % 10);
-            }
-        }
-        printf("\n");
-    }
-}
-
-void printNonTunnelingDistances() {
-    for (int i = 0; i < MAX_HEIGHT; i++) {
-        for (int j = 0; j < MAX_WIDTH; j++) {
-            if (dungeon[i][j].nonTunnelingDist == UNREACHABLE) {
-                printf(" ");
-            }
-            else if (dungeon[i][j].nonTunnelingDist == 0) {
-                printf("@");
-            }
-            else {
-                printf("%d", dungeon[i][j].nonTunnelingDist % 10);
-            }
-        }
-        printf("\n");
-    }
-}
-
 int generateStructures() {
     roomCount = rand() % 5 + 7;
-    rooms = buildRooms(roomCount);
-    if (!rooms) {
-        return 1;
-    }
+    buildRooms();
     buildCorridors();
-    if (buildStairs()) {
-        delete[] rooms;
-        return 1;
-    }
+    buildStairs();
 
     return 0;
 }
 
-void freeAll() {
-    delete[] rooms;
-    delete[] upStairs;
-    delete[] downStairs;
-
+void clearAll() {
+    rooms.clear();
+    upStairs.clear();
     monsters.clear();
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
@@ -440,5 +354,4 @@ void freeAll() {
             objectAt[i][j].clear();
         }
     }
-
 }

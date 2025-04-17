@@ -25,7 +25,6 @@ static const SwitchInfo switches[] = {
     {"-po", "--parse-objects", "Print parsed object file to stdout"},
     {"-hb", "--printhardb", "After the game ends, print the hardness map before the dungeon structures are added"},
     {"-ha", "--printharda", "After the game ends, print the hardness map after dungeon structures are added"},
-    {"-d", "--printdist", "After the game ends, print tunneling and non-tunneling distances"},
     {"-s", "--save", "Save the dungeon to a file (requires filename)"},
     {"-l", "--load", "Load a dungeon from a file (requires filename)"},
     {"-m", "--nummon", "Set the number of monsters (requires positive integer)"},
@@ -42,7 +41,6 @@ int main(int argc, char *argv[]) {
 
     bool printhardbFlag = false;
     bool printhardaFlag = false;
-    bool printdistFlag = false;
     bool saveFlag = false;
     bool loadFlag = false;
     //bool monTypeFlag = false;
@@ -92,9 +90,6 @@ int main(int argc, char *argv[]) {
         }
         else if (!strcmp(argv[i], "-ha") || !strcmp(argv[i], "--printharda")) {
             printhardaFlag = true;
-        }
-        else if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--printdist")) {
-            printdistFlag = true;
         }
         else if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--save")) {
             if (i < argc - 1) {
@@ -262,12 +257,6 @@ int main(int argc, char *argv[]) {
 
     if (saveFlag && !loadFlag) {
         saveDungeon(filename);
-    }
-
-    if (printdistFlag) {
-        generateDistances(player.getPos().x, player.getPos().y);
-        printTunnelingDistances();
-        printNonTunnelingDistances();       
     }
 
     initscr();

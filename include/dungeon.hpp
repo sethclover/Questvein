@@ -28,12 +28,24 @@ enum class Color {
     White
 };
 
-class Room {
-public:
-    int width;
-    int height;
+struct Pos {
     int x;
     int y;
+};    
+
+class Room {
+private:
+    const Pos pos;
+    const int width;
+    const int height;
+
+public:
+    Pos getPos() { return pos; }
+    int getWidth() { return width; }
+    int getHeight() { return height; }
+
+    Room(Pos pos, int width, int height) : pos(pos), width(width), height(height) {}
+    ~Room() = default;
 };
 
 class Tile {
@@ -43,12 +55,6 @@ public:
     int tunnelingDist;
     int nonTunnelingDist;
     char visible;
-};
-
-class Pos {
-public:
-    int x;
-    int y;
 };
 
 class Character {
@@ -355,10 +361,10 @@ public:
 
 extern Tile dungeon[MAX_HEIGHT][MAX_WIDTH];
 extern int roomCount;
-extern Room *rooms;
-extern Pos *upStairs;
+extern std::vector<Room> rooms;
+extern std::vector<Pos> upStairs;
 extern int upStairsCount;
-extern Pos *downStairs;
+extern std::vector<Pos> downStairs;
 extern int downStairsCount;
 
 extern Player player;
@@ -370,13 +376,10 @@ extern std::vector<Object*> objectAt[MAX_HEIGHT][MAX_WIDTH];
 extern std::vector<Object> objects;
 
 void initDungeon();
-void initRoom(Room *roomsLoaded);
 void spawnPlayer();
 void printHardness();
-void printTunnelingDistances();
-void printNonTunnelingDistances();
 int spawnMonsterWithMonType(char monType);
 int spawnMonsters(int numMonsters, int playerX, int playerY);
 int spawnObjects(int numObjects);
 int generateStructures();
-void freeAll();
+void clearAll();

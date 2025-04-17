@@ -52,37 +52,33 @@ int loadDungeon(char *filename) {
     r = be16toh(r);
     roomCount = r;
 
-    Room *roomsLoaded = new Room[r];
+    rooms.reserve(r);
     for (int i = 0; i < r; i++) {
-        fread(&roomsLoaded[i].x, 1, 1, file);
-        fread(&roomsLoaded[i].y, 1, 1, file);
-        fread(&roomsLoaded[i].width, 1, 1, file);
-        fread(&roomsLoaded[i].height, 1, 1, file);
-    }
-    for (int i = 0; i < r; i++) {
-        for (int j = roomsLoaded[i].y; j < roomsLoaded[i].y + roomsLoaded[i].height; j++) {
+        uint8_t x, y, width, height;
+        fread(&x, 1, 1, file);
+        fread(&y, 1, 1, file);
+        fread(&width, 1, 1, file);
+        fread(&height, 1, 1, file);
 
-            for (int k = roomsLoaded[i].x; k < roomsLoaded[i].x + roomsLoaded[i].width; k++) {
+        rooms.emplace_back(Room((Pos){(int)x, (int)y}, (int)width, (int)height));
+        for (int j = rooms.back().getPos().y; j < rooms.back().getPos().y + rooms.back().getHeight(); j++) {
+            for (int k = rooms.back().getPos().x; k < rooms.back().getPos().x + rooms.back().getWidth(); k++) {
                 dungeon[j][k].type = FLOOR;
             }
         }
     }
-
-    initRoom(roomsLoaded);
-    delete[] roomsLoaded;
-
 
     uint16_t u;
     fread(&u, 2, 1, file);
     u = be16toh(u);
     upStairsCount = u;
 
-    Pos *upStairs = new Pos[u];
     for (int i = 0; i < u; i++) {
-        fread(&upStairs[i].x, 1, 1, file);
-        fread(&upStairs[i].y, 1, 1, file);
-
-        dungeon[upStairs[i].y][upStairs[i].x].type = STAIR_UP;
+        uint8_t x, y;
+        fread(&x, 1, 1, file);
+        fread(&y, 1, 1, file);
+        upStairs.emplace_back((Pos){(int)x, (int)y});
+        dungeon[(int)y][(int)x].type = STAIR_UP;
     }
 
     uint16_t d;
@@ -90,12 +86,12 @@ int loadDungeon(char *filename) {
     d = be16toh(d);
     downStairsCount = d;
 
-    Pos *downStairs = new Pos[d];
     for (int i = 0; i < d; i++) {
-        fread(&downStairs[i].x, 1, 1, file);
-        fread(&downStairs[i].y, 1, 1, file);
-
-        dungeon[downStairs[i].y][downStairs[i].x].type = STAIR_DOWN;
+        uint8_t x, y;
+        fread(&x, 1, 1, file);
+        fread(&y, 1, 1, file);
+        downStairs.emplace_back((Pos){(int)x, (int)y});
+        dungeon[(int)y][(int)x].type = STAIR_DOWN;
     }
 
     std::cout << "Dungeon loaded from" << dungeonFile << std::endl;
@@ -129,10 +125,10 @@ int saveDungeon(char *filename) {
 
     for (int i = 0; i < roomCount; i++) {
         uint8_t room[4] = {
-            static_cast<uint8_t>(rooms[i].x),
-            static_cast<uint8_t>(rooms[i].y),
-            static_cast<uint8_t>(rooms[i].width),
-            static_cast<uint8_t>(rooms[i].height)
+            static_cast<uint8_t>(rooms[i].getPos().x),
+            static_cast<uint8_t>(rooms[i].getPos().y),
+            static_cast<uint8_t>(rooms[i].getWidth()),
+            static_cast<uint8_t>(rooms[i].getHeight())
         };
         fwrite(room, 4, 1, file);
     }

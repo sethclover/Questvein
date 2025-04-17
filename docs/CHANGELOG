@@ -3,6 +3,22 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [8.1.0] - 2025-4-17
+
+### Changed
+
+- Moved the --printdist/-d switch that prints the tunneling distances
+  into two separate command in the game, 'D' and 'T', that show the
+  tunneling and non-tunneling distances maps, respectively, with
+  radiating colors for coolness
+- the '?' help command now shows up as a suggestion for every turn
+  in order to make known when the game starts
+
+### Fixed
+
+- Loading from saved works correctly again instead of failing to
+  instantiate the dungeon
+
 ## [8.0.0] - 2025-4-16
 
 ### Added 

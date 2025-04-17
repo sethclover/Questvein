@@ -9,6 +9,7 @@
 #include "display.hpp"
 #include "dungeon.hpp"
 #include "game.hpp"
+#include "pathFinding.hpp"
 
 class CommandInfo {
 public:
@@ -32,7 +33,9 @@ static const CommandInfo switches[] = {
     {"g", "Teleport (goto)"},
     {"m", "Show monster list"},
     {"o", "Show object list"},
+    {"D", "Show tunneling map"},
     {"Q", "Quit the game"},
+    {"T", "Show non-tunneling map"},
     {"?", "Show help"}
 };
 
@@ -291,7 +294,7 @@ void printDungeon(bool supportsColor, bool fogOfWarToggle) {
         }
     }
     
-    printLine(MESSAGE_LINE, "Press a key to continue...");
+    printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help.");
 
     move(23, 0);
     clrtoeol();
@@ -750,4 +753,124 @@ void commandList(bool supportsColor, bool fogOfWarToggle) {
                 return;
         }
     }
+}
+
+void tunnelingDistMap(bool supportsColor, bool fogOfWarToggle) {
+    clear();
+    printLine(MESSAGE_LINE, "Press ESC to return");
+    printLine(STATUS_LINE2, "Tunneling distance map.");
+
+    generateDistances(player.getPos().x, player.getPos().y);   
+    for (int i = 0; i < MAX_HEIGHT; i++) {
+        for (int j = 0; j < MAX_WIDTH; j++) {
+            move(i + 1, j);
+            if (dungeon[i][j].tunnelingDist == UNREACHABLE) {
+                addch(' ');
+            }
+            else if (dungeon[i][j].tunnelingDist == 0) {
+                addch('@');
+            }
+            else {
+                if (supportsColor) {
+                    if (dungeon[i][j].tunnelingDist < 10) {
+                        attron(COLOR_PAIR(Color::Red));
+                        addch(dungeon[i][j].tunnelingDist % 10 + '0');
+                        attroff(COLOR_PAIR(Color::Red));
+                    }
+                    else if (dungeon[i][j].tunnelingDist < 20) {
+                        attron(COLOR_PAIR(Color::Yellow));
+                        addch(dungeon[i][j].tunnelingDist % 10 + '0');
+                        attroff(COLOR_PAIR(Color::Yellow));
+                    }
+                    else if (dungeon[i][j].tunnelingDist < 30) {
+                        attron(COLOR_PAIR(Color::Green));
+                        addch(dungeon[i][j].tunnelingDist % 10 + '0');
+                        attroff(COLOR_PAIR(Color::Green));
+                    }
+                    else if (dungeon[i][j].tunnelingDist < 40) {
+                        attron(COLOR_PAIR(Color::Cyan));
+                        addch(dungeon[i][j].tunnelingDist % 10 + '0');
+                        attroff(COLOR_PAIR(Color::Cyan));
+                    }
+                    else {
+                        attron(COLOR_PAIR(Color::Blue));
+                        addch(dungeon[i][j].tunnelingDist % 10 + '0');
+                        attroff(COLOR_PAIR(Color::Blue));
+                    }
+                }
+                else {
+                    addch(dungeon[i][j].tunnelingDist % 10 + '0');
+                } 
+            }
+        }
+    }
+
+    refresh();
+
+    int ch;
+    do {
+        ch = getch();
+    } while (ch != 27);
+
+    printDungeon(supportsColor, fogOfWarToggle);
+}
+
+void nonTunnelingDistMap(bool supportsColor, bool fogOfWarToggle) {
+    clear();
+    printLine(MESSAGE_LINE, "Press ESC to return");
+    printLine(STATUS_LINE2, "Non-tunneling distance map.");
+
+    generateDistances(player.getPos().x, player.getPos().y);
+    for (int i = 0; i < MAX_HEIGHT; i++) {
+        for (int j = 0; j < MAX_WIDTH; j++) {
+            move(i + 1, j);
+            if (dungeon[i][j].nonTunnelingDist == UNREACHABLE) {
+                addch(' ');
+            }
+            else if (dungeon[i][j].nonTunnelingDist == 0) {
+                addch('@');
+            }
+            else {
+                if (supportsColor) {
+                    if (dungeon[i][j].nonTunnelingDist < 10) {
+                        attron(COLOR_PAIR(Color::Red));
+                        addch(dungeon[i][j].nonTunnelingDist % 10 + '0');
+                        attroff(COLOR_PAIR(Color::Red));
+                    }
+                    else if (dungeon[i][j].nonTunnelingDist < 20) {
+                        attron(COLOR_PAIR(Color::Yellow));
+                        addch(dungeon[i][j].nonTunnelingDist % 10 + '0');
+                        attroff(COLOR_PAIR(Color::Yellow));
+                    }
+                    else if (dungeon[i][j].nonTunnelingDist < 30) {
+                        attron(COLOR_PAIR(Color::Green));
+                        addch(dungeon[i][j].nonTunnelingDist % 10 + '0');
+                        attroff(COLOR_PAIR(Color::Green));
+                    }
+                    else if (dungeon[i][j].nonTunnelingDist < 40) {
+                        attron(COLOR_PAIR(Color::Cyan));
+                        addch(dungeon[i][j].nonTunnelingDist % 10 + '0');
+                        attroff(COLOR_PAIR(Color::Cyan));
+                    }
+                    else {
+                        attron(COLOR_PAIR(Color::Blue));
+                        addch(dungeon[i][j].nonTunnelingDist % 10 + '0');
+                        attroff(COLOR_PAIR(Color::Blue));
+                    }
+                }
+                else {
+                    addch(dungeon[i][j].nonTunnelingDist % 10 + '0');
+                } 
+            }
+        }
+    }
+
+    refresh();
+
+    int ch;
+    do {
+        ch = getch();
+    } while (ch != 27);
+
+    printDungeon(supportsColor, fogOfWarToggle);
 }

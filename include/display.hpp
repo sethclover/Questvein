@@ -13,3 +13,5 @@ void printDungeon(bool supportsColor, bool fogOfWarToggle);
 int monsterList(bool supportsColor, bool fogOfWarToggle);
 int objectList(bool supportsColor, bool fogOfWarToggle);
 void commandList(bool supportsColor, bool fogOfWarToggle);
+void tunnelingDistMap(bool supportsColor, bool fogOfWarToggle);
+void nonTunnelingDistMap(bool supportsColor, bool fogOfWarToggle);

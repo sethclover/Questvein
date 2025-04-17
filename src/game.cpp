@@ -91,7 +91,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         printLine(MESSAGE_LINE, "Goodbye!");
                         napms(1000);
                         
-                        freeAll();
+                        clearAll();
                         return 0;
                     }
 
@@ -192,12 +192,12 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                     }
                                 }
 
-                                freeAll();
+                                clearAll();
 
                                 clear();
                                 initDungeon();
                                 generateStructures();
-                                player.setPos((Pos){upStairs[0].x, upStairs[0].y});
+                                player.setPos((Pos){upStairs.back().x, upStairs.back().y});
                                 spawnMonsters(numMonsters, player.getPos().x, player.getPos().y);
                                 spawnObjects(numObjects);
                                 
@@ -226,12 +226,12 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                     }
                                 }
 
-                                freeAll();
+                                clearAll();
 
                                 clear();
                                 initDungeon();
                                 generateStructures();
-                                player.setPos((Pos){downStairs[0].x, downStairs[0].y});
+                                player.setPos((Pos){downStairs.back().x, downStairs.back().y});
                                 spawnMonsters(numMonsters, player.getPos().x, player.getPos().y);
                                 spawnObjects(numObjects);
 
@@ -438,7 +438,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                         while (getch() != 'Q')
                                             ;
             
-                                        freeAll();
+                                        clearAll();
                                         return 0;
                                     }
                                     else {
@@ -485,8 +485,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             break;
 
                         case 'D':
-                            // "display the non-tunneling distance map"
-                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
+                            tunnelingDistMap(supportsColor, fogOfWarToggle);
                             break;
                         
                         case 'E':
@@ -513,12 +512,11 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             printLine(MESSAGE_LINE, "Goodbye!");
                             napms(1000);
 
-                            freeAll();
+                            clearAll();
                             return 0;
 
                         case 'T':
-                            // "display the tunneling distance map"
-                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
+                            nonTunnelingDistMap(supportsColor, fogOfWarToggle);
                             break;
 
                         case '?':
@@ -526,7 +524,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             break;
 
                         default:
-                            printLine(MESSAGE_LINE, "Invalid key... Press '?' for help.");
+                            printLine(MESSAGE_LINE, "Invalid key... press '?' for help.");
                             break;
                             
                     }
@@ -562,7 +560,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             while (getch() != 'Q')
                                 ;
                                
-                            freeAll();
+                            clearAll();
                             return 0;
                         }
                         else {
@@ -592,10 +590,10 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                 {-1, -1}, {0, -1}, {1, -1}};
             int sameRoom = 0;
             for (int i = 0; i < roomCount; i++) {
-                if (x >= rooms[i].x && x <= rooms[i].x + rooms[i].width - 1 &&
-                    y >= rooms[i].y && y <= rooms[i].y + rooms[i].height - 1 &&
-                    player.getPos().x >= rooms[i].x && player.getPos().x <= rooms[i].x + rooms[i].width - 1 &&
-                    player.getPos().y >= rooms[i].y && player.getPos().y <= rooms[i].y + rooms[i].height - 1) {
+                if (x >= rooms[i].getPos().x && x <= rooms[i].getPos().x + rooms[i].getWidth() - 1 &&
+                    y >= rooms[i].getPos().y && y <= rooms[i].getPos().y + rooms[i].getHeight() - 1 &&
+                    player.getPos().x >= rooms[i].getPos().x && player.getPos().x <= rooms[i].getPos().x + rooms[i].getWidth() - 1 &&
+                    player.getPos().y >= rooms[i].getPos().y && player.getPos().y <= rooms[i].getPos().y + rooms[i].getHeight() - 1) {
                     sameRoom = 1;
                     break;
                 }
@@ -759,7 +757,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             while (getch() != 'Q')
                                 ;
 
-                            freeAll();
+                            clearAll();
                             return 0;
                         }
                         else {
@@ -780,7 +778,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         while ((ch = getch()) != 'Q')
                             ;
     
-                        freeAll();
+                        clearAll();
                         return 0;
                     }
                     
