@@ -648,113 +648,6 @@ int objectList(bool supportsColor, bool fogOfWarToggle) {
     }
 }
 
-void commandList(bool supportsColor, bool fogOfWarToggle) {
-    int count = sizeof(switches) / sizeof(CommandInfo);
-
-    int cols = 55;
-    int rows = 24;
-    int leftCol = (MAX_WIDTH - cols) / 2;
-    if (leftCol < 0) leftCol = 0;
-    int top = 0;
-
-    clear();
-    while (1) {
-        if (supportsColor) {
-            attron(COLOR_PAIR(Color::Yellow));
-
-            mvhline(0, leftCol, '-', cols);
-            mvhline(rows - 1, leftCol, '-', cols);
-            mvvline(0, leftCol, '|', rows);
-            mvvline(0, leftCol + cols - 1, '|', rows);
-
-            mvaddch(0, leftCol + cols / 2, '+');
-            mvaddch(0, leftCol, '+');
-            mvaddch(rows - 1, leftCol + cols / 2, '+');
-            mvaddch(rows - 1, leftCol, '+');
-            mvaddch(0, leftCol + cols - 1, '+');
-            mvaddch(rows - 1, leftCol + cols - 1, '+');
-
-            attroff(COLOR_PAIR(Color::Yellow));
-        }
-        else {
-            mvhline(0, leftCol, '-', cols);
-            mvhline(rows - 1, leftCol, '-', cols);
-            mvvline(0, leftCol, '|', rows);
-            mvvline(0, leftCol + cols - 1, '|', rows);
-
-            mvaddch(0, leftCol + cols / 2, '+');
-            mvaddch(0, leftCol, '+');
-            mvaddch(rows - 1, leftCol + cols / 2, '+');
-            mvaddch(rows - 1, leftCol, '+');
-            mvaddch(0, leftCol + cols - 1, '+');
-            mvaddch(rows - 1, leftCol + cols - 1, '+');
-        }
-
-        const char title[13] = "Command List";
-        int titleCol = leftCol + (cols - strlen(title)) / 2;
-        mvprintw(1, titleCol, "%s", title);
-
-        move(4, leftCol + cols / 2);
-        if (top > 0) {
-            printw("^");
-        }
-        else {
-            printw(" ");
-        }
-
-        int maxDisplay = rows - 7;
-        for (int i = top; i < top + maxDisplay && i < count; i++) {
-            int row = 5 + (i - top);
-            move(row, leftCol + 2);
-            clrtoeol();
-            mvprintw(row, leftCol + 8, "%18s - %s", switches[i].buttons, switches[i].desc);
-
-            if (supportsColor) {
-                attron(COLOR_PAIR(Color::Yellow));
-                mvaddch(row, leftCol + cols - 1, '|');
-                attroff(COLOR_PAIR(Color::Yellow));
-            }
-            else {
-                mvaddch(row, leftCol + cols - 1, '|');
-            }
-        }
-
-        move(rows - 2, leftCol + cols / 2);
-        if (top + maxDisplay < count) {
-            printw("v");
-        }
-        else {
-            printw(" ");    
-        }
-
-        refresh();
-
-        int ch;
-        do {
-            ch = getch();
-        } while (ch != KEY_UP && ch != KEY_DOWN && ch != 27);
-
-        switch (ch) {
-            case KEY_UP:
-                if (top > 0) {
-                    top--;
-                }
-                break;
-
-            case KEY_DOWN:
-                if (top + maxDisplay < count) {
-                    top++;
-                }
-                break;
-
-            case 27:
-                clear();
-                printDungeon(supportsColor, fogOfWarToggle);
-                return;
-        }
-    }
-}
-
 void tunnelingDistMap(bool supportsColor, bool fogOfWarToggle) {
     clear();
     printLine(MESSAGE_LINE, "Press ESC to return");
@@ -873,4 +766,309 @@ void nonTunnelingDistMap(bool supportsColor, bool fogOfWarToggle) {
     } while (ch != 27);
 
     printDungeon(supportsColor, fogOfWarToggle);
+}
+
+void commandList(bool supportsColor, bool fogOfWarToggle) {
+    int count = sizeof(switches) / sizeof(CommandInfo);
+
+    int cols = 55;
+    int rows = 24;
+    int leftCol = (MAX_WIDTH - cols) / 2;
+    if (leftCol < 0) leftCol = 0;
+    int top = 0;
+
+    clear();
+    while (1) {
+        if (supportsColor) {
+            attron(COLOR_PAIR(Color::Yellow));
+
+            mvhline(0, leftCol, '-', cols);
+            mvhline(rows - 1, leftCol, '-', cols);
+            mvvline(0, leftCol, '|', rows);
+            mvvline(0, leftCol + cols - 1, '|', rows);
+
+            mvaddch(0, leftCol + cols / 2, '+');
+            mvaddch(0, leftCol, '+');
+            mvaddch(rows - 1, leftCol + cols / 2, '+');
+            mvaddch(rows - 1, leftCol, '+');
+            mvaddch(0, leftCol + cols - 1, '+');
+            mvaddch(rows - 1, leftCol + cols - 1, '+');
+
+            attroff(COLOR_PAIR(Color::Yellow));
+        }
+        else {
+            mvhline(0, leftCol, '-', cols);
+            mvhline(rows - 1, leftCol, '-', cols);
+            mvvline(0, leftCol, '|', rows);
+            mvvline(0, leftCol + cols - 1, '|', rows);
+
+            mvaddch(0, leftCol + cols / 2, '+');
+            mvaddch(0, leftCol, '+');
+            mvaddch(rows - 1, leftCol + cols / 2, '+');
+            mvaddch(rows - 1, leftCol, '+');
+            mvaddch(0, leftCol + cols - 1, '+');
+            mvaddch(rows - 1, leftCol + cols - 1, '+');
+        }
+
+        const char title[13] = "Command List";
+        int titleCol = leftCol + (cols - strlen(title)) / 2;
+        mvprintw(1, titleCol, "%s", title);
+
+        move(4, leftCol + cols / 2);
+        if (top > 0) {
+            printw("^");
+        }
+        else {
+            printw(" ");
+        }
+
+        int maxDisplay = rows - 7;
+        for (int i = top; i < top + maxDisplay && i < count; i++) {
+            int row = 5 + (i - top);
+            move(row, leftCol + 2);
+            clrtoeol();
+            mvprintw(row, leftCol + 8, "%18s - %s", switches[i].buttons, switches[i].desc);
+
+            if (supportsColor) {
+                attron(COLOR_PAIR(Color::Yellow));
+                mvaddch(row, leftCol + cols - 1, '|');
+                attroff(COLOR_PAIR(Color::Yellow));
+            }
+            else {
+                mvaddch(row, leftCol + cols - 1, '|');
+            }
+        }
+
+        move(rows - 2, leftCol + cols / 2);
+        if (top + maxDisplay < count) {
+            printw("v");
+        }
+        else {
+            printw(" ");    
+        }
+
+        refresh();
+
+        int ch;
+        do {
+            ch = getch();
+        } while (ch != KEY_UP && ch != KEY_DOWN && ch != 27);
+
+        switch (ch) {
+            case KEY_UP:
+                if (top > 0) {
+                    top--;
+                }
+                break;
+
+            case KEY_DOWN:
+                if (top + maxDisplay < count) {
+                    top++;
+                }
+                break;
+
+            case 27:
+                clear();
+                printDungeon(supportsColor, fogOfWarToggle);
+                return;
+        }
+    }
+}
+
+void lossScreen(bool supportsColor) {
+    clear();
+
+    std::string youDied =   "                                         ..          .                ..       \n"
+                            "  ..                                    dF          @88>             dF        \n"
+                            " @L                u.     x            '88bu.       %8P             '88bu.     \n"
+                            "9888i   .dL  ...ue888b  .@88k  z88u    '*88888bu     .         .u   '*88888bu  \n"
+                            "`Y888k:*888. 888R Y888r \"8888 ^8888      ^\"*8888N  .@88u    ud8888.   ^\"*8888N \n"
+                            "  888E  888I 888R I888>  8888  888R     beWE \"888L''888E` :888'8888. beWE \"888L\n"
+                            "  888E  888I 888R I888>..8888..888R     888E  888E  888E  d888 '88%\" 888E  888E\n"
+                            "  888E  888I 888R.I888>..8888..888R.... 888E  888E  888E  8888.+\"    888E  888E\n"
+                            "  888E  888Iu8888cJ888...8888-.888B.....888E  888F  888E  8888L      888E  888F\n"
+                            "  x888N><888'\"*888*P\"....\"8888Y-8888\".:-.888N..888  888&  '8888c. .+.888N..888 \n"
+                            "  \"88\"  888 .::.'Y\".......`Y\"...'YP:.::::`\"888*\"\"   R888\"  \"88888%   `\"888*\"\"  \n"
+                            "        88F.:::..........::.:*@@%*:...+%#*=:\"\"        \"\"      \"YP'       \"\"    \n"
+                            "       98\".-:.............:*@@@%%*+:..:#%#*=..                                 \n"
+                            "     ./\"  :-:...........:.=@@@%%#++:...++##+:.                                 \n"
+                            "    ~`    .-:..........:=.-%%%#++=:...+*+*#+:.                                 \n"
+                            "          .--:...:::...:=:.:=++=-:...=%*+=:....                                \n"
+                            "          .:--..:-=++=:.:=:..........=%%+=-:.::                                \n"
+                            "           .----:=***-...:::..........:-:.:--:.                                \n"
+                            "            .---==--=++-:::::::::::......:::.                                  \n"
+                            "             .--*##%%++++-:=*=:...:x+:+++:x:..                                 \n"
+                            "              .-=**#@@*---:=%+=-:::+x:+:+xxx:.                                 \n"
+                            "               .:=+*#%%+--:.++=-:::::..:....::.                                \n"
+                            "                  .::::=---..--:.::::.........                                 \n"
+                            "                       .:---::::.:.........                         'Q' to quit\n";
+
+std::string colorField =    "                                         rr          r                rr       \n"
+                            "  rr                                    rr          rrrt             rr        \n"
+                            " rr                rr     r            rrrrrr       rrtt            rrrrrr     \n"
+                            "rrrrr   rrr  rrrrrrrrr  rrrrr  rrrr    rrrrrrrrrr    r         rr   rrrrrrrrr  \n"
+                            "rrrrrrttrrrr rrrr rrrrt rrrrr rrrrr      rrrrrrrr  rrrrr    rrrrrrr   rrrrrrrt \n"
+                            "  rrrr  rrrr rrrr rrrrt  rrrr  rrrr     rrrr rrrrrrrrrrrt rrrrrrrrrt rrrr rrrrt\n"
+                            "  rrrr  rrrr rrrr rrrrtwwrrrrwwrrrr     rrrr  rrrt  rrrr  rrrr rrrrt rrrt  rrrt\n"
+                            "  rrrr  rrrt rrrrwrrrrtwwrrrrwwrrrtwwww rrrr  rrrt  rrrr  rrrrrtt    rrrt  rrrt\n"
+                            "  rrrr  rrrtrrrrrrrrrtwwwrrrrwtrrrtwtwwwrrrr  rrrt  rrrr  rrrrr      rrrt  rrtt\n"
+                            "  rrrrtrrrrttrrrrrrttwwwwrrrrrtwrrtttwwwrrrrrttrrt  rrrr  rrrrrrt ttrrrrrttrtt \n"
+                            "  rttt  rrt wwwwtttwwwwwwwrrtwwwtttwwwwwwrrrrrttt   trrrt  rrrrrtt   rrrrtttt  \n"
+                            "        rrtwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwtt        tt      tttt       tt    \n"
+                            "       rttwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww                                 \n"
+                            "     rtt  wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww                                 \n"
+                            "    tt    wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww                                 \n"
+                            "          wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww                                \n"
+                            "          wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww                                \n"
+                            "           wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww                                \n"
+                            "            wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww                                  \n"
+                            "             wwwwwwwwwwwwwwwwwwwwwwwwwwwwyywww                                 \n"
+                            "              wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww                                 \n"
+                            "               wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww                                \n"
+                            "                  wwwwwwwwwwwwwwwwwwwwwwwwwwww                                 \n"
+                            "                       wwwwwwwwwwwwwwwwwwww                         ewe we wwee\n";
+
+    move(0,0);
+    for (unsigned int i = 0; i < youDied.length(); i++) {
+        if (supportsColor) {
+            if (colorField[i] == 'w') {
+                attron(COLOR_PAIR(Color::White));
+                addch(youDied[i]);
+                attroff(COLOR_PAIR(Color::White));
+            }
+            else if (colorField[i] == 'e') {
+                attron(COLOR_PAIR(Color::Cyan));
+                addch(youDied[i]);
+                attroff(COLOR_PAIR(Color::Cyan));
+            }
+            else if (colorField[i] == 'r') {
+                attron(COLOR_PAIR(Color::Red));
+                addch(youDied[i]);
+                attroff(COLOR_PAIR(Color::Red));
+            }
+            else if (colorField[i] == 't') {
+                attron(COLOR_PAIR(Color::Magenta));
+                addch(youDied[i]);
+                attroff(COLOR_PAIR(Color::Magenta));
+            }
+            else if (colorField[i] == 'y') {
+                attron(COLOR_PAIR(Color::Yellow));
+                addch(youDied[i]);
+                attroff(COLOR_PAIR(Color::Yellow));
+            }
+            else {
+                attron(COLOR_PAIR(Color::Green));
+                addch(youDied[i]);
+                attroff(COLOR_PAIR(Color::Green));
+            }
+        }
+        else {
+            addch(youDied[i]);
+        }
+    }
+        
+
+    while (getch() != 'Q')
+        ;
+}
+
+void winScreen(bool supportsColor) {
+    clear();
+
+    std::string youWin =    "  ..                                   x=~              @88>               \n"
+                            " @L                u.    x.    .      88x.   .e.   .e.   %8P     u.    u.  \n"
+                            "9888i   .dL  ...ue888b .@88k  z88u   '8888X.x888:.x888    .    x@88k u@88c.\n"
+                            "`Y888k:*888. 888R Y888r\"8888 ^8888    `8888  888X '888k .@88u ^\"8888\"\"8888\"\n"
+                            "  888E  888I 888R I888> 8888  888R     X888  888X  888X''888E`  8888  888R \n"
+                            "  888E  888I 888R I888> 8888  888R     X888  888X  888X  888E   8888  888R \n"
+                            "  888E  888I 888R I888> 8888  888R+:;:.X888  888X  888X  888E   8888  888R \n"
+                            "  888E  888Iu8888cJ888. 8888 ,888BX.+;.X888xx888X.;888~  888E   8888  888R \n"
+                            " x888N><888' \"*888*P\";.\"8888Y 8888\"x;.`%88%::\"*888Y\";.   888&  \"*88*\" 8888\"\n"
+                            "  \"88\". 888    'Y\"xxx;.:`Y\"   'YP;+;:.  `~.xx;.`\"x+;.    R888\" .:\"\"   'Y\"  \n"
+                            "  .;+;;;88F:..   .x++;..:+:.    .;;::.    .;;..++;;:    .:.. .;Xx::.       \n"
+                            "  .;XXx98\"+x+:   .x+;;;.:;;.   .;;:::..  .:;:.:+;;;:    ;x+;..xXx+;.       \n"
+                            "     ../\"..:+X+. :++;;;;;;;:.  ;;;::.:.  :;::;;;;;;; ..:;:..:xXx;.         \n"
+                            "     ~`:;x;..+Xx;x+;;;::;;;;::;+;:::..:.;;;;+;::;;;;;++;. .+XXx.           \n"
+                            "       .:;+x;;xXX++;;;:::;+++++;;+XX+....::::::;;;;;+++;;+XxXX:            \n"
+                            "        .;++xxxxxx++X$x;::;;++;;+$X++:.......:x$Xx;::;+++xxXX:             \n"
+                            "         .++xxXXXx+x$$;+;:;;++;;x$X++;......:+$$+;+::::;++xXx.             \n"
+                            "         ;X$xxXXXx+x&$XX+:;;++;;+$$$$+....:::+$$$$;;:::;+xX$+.             \n"
+                            "         x+$$xxXXxx+X&$X;;;++++;;xX$x::::::;;+X$$x;;::;++x$Xx.             \n"
+                            "         ;$$$xxXXXx++++;;;;++++++;;;;;;;;;;++++++;;;;;++xx$$x.             \n"
+                            "         .+Xx+xXXXxxx+++++++++++++++++;;;;;;;++++++;;+++xxx+.              \n"
+                            "           .;+++++xxxxxxxxXXXXXXXXXXXXXXXXXXxxxx++xx+++++x;.               \n"
+                            "          .;+xX$$$$XXXXXXXXXXXXXXXXXXXXXXXXX$$$$$$$$$$$$Xx+.               \n"
+                            "           :+XXXXXXXXXXxxxxxx+++++xxxxxxXXXXXXXX$$$$$$$$Xx;.    'Q' to quit\n";
+
+    std::string colorField ="  rr                                   rrr              rrrt               \n"
+                            " rr                rr    rr    r      rrrr   rrr   rrr   rtt     rr    rr  \n"
+                            "rrrrr   rrr  rrrrrrrrr rrrrr  rrrr   rrrrrrttrrrrttrrr    r    rrrrr rrrrrr\n"
+                            "rrrrrrttrrrr rrrr rrrrrrrrrr rrrrr    rrrrr  rrrr trrrr rrrrr rrrrrrrrrrrrr\n"
+                            "  rrrr  rrrr rrrr rrrrt rrrr  rrrr     rrrr  rrrr  rrrrrrrrrrr  rrrr  rrrr \n"
+                            "  rrrr  rrrr rrrr rrrrt rrrr  rrrr     rrrr  rrrr  rrrr  rrrr   rrrr  rrrt \n"
+                            "  rrrr  rrrr rrrr rrrrt rrrr  rrrtwwwwwrrrr  rrrt  rrrt  rrrr   rrrr  rrrt \n"
+                            "  rrrr  rrrtrrrrrrrrrtw rrrr rrrrtwtwwrrrrrrrrrrttwrrrt  rrrr   rrrt  rrrt \n"
+                            " rrrrrrrrrrt rrrrrtttwwrrrrrt rrrttwwwrrrrrwwtrrrrttww   rrrt  rrrrtt rrrtt\n"
+                            "  rtttw rrt    tttwwwwwwttt   tttwwwww  ttwwwwwttwwww    rrrrt wwtt   ttt  \n"
+                            "  wwwwwwrrtwww   wwwwwwwwwww    wwwwww    wwwwwwwwww    wwww wwwwwww       \n"
+                            "  wwwwwrrtwwww   wwwwwwwwwww   wwwwwwww  wwwwwwwwwww    wwwwwwwwwwww       \n"
+                            "     wrttwwwwwww wwwwwwwwwwww  wwwwwwww wwwwwwwwwwww wwwwwwwwwwwww         \n"
+                            "     ttwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww wwwww           \n"
+                            "       wwwwwwwwwwwwwwwwwwwwwwwwwweeeewwwwwwwwwwwwwwwwwwwwwwwwww            \n"
+                            "        wwwwwwwwwwwweeeewwwwwwwweeeeeewwwwwwwweeeewwwwwwwwwwww             \n"
+                            "         wwwwwwwwwweeeeewwwwwwwweeeeeewwwwwwwweeeeewwwwwwwwwww             \n"
+                            "         weewwwwwwweeeeeewwwwwwweeeeeewwwwwwwweeeeewwwwwwweeww             \n"
+                            "         eeeewwwwwwweeeewwwwwwwwweeeewwwwwwwwweeeeewwwwwweeeew             \n"
+                            "         weeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwweeeew             \n"
+                            "         weeewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwweew              \n"
+                            "           wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww               \n"
+                            "          wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww               \n"
+                            "           wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww    yuy yu yuuy\n";
+
+    move(0, 0);
+    for (unsigned int i = 0; i < youWin.length(); i++) {
+        if (supportsColor) {
+            if (colorField[i] == 'w') {
+                attron(COLOR_PAIR(Color::Yellow));
+                addch(youWin[i]);
+                attroff(COLOR_PAIR(Color::Yellow));
+            }
+            else if (colorField[i] == 'e') {
+                attron(COLOR_PAIR(Color::Red));
+                addch(youWin[i]);
+                attroff(COLOR_PAIR(Color::Red));
+            }
+            else if (colorField[i] == 'r') {
+                attron(COLOR_PAIR(Color::Green));
+                addch(youWin[i]);
+                attroff(COLOR_PAIR(Color::Green));
+            }
+            else if (colorField[i] == 't') {
+                attron(COLOR_PAIR(Color::Blue));
+                addch(youWin[i]);
+                attroff(COLOR_PAIR(Color::Blue));
+            }
+            else if (colorField[i] == 'y') {
+                attron(COLOR_PAIR(Color::Cyan));
+                addch(youWin[i]);
+                attroff(COLOR_PAIR(Color::Cyan));
+            }
+            else if (colorField[i] == 'u') {
+                attron(COLOR_PAIR(Color::White));
+                addch(youWin[i]);
+                attroff(COLOR_PAIR(Color::White));
+            }
+            else {
+                attron(COLOR_PAIR(Color::Magenta));
+                addch(colorField[i]);
+                attroff(COLOR_PAIR(Color::Magenta));
+            }
+        }
+        else {
+            addch(youWin[i]);
+        }
+    }
+  
+    while (getch() != 'Q')
+        ;
 }

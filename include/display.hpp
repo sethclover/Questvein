@@ -15,3 +15,5 @@ int objectList(bool supportsColor, bool fogOfWarToggle);
 void commandList(bool supportsColor, bool fogOfWarToggle);
 void tunnelingDistMap(bool supportsColor, bool fogOfWarToggle);
 void nonTunnelingDistMap(bool supportsColor, bool fogOfWarToggle);
+void lossScreen(bool supportsColor);
+void winScreen(bool supportsColor);

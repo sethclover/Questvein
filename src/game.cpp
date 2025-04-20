@@ -434,9 +434,9 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                     if (monstersAlive <= 0) {
                                         printDungeon(supportsColor, fogOfWarToggle);
                                         printLine(STATUS_LINE1, "Player killed all monsters!\n");
-                                        printLine(STATUS_LINE2, "You win! (Press 'Q' to exit)");
-                                        while (getch() != 'Q')
-                                            ;
+                                        printLine(STATUS_LINE2, "You win! Press any key to continue...");
+                                        getch();
+                                        winScreen(supportsColor);
             
                                         clearAll();
                                         return 0;
@@ -556,9 +556,9 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         if (monstersAlive <= 0) {
                             printDungeon(supportsColor, fogOfWarToggle);
                             printLine(STATUS_LINE1, "Player killed all monsters!\n");
-                            printLine(STATUS_LINE2, "You win! (Press 'Q' to exit)");
-                            while (getch() != 'Q')
-                                ;
+                            printLine(STATUS_LINE2, "You win! Press any key to continue...");
+                            getch();
+                            winScreen(supportsColor);
                                
                             clearAll();
                             return 0;
@@ -753,9 +753,9 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             updateAroundPlayer();
                             printDungeon(supportsColor, fogOfWarToggle);
                             printLine(STATUS_LINE1, "Player killed all monsters!\n");
-                            printLine(STATUS_LINE2, "You win! (Press 'Q' to exit)");
-                            while (getch() != 'Q')
-                                ;
+                            printLine(STATUS_LINE2, "You win! Press any key to continue...");
+                            getch();
+                            winScreen(supportsColor);
 
                             clearAll();
                             return 0;
@@ -773,11 +773,10 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         printDungeon(supportsColor, fogOfWarToggle);
                         printLine(MESSAGE_LINE, "");
                         printLine(STATUS_LINE1, "Player killed by %s, gg", mon->getName().c_str());
-                        printLine(STATUS_LINE2, "You lose! (Press 'Q' to exit)");
-                        char ch;
-                        while ((ch = getch()) != 'Q')
-                            ;
-    
+                        printLine(STATUS_LINE2, "You lose! Press any key to continue...");
+                        getch();
+                        lossScreen(supportsColor);
+
                         clearAll();
                         return 0;
                     }
