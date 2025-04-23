@@ -61,13 +61,13 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
             if (monsterAt[i][j]) {
-                insert(heap.get(), 1000 / monsterAt[i][j]->getSpeed(), (Pos){j, i});
+                insert(heap.get(), 1000 / monsterAt[i][j].get()->getSpeed(), (Pos){j, i});
             }
             
             dungeon[i][j].visible = FOG;
         }
     }
-    insert(heap.get(), 100, player.getPos());
+    insert(heap.get(), 1, player.getPos());
 
     if (autoFlag) {
         fogOfWarToggle = false;
@@ -181,10 +181,12 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
 
                                 for (int i = 0; i < MAX_HEIGHT; i++) {
                                     for (int j = 0; j < MAX_WIDTH; j++) {
-                                        if (monsterAt[i][j] && (monsterAt[i][j]->isBoss() || monsterAt[i][j]->isUnique())) {
-                                            monsterTypeList[monsterAt[i][j]->getMonTypeIndex()].eligible = true;
+                                        if (monsterAt[i][j]) {
+                                            if (monsterAt[i][j].get()->isBoss() || monsterAt[i][j].get()->isUnique()) {
+                                                monsterTypeList[monsterAt[i][j].get()->getMonTypeIndex()].eligible = true;
+                                            }
                                         }
-                                        for (const auto& obj : objectAt[i][j]) {
+                                        for (const auto& obj : objectsAt[i][j]) {
                                             if (obj->isArtifact()) {
                                                 objectTypeList[obj->getObjTypeIndex()].eligible = true;
                                             }
@@ -215,10 +217,12 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
 
                                 for (int i = 0; i < MAX_HEIGHT; i++) {
                                     for (int j = 0; j < MAX_WIDTH; j++) {
-                                        if (monsterAt[i][j] && (monsterAt[i][j]->isBoss() || monsterAt[i][j]->isUnique())) {
-                                            monsterTypeList[monsterAt[i][j]->getMonTypeIndex()].eligible = true;
+                                        if (monsterAt[i][j]) {
+                                            if (monsterAt[i][j].get()->isBoss() || monsterAt[i][j].get()->isUnique()) {
+                                                monsterTypeList[monsterAt[i][j].get()->getMonTypeIndex()].eligible = true;
+                                            }
                                         }
-                                        for (const auto& obj : objectAt[i][j]) {
+                                        for (const auto& obj : objectsAt[i][j]) {
                                             if (obj->isArtifact()) {
                                                 objectTypeList[obj->getObjTypeIndex()].eligible = true;
                                             }
@@ -248,13 +252,30 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             break;
                         
                         case 'd':
-                            // "drop item"
-                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
+                            printLine(MESSAGE_LINE, "Choose an inventory slot 0-9");
+                            {
+                            int ch = getch();
+                            if (ch >= '0' && ch <= '9') {
+                                int index = ch - '0';
+                                if (player.getInventoryItem(index) == nullptr) {
+                                    printLine(MESSAGE_LINE, "Nothing in that slot.");
+                                    break;
+                                }
+                                std::string itemName = player.getInventoryItem(index)->getName();
+                                player.dropFromInventory(index);
+                                printLine(MESSAGE_LINE, "%s has been dropped.", itemName.c_str());
+                            }
+                            else if (ch == 'd') {
+                                printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
+                            }
+                            else {
+                                printLine(MESSAGE_LINE, "Not a valid slot.");
+                            }
+                            }
                             break;
 
                         case 'e':
-                            // "display equipment"
-                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
+                            openEquipment(supportsColor, fogOfWarToggle);
                             break;
                         
                         case 'f':
@@ -400,7 +421,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                             break;
                                     }
                                     if (monsterAt[oldY][oldX]) {
-                                        mvaddch(oldY + 1, oldX, monsterAt[oldY][oldX]->getSymbol());
+                                        mvaddch(oldY + 1, oldX, monsterAt[oldY][oldX].get()->getSymbol());
                                     }
                                     else {
                                         mvaddch(oldY + 1, oldX, dungeon[oldY][oldX].type);
@@ -418,8 +439,8 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 if (monsterAt[player.getPos().y][player.getPos().x]) {
                                     std::unique_ptr<FibHeap> tempHeap = std::make_unique<FibHeap>();
                                     FibNode *tempNode = extractMin(heap.get());
-                                    while (tempNode->pos.x != monsterAt[player.getPos().y][player.getPos().x]->getPos().x ||
-                                           tempNode->pos.y != monsterAt[player.getPos().y][player.getPos().x]->getPos().y) {
+                                    while (tempNode->pos.x != monsterAt[player.getPos().y][player.getPos().x].get()->getPos().x ||
+                                           tempNode->pos.y != monsterAt[player.getPos().y][player.getPos().x].get()->getPos().y) {
                                         insert(tempHeap.get(), tempNode->key, tempNode->pos);
                                         tempNode = extractMin(heap.get());
                                     }
@@ -428,7 +449,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                         insert(heap.get(), tempNode->key, tempNode->pos);
                                     }
 
-                                    monsterAt[player.getPos().y][player.getPos().x] = NULL;
+                                    monsterAt[player.getPos().y][player.getPos().x] = nullptr;
             
                                     monstersAlive--;
                                     if (monstersAlive <= 0) {
@@ -452,8 +473,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             break;
                         
                         case 'i':
-                            // "display inventory"
-                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
+                            openInventory(supportsColor, fogOfWarToggle);
                             break;
 
                         case 'm':
@@ -470,18 +490,136 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             break;
 
                         case 't':
-                            // "take off item"
-                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
+                            printLine(MESSAGE_LINE, "Choose an equipment slot a-l");
+                            {
+                            int ch = getch();
+                            if (ch >= 'a' && ch <= 'l') {
+                                int index = ch - 'a';
+                                if (player.getEquipmentItem((Equip)index) == nullptr) {
+                                    printLine(MESSAGE_LINE, "Nothing in that slot.");
+                                    break;
+                                }
+                                std::string itemName = player.getEquipmentItem((Equip)index)->getName();
+                                if (player.unequip((Equip)index)) {
+                                    printLine(MESSAGE_LINE, "%s has been unequipped.", itemName.c_str());
+                                }
+                                else {
+                                    printLine(MESSAGE_LINE, "Inventory is full. Cannot unequip %s.", itemName.c_str());
+                                }
+                            }
+                            else if (ch == 't') {
+                                printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
+                            }
+                            else {
+                                printLine(MESSAGE_LINE, "Not a valid slot.");
+                            }
+                            }
                             break;
 
                         case 'w':
-                            // "wear item"
-                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
+                            printLine(MESSAGE_LINE, "Choose an inventory slot 0-9");
+                            {
+                            int ch = getch();
+                            if (ch >= '0' && ch <= '9') {
+                                int index = ch - '0';
+                                if (player.getInventoryItem(index) == nullptr) {
+                                    printLine(MESSAGE_LINE, "Nothing in that slot.");
+                                    break;
+                                }
+                                std::string itemName = player.getInventoryItem(index)->getName();
+                                if (player.getInventoryItem(index)->isTwoHanded()) {
+                                    if (player.inventoryFull() && player.getEquipmentItem(Equip::Weapon) != nullptr &&
+                                        player.getEquipmentItem(Equip::Offhand) != nullptr) {
+                                        printLine(MESSAGE_LINE, "Inventory and weapon slots full. Cannot equip two-handed weapon.");
+                                        break;
+                                    }
+                                    else if (player.getEquipmentItem(Equip::Offhand) != nullptr) {
+                                        player.unequip(Equip::Offhand);
+                                        player.swapEquipment(index);
+                                        printLine(MESSAGE_LINE, "Equipped two-handed weapon and unequipped offhand weapon.");
+                                        break;
+                                    }
+                                    else {
+                                        player.swapEquipment(index);
+                                    }
+                                }
+                                else if (player.getInventoryItem(index)->getEquipmentIndex() == Equip::Offhand) {
+                                    if (player.getEquipmentItem(Equip::Weapon) != nullptr) {
+                                        if (player.getEquipmentItem(Equip::Weapon)->isTwoHanded()) {
+                                            player.unequip(Equip::Weapon);
+                                            player.equip(index);
+                                            printLine(MESSAGE_LINE, "Equipped offhand weapon and unequipped two-handed weapon.");
+                                            break;
+                                        }
+                                        else {
+                                            player.swapEquipment(index);
+                                        }
+                                    }
+                                    else {
+                                        player.swapEquipment(index);
+                                    }
+                                }
+                                else if (player.getInventoryItem(index)->getEquipmentIndex() == Equip::Ring1 || 
+                                         player.getInventoryItem(index)->getEquipmentIndex() == Equip::Ring2) {
+                                    if (player.getEquipmentItem(Equip::Ring1) == nullptr) {
+                                        player.getInventoryItem(index)->setEquipmentIndex(Equip::Ring1);
+                                        player.equip(index);
+                                    }
+                                    else if (player.getEquipmentItem(Equip::Ring2) == nullptr) {
+                                        player.getInventoryItem(index)->setEquipmentIndex(Equip::Ring2);
+                                        player.equip(index);
+                                    }
+                                    else {
+                                        printLine(MESSAGE_LINE, "Ring slots full. Replace ring (1) or (2)?");
+                                        char ch = getch();
+                                        if (ch == '1') {
+                                            player.getInventoryItem(index)->setEquipmentIndex(Equip::Ring1);
+                                            player.swapEquipment(index);
+                                        }
+                                        else if (ch == '2') {
+                                            player.getInventoryItem(index)->setEquipmentIndex(Equip::Ring2);
+                                            player.swapEquipment(index);
+                                        }
+                                    }
+                                }
+                                else if (player.getInventoryItem(index)->getEquipmentIndex() != Equip::None) {
+                                    player.swapEquipment(index);
+                                }
+                                else {
+                                    break;
+                                }
+                                printLine(MESSAGE_LINE, "%s is now equipped.", itemName.c_str());
+                            }
+                            else if (ch == 'w') {
+                                printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
+                            }
+                            else {
+                                printLine(MESSAGE_LINE, "Not a valid slot.");
+                            }
+                            }
                             break;
 
                         case 'x':
-                            // "expunge item"
-                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
+                            printLine(MESSAGE_LINE, "Choose an inventory slot 0-9");
+                            {
+                            int ch = getch();
+                            if (ch >= '0' && ch <= '9') {
+                                int index = ch - '0';
+                                if (player.getInventoryItem(index) == nullptr) {
+                                    printLine(MESSAGE_LINE, "Nothing in that slot.");
+                                    break;
+                                }
+                                std::string itemName = player.getInventoryItem(index)->getName();
+                                player.expungeFromInventory(index);
+                                printLine(MESSAGE_LINE, "%s has been obliterated.", itemName.c_str());
+                            }
+                            else if (ch == 'd') {
+                                printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
+                            }
+                            else {
+                                printLine(MESSAGE_LINE, "Not a valid slot.");
+                            }
+                            }
                             break;
 
                         case 'D':
@@ -519,6 +657,22 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             nonTunnelingDistMap(supportsColor, fogOfWarToggle);
                             break;
 
+                        case ',':
+                            if (!objectsAt[player.getPos().y][player.getPos().x].empty()) {
+                                std::string itemName = objectsAt[player.getPos().y][player.getPos().x].back()->getName();
+                                bool added = player.addToInventory(player.getPos());
+                                if (added) {
+                                    printLine(MESSAGE_LINE, "Picked up %s.", itemName.c_str()); 
+                                }
+                                else {
+                                    printLine(MESSAGE_LINE, "Inventory full. Cannot pick up %s.", itemName.c_str());
+                                }                                
+                            }
+                            else {
+                                printLine(MESSAGE_LINE, "Nothing to pick up here.");
+                            }
+                            break;
+
                         case '?':
                             commandList(supportsColor, fogOfWarToggle);
                             break;
@@ -538,8 +692,8 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     if (monsterAt[player.getPos().y][player.getPos().x]) {
                         std::unique_ptr<FibHeap> tempHeap = std::make_unique<FibHeap>();
                         FibNode *tempNode = extractMin(heap.get());
-                        while (tempNode->pos.x != monsterAt[player.getPos().y][player.getPos().x]->getPos().x ||
-                               tempNode->pos.y != monsterAt[player.getPos().y][player.getPos().x]->getPos().y) {
+                        while (tempNode->pos.x != monsterAt[player.getPos().y][player.getPos().x].get()->getPos().x ||
+                               tempNode->pos.y != monsterAt[player.getPos().y][player.getPos().x].get()->getPos().y) {
                             insert(tempHeap.get(), tempNode->key, tempNode->pos);
                             tempNode = extractMin(heap.get());
                         }
@@ -548,7 +702,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             insert(heap.get(), tempNode->key, tempNode->pos);
                         }
 
-                        monsterAt[player.getPos().y][player.getPos().x] = NULL;
+                        monsterAt[player.getPos().y][player.getPos().x] = nullptr;
 
                         insert(heap.get(), time + 100, player.getPos());
 
@@ -579,7 +733,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
             }
         }
         else {
-            Monster *mon = monsterAt[node->pos.y][node->pos.x];
+            Monster *mon = monsterAt[node->pos.y][node->pos.x].get();
 
             int x = mon->getPos().x;
             int y = mon->getPos().y;
@@ -713,8 +867,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     dungeon[newY][newX].type = CORRIDOR;
 
                     mon->setPos((Pos){newX, newY});
-                    monsterAt[y][x] = NULL;
-                    monsterAt[newY][newX] = mon;
+                    monsterAt[newY][newX] = std::move(monsterAt[y][x]);
                     insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());
                 }
             }
@@ -722,8 +875,8 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                 if (monsterAt[newY][newX]) {
                     std::unique_ptr<FibHeap> tempHeap = std::make_unique<FibHeap>();
                     FibNode *tempNode = extractMin(heap.get());
-                    while (tempNode->pos.x != monsterAt[newY][newX]->getPos().x ||
-                           tempNode->pos.y != monsterAt[newY][newX]->getPos().y) {
+                    while (tempNode->pos.x != monsterAt[newY][newX].get()->getPos().x ||
+                           tempNode->pos.y != monsterAt[newY][newX].get()->getPos().y) {
                         insert(tempHeap.get(), tempNode->key, tempNode->pos);
                         tempNode = extractMin(heap.get());
                         if (!tempNode) {
@@ -736,8 +889,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     }
 
                     mon->setPos((Pos){newX, newY});
-                    monsterAt[y][x] = NULL;
-                    monsterAt[newY][newX] = mon;
+                    monsterAt[newY][newX] = std::move(monsterAt[y][x]);
                     insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());
                     
                     if (newX != x || newY != y) {
@@ -746,7 +898,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                 }
                 else if (newX == player.getPos().x && newY == player.getPos().y) {
                     if (godmodeFlag) {
-                        monsterAt[y][x] = NULL;
+                        monsterAt[y][x] = nullptr;
 
                         monstersAlive--;
                         if (monstersAlive <= 0) {
@@ -766,8 +918,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     }
                     else {
                         mon->setPos((Pos){newX, newY});
-                        monsterAt[newY][newX] = mon;
-                        monsterAt[y][x] = NULL;
+                        monsterAt[newY][newX] = std::move(monsterAt[y][x]);
     
                         updateAroundPlayer();
                         printDungeon(supportsColor, fogOfWarToggle);
@@ -784,8 +935,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                 }
                 else {
                     mon->setPos((Pos){newX, newY});
-                    monsterAt[newY][newX] = mon;
-                    monsterAt[y][x] = NULL;
+                    monsterAt[newY][newX] = std::move(monsterAt[y][x]);
                     insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());
                 }
             }

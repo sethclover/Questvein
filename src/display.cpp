@@ -29,13 +29,22 @@ static const CommandInfo switches[] = {
     {"B2 / SPACE / . / 5", "Rest"},
     {">", "Go down stairs"},
     {"<", "Go up stairs"},
+    {"d", "Drop item"},
+    {"e", "Show equipment"},
     {"f", "Toggle fog of war"},
     {"g", "Teleport (goto)"},
+    {"i", "Show inventory"},
     {"m", "Show monster list"},
     {"o", "Show object list"},
+    {"t", "Take off item"},
+    {"w", "Wear item"},
+    {"x", "Expunge item"},
     {"D", "Show tunneling map"},
+    {"I", "Inspect item"},
+    {"L", "Look at monster"},
     {"Q", "Quit the game"},
     {"T", "Show non-tunneling map"},
+    {",", "Pick up item"},
     {"?", "Show help"}
 };
 
@@ -107,23 +116,173 @@ void printLine(int line, const char* format, ...) {
     refresh();
 }
 
-char *monToPersonalityString(Monster *mon) {
-    int personality = 1 * mon->isIntelligent() +
-                      2 * mon->isTelepathic() +
-                      4 * mon->isTunneling() +
-                      8 * mon->isErratic();
-    static char buf[8];
-    buf[0] = '\0';
-    if (personality & 1) strcat(buf, "I ");
-    else strcat(buf, "* ");
-    if (personality & 2) strcat(buf, "T ");
-    else strcat(buf, "* ");
-    if (personality & 4) strcat(buf, "U ");
-    else strcat(buf, "* ");
-    if (personality & 8) strcat(buf, "E");
-    else strcat(buf, "*");
-    buf[7] = '\0';
-    return buf;
+void openEquipment(bool supportsColor, bool fogOfWarToggle) {
+    clear();
+
+    printLine(MESSAGE_LINE, "Equipment:");
+    printLine(STATUS_LINE1, "Press 'e' to return to the game.");
+
+    mvhline(1, 0, '~', MAX_WIDTH - 1);
+    mvhline(MAX_HEIGHT, 0, '~', MAX_WIDTH - 1);
+
+    mvaddch(1, 0, '*');
+    mvaddch(1, MAX_WIDTH - 1, '*');
+    mvaddch(MAX_HEIGHT, 0, '*');
+    mvaddch(MAX_HEIGHT, MAX_WIDTH - 1, '*');
+
+    for (int i = 0; i < static_cast<int>(Equip::Count); i++) {
+        mvaddch(4, 1 + i * 3, ' ');
+        if (player.getEquipmentItem((Equip)i) == nullptr) {
+            addch('.');
+        }
+        else {
+            Color c = player.getEquipmentItem((Equip)i)->getColor();
+            if (supportsColor) {
+                attron(COLOR_PAIR(c));
+                addch(player.getEquipmentItem((Equip)i)->getSymbol());
+                attroff(COLOR_PAIR(c));
+            }
+            else {
+                addch(player.getEquipmentItem((Equip)i)->getSymbol());
+            }
+        }
+        addch(' ');
+
+        mvaddch(5, 2 + i * 3, (char)('a' + i));
+    }
+
+    int cursor = 0;
+    while(true) {
+        mvaddch(3, 2 + cursor * 3, 'v');
+
+        for (int i = 6; i < MAX_HEIGHT - 1; i++) {
+            move(i, 0);
+            clrtoeol();
+        }
+        mvprintw(6, 0, "SLOT: %s", player.getEquipmentName(cursor));
+        if (player.getEquipmentItem((Equip)cursor) != nullptr) {
+            mvprintw(8, 0, "NAME: %s", player.getEquipmentItem((Equip)cursor)->getName().c_str());
+            mvprintw(9, 0, "DESCRIPTION:");
+            mvprintw(10, 0, "%s", player.getEquipmentItem((Equip)cursor)->getDescription().c_str());
+        }
+
+        refresh();
+
+        int ch;
+        do {
+            ch = getch();
+        } while (ch != KEY_RIGHT && ch != '6' && ch != 'l' &&
+                 ch != KEY_LEFT && ch != '4' && ch != 'h' && ch != 'e');
+
+        switch (ch) {
+            case KEY_RIGHT:
+            case '6':
+            case 'l':
+                if (cursor < static_cast<int>(Equip::Count) - 1) {
+                    mvaddch(3, 2 + cursor * 3, ' ');
+                    cursor++;
+                }
+                break;
+
+            case KEY_LEFT:
+            case '4':
+            case 'h':
+                if (cursor > 0) {
+                    mvaddch(3, 2 + cursor * 3, ' ');
+                    cursor--;
+                }
+                break;
+
+            case 'e':
+                clear();
+                printDungeon(supportsColor, fogOfWarToggle);
+                return;
+        }
+    }
+}
+
+void openInventory(bool supportsColor, bool fogOfWarToggle) {
+    clear();
+
+    printLine(MESSAGE_LINE, "Inventory:");
+    printLine(STATUS_LINE1, "Press 'i' to return to the game.");
+
+    mvhline(1, 0, '"', MAX_WIDTH - 1);
+    mvhline(MAX_HEIGHT, 0, '"', MAX_WIDTH - 1);
+
+    mvaddch(1, 0, '@');
+    mvaddch(1, MAX_WIDTH - 1, '@');
+    mvaddch(MAX_HEIGHT, 0, '@');
+    mvaddch(MAX_HEIGHT, MAX_WIDTH - 1, '@');
+
+    for (int i = 0; i < INVENTORY_SIZE; i++) {
+        mvaddch(4, 1 + i * 3, ' ');
+        if (player.getInventoryItem(i) == nullptr) {
+            addch('.');
+        }
+        else {
+            Color c = player.getInventoryItem(i)->getColor();
+            if (supportsColor) {
+                attron(COLOR_PAIR(c));
+                addch(player.getInventoryItem(i)->getSymbol());
+                attroff(COLOR_PAIR(c));
+            }
+            else {
+                addch(player.getInventoryItem(i)->getSymbol());
+            }
+        }
+        addch(' ');
+
+        mvaddch(5, 2 + i * 3, (char)('0' + i));
+    }
+
+    int cursor = 0;
+    while(true) {
+        mvaddch(3, 2 + cursor * 3, 'v');
+
+        for (int i = 8; i < MAX_HEIGHT - 1; i++) {
+            move(i, 0);
+            clrtoeol();
+        }
+        if (player.getInventoryItem(cursor) != nullptr) {
+            mvprintw(8, 0, "NAME: %s", player.getInventoryItem(cursor)->getName().c_str());
+            mvprintw(9, 0, "DESCRIPTION:");
+            mvprintw(10, 0, "%s", player.getInventoryItem(cursor)->getDescription().c_str());
+        }
+
+        refresh();
+
+        int ch;
+        do {
+            ch = getch();
+        } while (ch != KEY_RIGHT && ch != '6' && ch != 'l' &&
+                 ch != KEY_LEFT && ch != '4' && ch != 'h' && ch != 'i');
+
+        switch (ch) {
+            case KEY_RIGHT:
+            case '6':
+            case 'l':
+                if (cursor < INVENTORY_SIZE - 1) {
+                    mvaddch(3, 2 + cursor * 3, ' ');
+                    cursor++;
+                }
+                break;
+
+            case KEY_LEFT:
+            case '4':
+            case 'h':
+                if (cursor > 0) {
+                    mvaddch(3, 2 + cursor * 3, ' ');
+                    cursor--;
+                }
+                break;
+
+            case 'i':
+                clear();
+                printDungeon(supportsColor, fogOfWarToggle);
+                return;
+        }
+    }
 }
 
 void printDungeon(bool supportsColor, bool fogOfWarToggle) {
@@ -133,19 +292,19 @@ void printDungeon(bool supportsColor, bool fogOfWarToggle) {
                 if (((i >= player.getPos().y - 2 && i <= player.getPos().y + 2) && (j >= player.getPos().x - 2 && j <= player.getPos().x + 2)) &&
                    !((i == player.getPos().y - 2 || i == player.getPos().y + 2) && (j == player.getPos().x - 2 || j == player.getPos().x + 2))) {
                     if (monsterAt[i][j]) {
-                        Color c =  monsterAt[i][j]->getColor();
+                        Color c =  monsterAt[i][j].get()->getColor();
                         if (supportsColor) {
                             attron(COLOR_PAIR(c));
-                            mvaddch(i + 1, j,  monsterAt[i][j]->getSymbol());
+                            mvaddch(i + 1, j,  monsterAt[i][j].get()->getSymbol());
                             attroff(COLOR_PAIR(c));
                         }
                         else {
-                            mvaddch(i + 1, j,  monsterAt[i][j]->getSymbol());
+                            mvaddch(i + 1, j,  monsterAt[i][j].get()->getSymbol());
                         }
                     }
-                    else if (!objectAt[i][j].empty()) {
-                        Color c = objectAt[i][j].back()->getColor();
-                        if (objectAt[i][j].size() > 1) {
+                    else if (!objectsAt[i][j].empty()) {
+                        Color c = objectsAt[i][j].back()->getColor();
+                        if (objectsAt[i][j].size() > 1) {
                             if (supportsColor) {
                                 attron(COLOR_PAIR(c));
                                 mvaddch(i + 1, j, '&');
@@ -158,11 +317,11 @@ void printDungeon(bool supportsColor, bool fogOfWarToggle) {
                         else {
                             if (supportsColor) {
                                 attron(COLOR_PAIR(c));
-                                mvaddch(i + 1, j, objectAt[i][j].back()->getSymbol());
+                                mvaddch(i + 1, j, objectsAt[i][j].back()->getSymbol());
                                 attroff(COLOR_PAIR(c));
                             }
                             else {
-                                mvaddch(i + 1, j, objectAt[i][j].back()->getSymbol());
+                                mvaddch(i + 1, j, objectsAt[i][j].back()->getSymbol());
                             }
                         }
                     }
@@ -190,7 +349,7 @@ void printDungeon(bool supportsColor, bool fogOfWarToggle) {
             }
         }
 
-        Monster *mon = monsterAt[player.getPos().y][player.getPos().x];
+        Monster *mon = monsterAt[player.getPos().y][player.getPos().x].get();
         if (mon) {
             Color c = mon->getColor();
             if (supportsColor) {
@@ -239,21 +398,21 @@ void printDungeon(bool supportsColor, bool fogOfWarToggle) {
             for (int j = 1; j < MAX_WIDTH - 1; j++) {
                 if (monsterAt[i][j]) {
                     if (supportsColor) {
-                        Color c = monsterAt[i][j]->getColor();
+                        Color c = monsterAt[i][j].get()->getColor();
                         attron(COLOR_PAIR(c));
-                        mvaddch(i + 1, j, monsterAt[i][j]->getSymbol());
+                        mvaddch(i + 1, j, monsterAt[i][j].get()->getSymbol());
                         attroff(COLOR_PAIR(c));
                     }
                     else {
-                        mvaddch(i + 1, j, monsterAt[i][j]->getSymbol());
+                        mvaddch(i + 1, j, monsterAt[i][j].get()->getSymbol());
                     }
                 }
                 else if (player.getPos().x == j && player.getPos().y == i) {
                     mvaddch(i + 1, j, '@');
                 }
-                else if (!objectAt[i][j].empty()) {
-                    Color c = objectAt[i][j].back()->getColor();
-                    if (objectAt[i][j].size() > 1) {
+                else if (!objectsAt[i][j].empty()) {
+                    Color c = objectsAt[i][j].back()->getColor();
+                    if (objectsAt[i][j].size() > 1) {
                         if (supportsColor) {
                             attron(COLOR_PAIR(c));
                             mvaddch(i + 1, j, '&');
@@ -266,11 +425,11 @@ void printDungeon(bool supportsColor, bool fogOfWarToggle) {
                     else {
                         if (supportsColor) {
                             attron(COLOR_PAIR(c));
-                            mvaddch(i + 1, j, objectAt[i][j].back()->getSymbol());
+                            mvaddch(i + 1, j, objectsAt[i][j].back()->getSymbol());
                             attroff(COLOR_PAIR(c));
                         }
                         else {
-                            mvaddch(i + 1, j, objectAt[i][j].back()->getSymbol());
+                            mvaddch(i + 1, j, objectsAt[i][j].back()->getSymbol());
                         }
                     }
                 }
@@ -302,14 +461,14 @@ void printDungeon(bool supportsColor, bool fogOfWarToggle) {
     refresh();
 }
 
-int monsterList(bool supportsColor, bool fogOfWarToggle) {
+void monsterList(bool supportsColor, bool fogOfWarToggle) {
     std::vector<std::string> allLines;
     std::vector<Color> colorList;
     int count = 0;
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
             if (monsterAt[i][j]) {
-                Monster *mon = monsterAt[i][j];
+                Monster *mon = monsterAt[i][j].get();
                 MonsterType *monType = &monsterTypeList[mon->getMonTypeIndex()];
 
                 std::string nameLine = mon->getName() + " (" + std::string(1, mon->getSymbol()) + ")";
@@ -379,7 +538,7 @@ int monsterList(bool supportsColor, bool fogOfWarToggle) {
 
     clear();
     if (supportsColor) {
-        attron(COLOR_PAIR(Color::Magenta));
+        attron(COLOR_PAIR(Color::Green));
 
         mvhline(0, leftCol, '-', cols);
         mvhline(rows - 1, leftCol, '-', cols);
@@ -393,7 +552,7 @@ int monsterList(bool supportsColor, bool fogOfWarToggle) {
         mvaddch(0, leftCol + cols - 1, '+');
         mvaddch(rows - 1, leftCol + cols - 1, '+');
 
-        attroff(COLOR_PAIR(Color::Magenta));
+        attroff(COLOR_PAIR(Color::Green));
     }
     else {
         mvhline(0, leftCol, '-', cols);
@@ -444,9 +603,9 @@ int monsterList(bool supportsColor, bool fogOfWarToggle) {
                 }
             } 
             if (supportsColor) {
-                attron(COLOR_PAIR(Color::Magenta));
+                attron(COLOR_PAIR(Color::Green));
                 mvaddch(row, leftCol + cols - 1, '|');
-                attroff(COLOR_PAIR(Color::Magenta));
+                attroff(COLOR_PAIR(Color::Green));
             }
             else {
                 mvaddch(row, leftCol + cols - 1, '|');
@@ -484,18 +643,18 @@ int monsterList(bool supportsColor, bool fogOfWarToggle) {
             case 27:
                 clear();
                 printDungeon(supportsColor, fogOfWarToggle);
-                return 0;
+                return;
         }
     }
 }
 
-int objectList(bool supportsColor, bool fogOfWarToggle) {
+void objectList(bool supportsColor, bool fogOfWarToggle) {
     std::vector<std::string> allLines;
     std::vector<Color> colorList;
     int count = 0;
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
-            for (const auto& obj : objectAt[i][j]) {
+            for (const auto& obj : objectsAt[i][j]) {
                 std::string nameLine = obj->getName() + " (" + std::string(1, obj->getSymbol()) + ")";
 
                 std::string locationLine = "    - Location: ";
@@ -643,7 +802,7 @@ int objectList(bool supportsColor, bool fogOfWarToggle) {
             case 27:
                 clear();
                 printDungeon(supportsColor, fogOfWarToggle);
-                return 0;
+                return;
         }
     }
 }

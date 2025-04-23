@@ -3,6 +3,27 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [unreleased] - 2025-4-23
+
+### Added
+
+- You can now pick up items and add them to your inventory with the
+  ',' command and view you inventory with 'i'
+- The player can wear items from their inventory with 'w' and take
+  them off with 't' and pressing 'e' will show the players equipment
+  menu
+- The command 'd' will drop an item back on the floor
+- The command 'x' will permanently destroy a specified item
+
+### Changed
+
+- Monster list has a green border now
+
+### Fixed
+
+- The player will always go first at the start of the game to prevent
+  losing before their turn ever starts on unfortunate dungeon layouts
+
 ## [8.2.0] - 2025-4-20
 
 ### Added

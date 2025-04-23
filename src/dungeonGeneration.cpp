@@ -15,13 +15,9 @@ int upStairsCount;
 std::vector<Pos> downStairs;
 int downStairsCount;
 
-Player player;
-
-Monster *monsterAt[MAX_HEIGHT][MAX_WIDTH] = {nullptr};
-std::vector<Monster> monsters;
-
-std::vector<Object*> objectAt[MAX_HEIGHT][MAX_WIDTH];
-std::vector<Object> objects;
+Player player((Pos){-1, -1});
+std::unique_ptr<Monster> monsterAt[MAX_HEIGHT][MAX_WIDTH];
+std::vector<std::unique_ptr<Object>> objectsAt[MAX_HEIGHT][MAX_WIDTH];
 
 void initDungeon() {
     generateHardness();
@@ -173,54 +169,8 @@ void spawnPlayer() {
     player.setPos((Pos){x, y});
 }
 
-// no worky worky with types
-//
-// int spawnMonsterWithMonType(char monType) {
-//     monsters = new Monster[1];
-//     // if (!monsters) {
-//     //     errorHandle("Error: Failed to allocate memory for monsters");
-//     //     free(monsters);
-//     //     return 1;
-//     // }
-
-//     for (int j = 0; j < ATTEMPTS; j++) {
-//         int placed = 0;
-//         int x = rand() % MAX_WIDTH;
-//         int y = rand() % MAX_HEIGHT;
-//         if (dungeon[y][x].type != FLOOR) {
-//             continue;
-//         }
-//         for (int k = 0; k < roomCount; k++) {
-//             if ((player.gePos().x >= rooms[k].x && player.getPos().x <= rooms[k].x + rooms[k].width - 1 &&
-//                 player.getPos().y >= rooms[k].y && player.getPos().y <= rooms[k].y + rooms[k].height - 1)) {
-//                 continue;
-//             }
-//             else if (x >= rooms[k].x && x <= rooms[k].x + rooms[k].width - 1 &&
-//                         y >= rooms[k].y && y <= rooms[k].y + rooms[k].height - 1) {
-//                 monsters[0] = Monster((Pos){x, y}, monType);
-//                 // if (!monsters[0]) {
-//                 //     errorHandle("Error: Failed to create monster with type %c", monType);
-//                 //     free(monsters[0]);
-//                 //     free(monsters);
-//                 //     return 1;
-//                 // }
-//                 monsterAt[y][x] = &monsters[0];
-//                 placed = 1;
-//                 break;
-//             }
-//         }
-
-//         if (placed) {
-//             break;
-//         }
-//     }
-
-//     return 0;
-// }
-
 int spawnMonsters(int numMonsters, int playerX, int playerY) {
     int monsterTypeListSize = monsterTypeList.size();
-    monsters.reserve(numMonsters);
 
     for (int i = 0; i < numMonsters; i++) {
         for (int j = 0; j < ATTEMPTS; j++) {
@@ -248,10 +198,9 @@ int spawnMonsters(int numMonsters, int playerX, int playerY) {
                         continue;
                     }
                     
-                    monsters.emplace_back(Monster(monType, monTypeIndex, (Pos){x, y}));
-                    monsterAt[y][x] = &monsters.back();
+                    monsterAt[y][x] = std::make_unique<Monster>(monType, monTypeIndex, (Pos){x, y});
                     placed = 1;
-                    if (monsters.back().isUnique() || monsters.back().isBoss()) {
+                    if (monsterAt[y][x].get()->isUnique() || monsterAt[y][x].get()->isBoss()) {
                         monsterTypeList[monTypeIndex].eligible = false;
                     }
 
@@ -270,7 +219,6 @@ int spawnMonsters(int numMonsters, int playerX, int playerY) {
 
 int spawnObjects(int numObjects) {
     int objectTypeListSize = objectTypeList.size();
-    objects.reserve(numObjects);
 
     for (int i = 0; i < numObjects; i++) {
         for (int j = 0; j < ATTEMPTS; j++) {
@@ -288,9 +236,8 @@ int spawnObjects(int numObjects) {
             }
 
 
-            objects.emplace_back(Object(objType, objTypeIndex, (Pos){x, y}));
-            objectAt[y][x].push_back(&objects.back());
-            if (objects.back().isArtifact()) {
+            objectsAt[y][x].emplace_back(std::make_unique<Object>(objType, objTypeIndex, (Pos){x, y}));
+            if (objectsAt[y][x].back().get()->isArtifact()) {
                 objectTypeList[objTypeIndex].eligible = false;
             }
 
@@ -341,17 +288,15 @@ int generateStructures() {
 void clearAll() {
     rooms.clear();
     upStairs.clear();
-    monsters.clear();
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
-            monsterAt[i][j] = NULL;
+            monsterAt[i][j] = nullptr;
         }
     }
 
-    objects.clear();
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
-            objectAt[i][j].clear();
+            objectsAt[i][j].clear();
         }
     }
 }

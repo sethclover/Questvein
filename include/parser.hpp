@@ -10,6 +10,7 @@ public:
     int rolls;
     int sides;
 
+    Dice(int base, int rolls, int sides) : base(base), rolls(rolls), sides(sides) {}
     Dice() : base(0), rolls(0), sides(0) {}
     ~Dice() = default;
 };

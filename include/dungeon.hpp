@@ -1,7 +1,13 @@
 #pragma once
 
+#include <array>
+#include <memory>
+#include <ncurses.h>
+#include <string>
+#include <utility>
 #include <vector>
 
+#include "display.hpp"
 #include "parser.hpp"
 
 static const int MAX_WIDTH = 80;
@@ -9,6 +15,8 @@ static const int MAX_HEIGHT = 21;
 static const int MAX_HARDNESS = 255;
 static const int ATTEMPTS = 1000;
 static const int UNREACHABLE = 9999;
+
+static const int INVENTORY_SIZE = 10;
 
 static const char FLOOR = '.';
 static const char CORRIDOR = '#';
@@ -26,6 +34,23 @@ enum class Color {
     Magenta,
     Cyan,
     White
+};
+
+enum class Equip {
+    Weapon,
+    Offhand,
+    Ranged,
+    Armor,
+    Helmet,
+    Cloak,
+    Gloves,
+    Boots,
+    Amulet,
+    Light,
+    Ring1,
+    Ring2,
+    Count,
+    None
 };
 
 struct Pos {
@@ -57,34 +82,253 @@ public:
     char visible;
 };
 
+extern Tile dungeon[MAX_HEIGHT][MAX_WIDTH];
+extern int roomCount;
+extern std::vector<Room> rooms;
+extern std::vector<Pos> upStairs;
+extern int upStairsCount;
+extern std::vector<Pos> downStairs;
+extern int downStairsCount;
+
+class Object {
+private:
+    int objTypeIndex;
+    std::string name;
+    std::string description;
+    std::vector<std::string> types;
+    Equip equipIndex;
+    std::vector<Color> colors;
+    int colorCount;
+    int colorIndex;
+    int hitBonus;
+    Dice damageBonus;
+    int dodgeBonus;
+    int defenseBonus;
+    int weight;
+    int speedBonus;
+    int specialAttribute;
+    int value;
+    bool artifact;
+    char symbol;
+    int rarity;
+    Pos pos;
+
+public:
+    int getObjTypeIndex() { return objTypeIndex; }
+
+    std::string getName() { return name; }
+
+    std::string getDescription() { return description; }
+
+    std::vector<std::string> getTypes() { return types; }
+
+    bool isTwoHanded() {
+        return types.size() == 2;
+    }
+    Equip getEquipmentIndex() {
+        return equipIndex;
+    }
+    void setEquipmentIndex(Equip index) {
+        equipIndex = index;
+    }
+
+    Color getColor() {
+        if (colorIndex >= colorCount) {
+            colorIndex = 0;
+        }
+        return colors[colorIndex++];
+    }
+
+    int getHitBonus() { return hitBonus; }
+    Dice getDamageBonus() { return damageBonus; }
+    int getDodgeBonus() { return dodgeBonus; }
+    int getDefenseBonus() { return defenseBonus; }
+    int getWeight() { return weight; }
+    int getSpeedBonus() { return speedBonus; }
+    int getSpecialAttribute() { return specialAttribute; }
+    int getValue() { return value; }
+    bool isArtifact() { return artifact; }
+    char getSymbol() { return symbol; }
+    int getRarity() { return rarity; }
+
+    Pos getPos() { return pos; }
+    void setPos(Pos p) { pos = p; }
+
+    Object(ObjectType* objType, int objTypeIndex, Pos pos) {
+        this->objTypeIndex = objTypeIndex;
+        name = objType->name;
+        description = objType->desc;
+        types = objType->types;
+        for (const auto& color : objType->colors) {
+            if (color == "BLACK") { colors.push_back(Color::Black); }
+            else if (color == "RED") { colors.push_back(Color::Red); }
+            else if (color == "GREEN") { colors.push_back(Color::Green); }
+            else if (color == "YELLOW") { colors.push_back(Color::Yellow); }
+            else if (color == "BLUE") { colors.push_back(Color::Blue); }
+            else if (color == "MAGENTA") { colors.push_back(Color::Magenta); }
+            else if (color == "CYAN") { colors.push_back(Color::Cyan); }
+            else if (color == "WHITE") { colors.push_back(Color::White); }
+        }
+        colorCount = colors.size();
+        colorIndex = 0;
+        hitBonus = objType->hit.base + objType->hit.rolls * (rand() % objType->hit.sides + 1);
+        damageBonus = Dice(objType->dam.base, objType->dam.rolls, objType->dam.sides);
+        dodgeBonus = objType->dodge.base + objType->dodge.rolls * (rand() % objType->dodge.sides + 1);
+        defenseBonus = objType->def.base + objType->def.rolls * (rand() % objType->def.sides + 1);
+        weight = objType->weight.base + objType->weight.rolls * (rand() % objType->weight.sides + 1);
+        speedBonus = objType->speed.base + objType->speed.rolls * (rand() % objType->speed.sides + 1);
+        specialAttribute = objType->attr.base + objType->attr.rolls * (rand() % objType->attr.sides + 1);
+        value = objType->val.base + objType->val.rolls * (rand() % objType->val.sides + 1);
+        artifact = objType->art;
+        if (types.size() == 2) {
+            symbol = ')'; equipIndex = Equip::Weapon;
+        }
+        if (types.size() == 1) {
+            if (types.front() == "WEAPON") { symbol = '|'; equipIndex = Equip::Weapon; }
+            else if (types.front() == "OFFHAND") { symbol = ')'; equipIndex = Equip::Offhand; }
+            else if (types.front() == "RANGED") { symbol = '}'; equipIndex = Equip::Ranged; }
+            else if (types.front() == "ARMOR") { symbol = '['; equipIndex = Equip::Armor; }
+            else if (types.front() == "HELMET") { symbol = ']'; equipIndex = Equip::Helmet; }
+            else if (types.front() == "CLOAK") { symbol = '('; equipIndex = Equip::Cloak; }
+            else if (types.front() == "GLOVES") { symbol = '{'; equipIndex = Equip::Gloves; }
+            else if (types.front() == "BOOTS") { symbol = '\\'; equipIndex = Equip::Boots; }
+            else if (types.front() == "RING") { symbol = '='; equipIndex = Equip::Ring1; }
+            else if (types.front() == "AMULET") { symbol = '"'; equipIndex = Equip::Amulet; }
+            else if (types.front() == "LIGHT") { symbol = '_'; equipIndex = Equip::Light; }
+            else if (types.front() == "SCROLL") { symbol = '~'; equipIndex = Equip::None; }
+            else if (types.front() == "BOOK") { symbol = '?'; equipIndex = Equip::None; }
+            else if (types.front() == "FLASK") { symbol = '!'; equipIndex = Equip::None; }
+            else if (types.front() == "GOLD") { symbol = '$'; equipIndex = Equip::None; }
+            else if (types.front() == "AMMUNITION") { symbol = '/'; equipIndex = Equip::None; }
+            else if (types.front() == "FOOD") { symbol = ','; equipIndex = Equip::None; }
+            else if (types.front() == "WAND") { symbol = '-'; equipIndex = Equip::None; }
+            else if (types.front() == "CONTAINER") { symbol = '%'; equipIndex = Equip::None; }
+            else { symbol = '*'; }
+        }
+        rarity = objType->rarity;
+        this->pos = pos;
+    }
+    Object() = delete;
+    ~Object() = default;
+};
+
+extern std::vector<std::unique_ptr<Object>> objectsAt[MAX_HEIGHT][MAX_WIDTH];
+
 class Character {
 protected:
     Pos pos;
-};
+    int hitpoints;
+    int speed;
+    std::array<std::unique_ptr<Object>, static_cast<int>(Equip::Count)> equipment;
+    std::array<std::unique_ptr<Object>, static_cast<int>(Equip::Count)> inventory;
 
-class Player : public Character {
 public:
     Pos getPos() { return pos; }
     void setPos(Pos p) { pos = p; }
 
-    Player() = default;
+    int getHitpoints() { return hitpoints; }
+    int setHitpoints(int hp) { hitpoints = hp; return hitpoints; }
+
+    int getSpeed() { return speed; }
+    void setSpeed(int spd) { speed = spd; }
+
+    int getDamage() {
+        int damage = 0;
+        for (std::unique_ptr<Object>& obj : equipment) {
+            damage += obj->getDamageBonus().base + obj->getDamageBonus().rolls * (rand() % obj->getDamageBonus().sides + 1);
+        }
+        if (damage <= 0) {
+            damage += 0 + 1 * (rand() % 4 + 1);
+        }
+        return damage;
+    }
+
+    Object *getEquipmentItem(Equip e) {
+        return equipment[static_cast<int>(e)].get();
+    }
+    const char* getEquipmentName(int index) {
+        if (index == 0) { return "Weapon"; }
+        else if (index == 1) { return "Offhand"; }
+        else if (index == 2) { return "Ranged"; }
+        else if (index == 3) { return "Armor"; }
+        else if (index == 4) { return "Helmet"; }
+        else if (index == 5) { return "Cloak"; }
+        else if (index == 6) { return "Gloves"; }
+        else if (index == 7) { return "Boots"; }
+        else if (index == 8) { return "Amulet"; }
+        else if (index == 9) { return "Light"; }
+        else if (index == 10) { return "Left Ring"; }
+        else if (index == 11) { return "Right Ring"; }
+        else { return "Unknown"; }
+    }
+    void equip(int index) {
+        equipment[static_cast<int>(inventory[index].get()->getEquipmentIndex())] = std::move(inventory[index]);
+    }
+    void swapEquipment(int index) {
+        std::unique_ptr<Object> tmp = std::move(equipment[static_cast<int>(inventory[index]->getEquipmentIndex())]);
+        equipment[static_cast<int>(inventory[index]->getEquipmentIndex())] = std::move(inventory[index]);
+        inventory[index] = std::move(tmp);
+    }
+    bool unequip(Equip e) {
+        for (int i = 0; i < INVENTORY_SIZE; i++) {
+            if (inventory[i] == nullptr) {
+                inventory[i] = std::move(equipment[static_cast<int>(e)]);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    Object *getInventoryItem(int index) {
+        return inventory[index].get();
+    }
+    bool inventoryFull() {
+        for (int i = 0; i < INVENTORY_SIZE; i++) {
+            if (inventory[i] == nullptr) {
+                return false;
+            }
+        }
+        return true;
+    }
+    bool addToInventory(Pos pos) {
+        for (int i = 0; i < INVENTORY_SIZE; i++) {
+            if (inventory[i] == nullptr) {
+                inventory[i] = std::move(objectsAt[pos.y][pos.x].back());
+                objectsAt[pos.y][pos.x].pop_back();
+                return true;
+            }
+        }
+        return false;
+    }
+    void dropFromInventory(int index) {
+        objectsAt[pos.y][pos.x].push_back(std::move(inventory[index]));
+    }
+    void expungeFromInventory(int index) {
+        inventory[index] = nullptr;
+    }
+};
+
+class Player : public Character {
+public:
+    Player(Pos pos) {
+        this->pos = pos;
+        hitpoints = 100;
+        speed = 10;
+    }
+    Player() = delete;
     ~Player() = default;
 };
+
+extern Player player;
 
 class Monster : public Character {
 private:
     int monTypeIndex;
-
     std::string name;
-
     std::string description;
-
     std::vector<Color> colors;
     int colorCount;
-    int colorIndex;
-
-    int speed;
-
+    int colorIndex; 
     bool intelligent;
     bool telepathic;
     bool tunneling;
@@ -94,15 +338,8 @@ private:
     bool destroy;
     bool unique;
     bool boss;
-    
-    int hitpoints;
-
-    Dice damage;
-
     char symbol;
-    
     int rarity;
-
     Pos lastSeen;
 
 public:
@@ -119,8 +356,6 @@ public:
         return colors[colorIndex++];
     }
 
-    int getSpeed() { return speed; }
-
     bool isIntelligent() { return intelligent; }
     bool isTelepathic() { return telepathic; }
     bool isTunneling() { return tunneling; }
@@ -131,29 +366,16 @@ public:
     bool isUnique() { return unique; }
     bool isBoss() { return boss; }
 
-    int getHitpoints() { return hitpoints; }
-
-    int getDamage() {
-        return damage.base + damage.rolls * (rand() % damage.sides + 1);
-    }
-
     char getSymbol() { return symbol; }
-
     int getRarity() { return rarity; }
 
     Pos getLastSeen() { return lastSeen; }
     void setLastSeen(Pos p) { lastSeen = p; }
 
-    Pos getPos() { return pos; }
-    void setPos(Pos p) { pos = p; }
-
     Monster(MonsterType* monType, int monTypeIndex, Pos pos) {
         this->monTypeIndex = monTypeIndex;
-
         name = monType->name;
-
         description = monType->desc;
-        
         for (const auto& color : monType->colors) {
             if (color == "BLACK") { colors.push_back(Color::Black); }
             else if (color == "RED") { colors.push_back(Color::Red); }
@@ -166,9 +388,7 @@ public:
         }
         colorCount = colors.size();
         colorIndex = 0;
-
         speed = monType->speed.base + monType->speed.rolls * (rand() % monType->speed.sides + 1);
-
         intelligent = false;
         telepathic = false;
         tunneling = false;
@@ -189,191 +409,18 @@ public:
             else if (abil == "UNIQ") { unique = true; }
             else if (abil == "BOSS") { boss = true; }
         }
-
         hitpoints = monType->hp.base + monType->hp.rolls * (rand() % monType->hp.sides + 1);
-
-        damage = monType->dam;
-
         symbol = monType->symbol;
-
         rarity = monType->rarity;
-
         lastSeen = {-1, -1};
-
         this->pos = pos;
     }
     Monster() = delete;
     ~Monster() = default;  
 };
 
-class Object {
-private:
-    int objTypeIndex;
-
-    std::string name;
-
-    std::string description;
-
-    std::vector<std::string> types;
-
-    std::vector<Color> colors;
-    int colorCount;
-    int colorIndex;
-
-    int hitBonus;
-
-    int damageBonus;
-
-    int dodgeBonus;
-
-    int defenseBonus;
-
-    int weight;
-
-    int speedBonus;
-
-    int specialAttribute;
-
-    int value;
-
-    bool artifact;
-
-    char symbol;
-
-    int rarity;
-
-    Pos pos;
-
-public:
-    int getObjTypeIndex() { return objTypeIndex; }
-
-    std::string getName() { return name; }
-
-    std::string getDescription() { return description; }
-
-    std::vector<std::string> getTypes() { return types; }
-
-    Color getColor() {
-        if (colorIndex >= colorCount) {
-            colorIndex = 0;
-        }
-        return colors[colorIndex++];
-    }
-
-    int getHitBonus() { return hitBonus; }
-
-    int getDamageBonus() { return damageBonus; }
-
-    int getDodgeBonus() { return dodgeBonus; }
-
-    int getDefenseBonus() { return defenseBonus; }
-
-    int getWeight() { return weight; }
-
-    int getSpeedBonus() { return speedBonus; }
-
-    int getSpecialAttribute() { return specialAttribute; }
-
-    int getValue() { return value; }
-
-    bool isArtifact() { return artifact; }
-
-    char getSymbol() { return symbol; }
-
-    int getRarity() { return rarity; }
-
-    Pos getPos() { return pos; }
-    void setPos(Pos p) { pos = p; }
-
-    Object(ObjectType* objType, int objTypeIndex, Pos pos) {
-        this->objTypeIndex = objTypeIndex;
-
-        name = objType->name;
-
-        description = objType->desc;
-
-        types = objType->types;
-
-        for (const auto& color : objType->colors) {
-            if (color == "BLACK") { colors.push_back(Color::Black); }
-            else if (color == "RED") { colors.push_back(Color::Red); }
-            else if (color == "GREEN") { colors.push_back(Color::Green); }
-            else if (color == "YELLOW") { colors.push_back(Color::Yellow); }
-            else if (color == "BLUE") { colors.push_back(Color::Blue); }
-            else if (color == "MAGENTA") { colors.push_back(Color::Magenta); }
-            else if (color == "CYAN") { colors.push_back(Color::Cyan); }
-            else if (color == "WHITE") { colors.push_back(Color::White); }
-        }
-        colorCount = colors.size();
-        colorIndex = 0;
-
-        hitBonus = objType->hit.base + objType->hit.rolls * (rand() % objType->hit.sides + 1);
-
-        damageBonus = objType->dam.base + objType->dam.rolls * (rand() % objType->dam.sides + 1);
-
-        dodgeBonus = objType->dodge.base + objType->dodge.rolls * (rand() % objType->dodge.sides + 1);
-
-        defenseBonus = objType->def.base + objType->def.rolls * (rand() % objType->def.sides + 1);
-
-        weight = objType->weight.base + objType->weight.rolls * (rand() % objType->weight.sides + 1);
-
-        speedBonus = objType->speed.base + objType->speed.rolls * (rand() % objType->speed.sides + 1);
-
-        specialAttribute = objType->attr.base + objType->attr.rolls * (rand() % objType->attr.sides + 1);
-
-        value = objType->val.base + objType->val.rolls * (rand() % objType->val.sides + 1);
-
-        artifact = objType->art;
-
-        if (types.size() == 2) {
-            symbol = ')';
-        }
-        if (types.size() == 1) {
-            if (types.front() == "WEAPON") { symbol = '|'; }
-            else if (types.front() == "OFFHAND") { symbol = ')'; }
-            else if (types.front() == "RANGED") { symbol = '}'; }
-            else if (types.front() == "ARMOR") { symbol = '['; }
-            else if (types.front() == "HELMET") { symbol = ']'; }
-            else if (types.front() == "CLOAK") { symbol = '('; }
-            else if (types.front() == "GLOVES") { symbol = '{'; }
-            else if (types.front() == "BOOTS") { symbol = '\\'; }
-            else if (types.front() == "RING") { symbol = '='; }
-            else if (types.front() == "AMULET") { symbol = '"'; }
-            else if (types.front() == "LIGHT") { symbol = '_'; }
-            else if (types.front() == "SCROLL") { symbol = '~'; }
-            else if (types.front() == "BOOK") { symbol = '?'; }
-            else if (types.front() == "FLASK") { symbol = '!'; }
-            else if (types.front() == "GOLD") { symbol = '$'; }
-            else if (types.front() == "AMMUNITION") { symbol = '/'; }
-            else if (types.front() == "FOOD") { symbol = ','; }
-            else if (types.front() == "WAND") { symbol = '-'; }
-            else if (types.front() == "CONTAINER") { symbol = '%'; }
-            else { symbol = '*'; }
-        }
-
-        rarity = objType->rarity;
-
-        this->pos = pos;
-    }
-    Object() = delete;
-    ~Object() = default;
-};
-
-extern Tile dungeon[MAX_HEIGHT][MAX_WIDTH];
-extern int roomCount;
-extern std::vector<Room> rooms;
-extern std::vector<Pos> upStairs;
-extern int upStairsCount;
-extern std::vector<Pos> downStairs;
-extern int downStairsCount;
-
-extern Player player;
-
-extern Monster *monsterAt[MAX_HEIGHT][MAX_WIDTH];
-extern std::vector<Monster> monsters;
-
-extern std::vector<Object*> objectAt[MAX_HEIGHT][MAX_WIDTH];
-extern std::vector<Object> objects;
+extern std::unique_ptr<Monster> monsterAt[MAX_HEIGHT][MAX_WIDTH];
+extern std::vector<std::unique_ptr<Monster>> monsters;
 
 void initDungeon();
 void spawnPlayer();
