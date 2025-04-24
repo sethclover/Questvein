@@ -13,7 +13,7 @@
 
 static bool fogOfWarToggle = true;
 
-int checkCorridor(int x, int y, int visited[MAX_HEIGHT][MAX_WIDTH]) {
+int checkCorridor(int x, int y, bool visited[MAX_HEIGHT][MAX_WIDTH]) {
     if (x < 0 || x >= MAX_WIDTH || y < 0 || y >= MAX_HEIGHT) {
         return 0;
     }
@@ -23,7 +23,7 @@ int checkCorridor(int x, int y, int visited[MAX_HEIGHT][MAX_WIDTH]) {
     else if (player.getPos().x == x && player.getPos().y == y) {
         return 1;
     }
-    visited[y][x] = 1;
+    visited[y][x] = true;
 
     int directions[9][2] = {
         {-1, 1}, {0, 1}, {1, 1},
@@ -61,7 +61,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
             if (monsterAt[i][j]) {
-                insert(heap.get(), 1000 / monsterAt[i][j].get()->getSpeed(), (Pos){j, i});
+                insert(heap.get(), 1000 / monsterAt[i][j].get()->getSpeed(), monsterAt[i][j].get()->getPos());
             }
             
             dungeon[i][j].visible = FOG;
@@ -80,7 +80,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
         if (node->pos.x == player.getPos().x && node->pos.y == player.getPos().y) {
             updateAroundPlayer();
             printDungeon(supportsColor, fogOfWarToggle);
-            int turnEnd = 0;
+            bool turnEnd = false;
             while (!turnEnd) {
                 int ch = 0;
                 int xDir = 0;
@@ -98,7 +98,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     xDir = rand() % 3 - 1;
                     yDir = rand() % 3 - 1;
                     napms(500);
-                    turnEnd++;
+                    turnEnd = true;
                 }
                 else {
                     ch = getch();
@@ -108,7 +108,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         case 'y':
                             xDir = -1;
                             yDir = -1;
-                            turnEnd++;
+                            turnEnd = true;
                             break;
 
                         case KEY_UP:
@@ -116,7 +116,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         case 'k':
                             xDir = 0;
                             yDir = -1;
-                            turnEnd++;
+                            turnEnd = true;
                             break;
                         
                         case KEY_PPAGE:
@@ -124,7 +124,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         case 'u':
                             xDir = 1;
                             yDir = -1;
-                            turnEnd++;
+                            turnEnd = true;
                             break;
 
                         case KEY_RIGHT:
@@ -132,7 +132,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         case 'l':
                             xDir = 1;
                             yDir = 0;
-                            turnEnd++;
+                            turnEnd = true;
                             break;
 
                         case KEY_NPAGE:
@@ -140,7 +140,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         case 'n':
                             xDir = 1;
                             yDir = 1;
-                            turnEnd++;
+                            turnEnd = true;
                             break;
 
                         case KEY_DOWN:
@@ -148,7 +148,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         case 'j':
                             xDir = 0;
                             yDir = 1;
-                            turnEnd++;
+                            turnEnd = true;
                             break;
 
                         case KEY_END:
@@ -156,7 +156,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         case 'b':
                             xDir = -1;
                             yDir = 1;
-                            turnEnd++;
+                            turnEnd = true;
                             break;
 
                         case KEY_LEFT:
@@ -164,14 +164,14 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         case 'h':
                             xDir = -1;
                             yDir = 0;
-                            turnEnd++;
+                            turnEnd = true;
                             break;
 
                         case KEY_B2:
                         case ' ':
                         case '.':
                         case '5':
-                            turnEnd++;
+                            turnEnd = true;
                             break;
 
                         case '>':
@@ -265,7 +265,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 player.dropFromInventory(index);
                                 printLine(MESSAGE_LINE, "%s has been dropped.", itemName.c_str());
                             }
-                            else if (ch == 'd') {
+                            else if (ch == 'd' || ch == 27) {
                                 printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
                             }
                             else {
@@ -283,7 +283,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             printDungeon(supportsColor, fogOfWarToggle);
                             {
                                 const char* fogStatus = fogOfWarToggle ? "on" : "off";
-                                printLine(STATUS_LINE2, "Fog of war toggled %s", fogStatus);
+                                printLine(STATUS_LINE1, "Fog of war toggled %s", fogStatus);
                             }
                                 
                             break;
@@ -421,7 +421,26 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                             break;
                                     }
                                     if (monsterAt[oldY][oldX]) {
-                                        mvaddch(oldY + 1, oldX, monsterAt[oldY][oldX].get()->getSymbol());
+                                        if (supportsColor) {
+                                            Color c = monsterAt[oldY][oldX].get()->getColor();
+                                            attron(COLOR_PAIR(c));
+                                            mvaddch(oldY + 1, oldX, monsterAt[oldY][oldX].get()->getSymbol());
+                                            attroff(COLOR_PAIR(c));
+                                        }
+                                        else {
+                                            mvaddch(oldY + 1, oldX, monsterAt[oldY][oldX].get()->getSymbol());
+                                        }
+                                    }
+                                    else if (objectsAt[oldY][oldX].size() > 0) {
+                                        if (supportsColor) {
+                                            Color c = objectsAt[oldY][oldX].back()->getColor();
+                                            attron(COLOR_PAIR(c));
+                                            mvaddch(oldY + 1, oldX, objectsAt[oldY][oldX].back()->getSymbol());
+                                            attroff(COLOR_PAIR(c));
+                                        }
+                                        else {
+                                            mvaddch(oldY + 1, oldX, objectsAt[oldY][oldX].back()->getSymbol());
+                                        }
                                     }
                                     else {
                                         mvaddch(oldY + 1, oldX, dungeon[oldY][oldX].type);
@@ -507,7 +526,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                     printLine(MESSAGE_LINE, "Inventory is full. Cannot unequip %s.", itemName.c_str());
                                 }
                             }
-                            else if (ch == 't') {
+                            else if (ch == 't' || ch == 27) {
                                 printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
                             }
                             else {
@@ -590,7 +609,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 }
                                 printLine(MESSAGE_LINE, "%s is now equipped.", itemName.c_str());
                             }
-                            else if (ch == 'w') {
+                            else if (ch == 'w' || ch == 27) {
                                 printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
                             }
                             else {
@@ -613,7 +632,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 player.expungeFromInventory(index);
                                 printLine(MESSAGE_LINE, "%s has been obliterated.", itemName.c_str());
                             }
-                            else if (ch == 'd') {
+                            else if (ch == 'd' || ch == 27) {
                                 printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
                             }
                             else {
@@ -637,8 +656,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             break;
 
                         case 'I':
-                            // "inspect inventory item"
-                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
+                            showObjectDescription(supportsColor, fogOfWarToggle);
                             break;
 
                         case 'L':
@@ -685,81 +703,83 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                 }
                 
                 if (xDir == 0 && yDir == 0 && !(ch == KEY_B2 || ch == ' ' || ch == '.' || ch == '5')) {
-                    turnEnd = 0;
+                    turnEnd = false;
                 }
                 else if (dungeon[player.getPos().y + yDir][player.getPos().x + xDir].hardness == 0) {
-                    player.setPos((Pos){player.getPos().x + xDir, player.getPos().y + yDir});
-                    if (monsterAt[player.getPos().y][player.getPos().x]) {
-                        std::unique_ptr<FibHeap> tempHeap = std::make_unique<FibHeap>();
-                        FibNode *tempNode = extractMin(heap.get());
-                        while (tempNode->pos.x != monsterAt[player.getPos().y][player.getPos().x].get()->getPos().x ||
-                               tempNode->pos.y != monsterAt[player.getPos().y][player.getPos().x].get()->getPos().y) {
-                            insert(tempHeap.get(), tempNode->key, tempNode->pos);
-                            tempNode = extractMin(heap.get());
-                        }
-                        while (tempHeap.get()->min) {
-                            tempNode = extractMin(tempHeap.get());
-                            insert(heap.get(), tempNode->key, tempNode->pos);
-                        }
+                    if (monsterAt[player.getPos().y + yDir][player.getPos().x + xDir]) {
+                        Monster *mon = monsterAt[player.getPos().y + yDir][player.getPos().x + xDir].get();
 
-                        monsterAt[player.getPos().y][player.getPos().x] = nullptr;
+                        int dam = player.doDamage();
+                        int hpLeft = mon->takeDamage(dam);
 
-                        insert(heap.get(), time + 100, player.getPos());
+                        if (hpLeft <= 0) {
+                            if (mon->isBoss()) {
+                                printDungeon(supportsColor, fogOfWarToggle);
+                                printLine(STATUS_LINE1, "%s has been slain!\n", mon->getName());
+                                printLine(STATUS_LINE2, "You win! Press any key to continue...");
+                                getch();
+                                winScreen(supportsColor);
+                                
+                                clearAll();
+                                return 0;
+                            }
+                            monstersAlive--;
 
-                        monstersAlive--;
-                        if (monstersAlive <= 0) {
-                            printDungeon(supportsColor, fogOfWarToggle);
-                            printLine(STATUS_LINE1, "Player killed all monsters!\n");
-                            printLine(STATUS_LINE2, "You win! Press any key to continue...");
-                            getch();
-                            winScreen(supportsColor);
-                               
-                            clearAll();
-                            return 0;
+                            std::unique_ptr<FibHeap> tempHeap = std::make_unique<FibHeap>();
+                            FibNode *tempNode = extractMin(heap.get());
+                            while (tempNode->pos.x != mon->getPos().x || tempNode->pos.y != mon->getPos().y) {
+                                insert(tempHeap.get(), tempNode->key, tempNode->pos);
+                                tempNode = extractMin(heap.get());
+                            }
+                            while (tempHeap.get()->min) {
+                                tempNode = extractMin(tempHeap.get());
+                                insert(heap.get(), tempNode->key, tempNode->pos);
+                            }
+
+                            printLine(STATUS_LINE1, "%s has been slain.\n", mon->getName());
+                            monsterAt[player.getPos().y + yDir][player.getPos().x + xDir] = nullptr;
                         }
                         else {
-                            printLine(STATUS_LINE1, "Player killed monster, Monsters alive: %d\n", monstersAlive);
+                            printLine(STATUS_LINE1, "You dealt %d damage to %s.\n", dam, mon->getName().c_str());
                         }
-
                     }
                     else {
-                        insert(heap.get(), time + 100, player.getPos());
+                        player.setPos((Pos){player.getPos().x + xDir, player.getPos().y + yDir});
                     }
+                    insert(heap.get(), time + 1000 / player.getSpeed(), player.getPos());
                 }
                 else {
                     printLine(MESSAGE_LINE, "There's a wall there, adventurer!");
-                    turnEnd--;
+                    turnEnd = false;
                 }
             }
         }
         else {
             Monster *mon = monsterAt[node->pos.y][node->pos.x].get();
-
             int x = mon->getPos().x;
             int y = mon->getPos().y;
 
-            int directions[9][2] = {
-                {-1, 1}, {0, 1}, {1, 1},
-                {-1, 0}, {0, 0}, {1, 0},
+            int directions[8][2] = {
+                {-1, 1},  {0, 1},  {1, 1},
+                {-1, 0},           {1, 0},
                 {-1, -1}, {0, -1}, {1, -1}};
-            int sameRoom = 0;
+            bool sameRoom = false;
             for (int i = 0; i < roomCount; i++) {
                 if (x >= rooms[i].getPos().x && x <= rooms[i].getPos().x + rooms[i].getWidth() - 1 &&
                     y >= rooms[i].getPos().y && y <= rooms[i].getPos().y + rooms[i].getHeight() - 1 &&
                     player.getPos().x >= rooms[i].getPos().x && player.getPos().x <= rooms[i].getPos().x + rooms[i].getWidth() - 1 &&
                     player.getPos().y >= rooms[i].getPos().y && player.getPos().y <= rooms[i].getPos().y + rooms[i].getHeight() - 1) {
-                    sameRoom = 1;
+                    sameRoom = true;
                     break;
                 }
             }
-            int visited[MAX_HEIGHT][MAX_WIDTH] = {0};
 
+            bool visited[MAX_HEIGHT][MAX_WIDTH] = {false};
             int sameCorridor = checkCorridor(x, y, visited);
 
-            int hasLastSeen = (mon->getLastSeen().x != -1 && mon->getLastSeen().y != -1);
-
-            int canSee = (mon->isTelepathic() || sameRoom || sameCorridor);
-            if (canSee) {
+            bool hasLastSeen = (mon->getLastSeen().x != -1 && mon->getLastSeen().y != -1);
+            bool canSee = (mon->isTelepathic() || sameRoom || sameCorridor);
+            if (sameRoom || sameCorridor) {
                 mon->setLastSeen(player.getPos());
             }
 
@@ -767,7 +787,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
             int newY = y;
             if (mon->isErratic() && rand() % 2) {
                 for (int i = 0; i < ATTEMPTS; i++) {
-                    int dir = rand() % 9;
+                    int dir = rand() % 8;
                     newX = x + directions[dir][0];
                     newY = y + directions[dir][1];
                     
@@ -787,9 +807,9 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                 
                 if (mon->isIntelligent()) {
                     int minDist = UNREACHABLE;
-                    int possibleDir[9] = {0};
+                    int possibleDir[8] = {0};
                     int numPossible = 0;
-                    for (int i = 0; i < 9; i++) {
+                    for (int i = 0; i < 8; i++) {
                         int newX = x + directions[i][0];
                         int newY = y + directions[i][1];
                         if ((mon->isTunneling() && dungeon[newY][newX].tunnelingDist < minDist) ||
@@ -855,7 +875,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
             else {
                 insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());
                 continue;
-            }   
+            }
 
             if (dungeon[newY][newX].type == ROCK) {
                 if (dungeon[newY][newX].hardness > 85) {
@@ -868,70 +888,82 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
 
                     mon->setPos((Pos){newX, newY});
                     monsterAt[newY][newX] = std::move(monsterAt[y][x]);
+
                     insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());
                 }
             }
             else {
                 if (monsterAt[newY][newX]) {
+                    Monster* monDisplace = monsterAt[newY][newX].get();
+                    int possibleDir[8] = {0};
+                    int numPossible = 0;
+                    for (int i = 0; i < 8; i++) {
+                        int displaceX = newX + directions[i][0];
+                        int displaceY = newY + directions[i][1];
+                        if (((dungeon[displaceY][displaceX].type == CORRIDOR || dungeon[displaceY][displaceX].type == FLOOR ||
+                             dungeon[displaceY][displaceX].type == STAIR_UP || dungeon[displaceY][displaceX].type == STAIR_DOWN) &&
+                             (!monsterAt[displaceY][displaceX]) && (player.getPos().x != displaceX || player.getPos().y != displaceY))) {
+                            numPossible++;
+                            possibleDir[numPossible - 1] = i;
+                        }
+                    }
+
                     std::unique_ptr<FibHeap> tempHeap = std::make_unique<FibHeap>();
                     FibNode *tempNode = extractMin(heap.get());
-                    while (tempNode->pos.x != monsterAt[newY][newX].get()->getPos().x ||
-                           tempNode->pos.y != monsterAt[newY][newX].get()->getPos().y) {
+                    while (tempNode->pos.x != monDisplace->getPos().x || tempNode->pos.y != monDisplace->getPos().y) {
                         insert(tempHeap.get(), tempNode->key, tempNode->pos);
                         tempNode = extractMin(heap.get());
-                        if (!tempNode) {
-                            break;
-                        }
                     }
                     while (tempHeap.get()->min) {
                         tempNode = extractMin(tempHeap.get());
                         insert(heap.get(), tempNode->key, tempNode->pos);
                     }
 
-                    mon->setPos((Pos){newX, newY});
-                    monsterAt[newY][newX] = std::move(monsterAt[y][x]);
-                    insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());
-                    
-                    if (newX != x || newY != y) {
-                        monstersAlive--;
+                    if (numPossible > 0) {
+                        int dir = possibleDir[rand() % numPossible];
+                        int displaceX = newX + directions[dir][0];
+                        int displaceY = newY + directions[dir][1];
+
+                        monDisplace->setPos((Pos){displaceX, displaceY});
+                        monsterAt[displaceY][displaceX] = std::move(monsterAt[newY][newX]);
+                        insert(heap.get(), tempNode->key, monDisplace->getPos());
+
+                        mon->setPos((Pos){newX, newY});
+                        monsterAt[newY][newX] = std::move(monsterAt[y][x]);
+                        insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());
+                    }
+                    else {
+                        std::unique_ptr<Monster> tmp = std::move(monsterAt[mon->getPos().y][mon->getPos().x]);
+                        monDisplace->setPos((Pos){x, y});
+                        mon->setPos((Pos){newX, newY});
+
+                        monsterAt[y][x] = std::move(monsterAt[newY][newX]);
+                        monsterAt[newY][newX] = std::move(tmp);
+
+                        insert(heap.get(), tempNode->key, monDisplace->getPos());
+                        insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());
                     }
                 }
                 else if (newX == player.getPos().x && newY == player.getPos().y) {
-                    if (godmodeFlag) {
-                        monsterAt[y][x] = nullptr;
-
-                        monstersAlive--;
-                        if (monstersAlive <= 0) {
+                    if (!godmodeFlag) {
+                        int dam = mon->doDamage();
+                        int hpLeft = player.takeDamage(dam);
+                        if (hpLeft <= 0) {
                             updateAroundPlayer();
                             printDungeon(supportsColor, fogOfWarToggle);
-                            printLine(STATUS_LINE1, "Player killed all monsters!\n");
-                            printLine(STATUS_LINE2, "You win! Press any key to continue...");
+                            printLine(MESSAGE_LINE, "");
+                            printLine(STATUS_LINE1, "Player killed by %s, gg", mon->getName().c_str());
+                            printLine(STATUS_LINE2, "Press any key to continue...");
                             getch();
-                            winScreen(supportsColor);
+                            lossScreen(supportsColor);
 
                             clearAll();
                             return 0;
                         }
-                        else {
-                            printLine(STATUS_LINE1, "Player killed monster, Monsters alive: %d\n", monstersAlive);
-                        }
+                        
                     }
-                    else {
-                        mon->setPos((Pos){newX, newY});
-                        monsterAt[newY][newX] = std::move(monsterAt[y][x]);
-    
-                        updateAroundPlayer();
-                        printDungeon(supportsColor, fogOfWarToggle);
-                        printLine(MESSAGE_LINE, "");
-                        printLine(STATUS_LINE1, "Player killed by %s, gg", mon->getName().c_str());
-                        printLine(STATUS_LINE2, "You lose! Press any key to continue...");
-                        getch();
-                        lossScreen(supportsColor);
 
-                        clearAll();
-                        return 0;
-                    }
-                    
+                    insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());                    
                 }
                 else {
                     mon->setPos((Pos){newX, newY});

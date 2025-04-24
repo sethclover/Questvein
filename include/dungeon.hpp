@@ -218,6 +218,7 @@ class Character {
 protected:
     Pos pos;
     int hitpoints;
+    int maxHitpoints;
     int speed;
     std::array<std::unique_ptr<Object>, static_cast<int>(Equip::Count)> equipment;
     std::array<std::unique_ptr<Object>, static_cast<int>(Equip::Count)> inventory;
@@ -227,21 +228,17 @@ public:
     void setPos(Pos p) { pos = p; }
 
     int getHitpoints() { return hitpoints; }
-    int setHitpoints(int hp) { hitpoints = hp; return hitpoints; }
+    int getMaxHitpoints() { return maxHitpoints; }
+    int takeDamage(int damage) {
+        hitpoints -= damage;
+        if (hitpoints < 0) {
+            hitpoints = 0;
+        }
+        return hitpoints;
+    }
 
     int getSpeed() { return speed; }
     void setSpeed(int spd) { speed = spd; }
-
-    int getDamage() {
-        int damage = 0;
-        for (std::unique_ptr<Object>& obj : equipment) {
-            damage += obj->getDamageBonus().base + obj->getDamageBonus().rolls * (rand() % obj->getDamageBonus().sides + 1);
-        }
-        if (damage <= 0) {
-            damage += 0 + 1 * (rand() % 4 + 1);
-        }
-        return damage;
-    }
 
     Object *getEquipmentItem(Equip e) {
         return equipment[static_cast<int>(e)].get();
@@ -262,17 +259,32 @@ public:
         else { return "Unknown"; }
     }
     void equip(int index) {
-        equipment[static_cast<int>(inventory[index].get()->getEquipmentIndex())] = std::move(inventory[index]);
+        Equip e = inventory[index].get()->getEquipmentIndex();
+        equipment[static_cast<int>(e)] = std::move(inventory[index]);
+        Object *obj = equipment[static_cast<int>(e)].get();
+        //hit bonus
+        //dodge bonus
+        //defense bonus
+        // weight
+        speed += obj->getSpeedBonus();
     }
     void swapEquipment(int index) {
         std::unique_ptr<Object> tmp = std::move(equipment[static_cast<int>(inventory[index]->getEquipmentIndex())]);
-        equipment[static_cast<int>(inventory[index]->getEquipmentIndex())] = std::move(inventory[index]);
+        equip(index);
         inventory[index] = std::move(tmp);
     }
     bool unequip(Equip e) {
         for (int i = 0; i < INVENTORY_SIZE; i++) {
             if (inventory[i] == nullptr) {
                 inventory[i] = std::move(equipment[static_cast<int>(e)]);
+
+                Object *obj = inventory[i].get();
+                //hit bonus
+                //dodge bonus
+                //defense bonus
+                // weight
+                speed -= obj->getSpeedBonus();
+
                 return true;
             }
         }
@@ -310,9 +322,22 @@ public:
 
 class Player : public Character {
 public:
+    int doDamage() {
+        int damage = 0;
+        for (std::unique_ptr<Object>& obj : equipment) {
+            if (obj == nullptr) { continue; }
+            damage += obj->getDamageBonus().base + obj->getDamageBonus().rolls * (rand() % obj->getDamageBonus().sides + 1);
+        }
+        if (equipment[static_cast<int>(Equip::Weapon)] == nullptr) {
+            damage += 0 + 1 * (rand() % 4 + 1);
+        }
+        return damage;
+    }
+
     Player(Pos pos) {
         this->pos = pos;
         hitpoints = 100;
+        maxHitpoints = 100;
         speed = 10;
     }
     Player() = delete;
@@ -338,6 +363,7 @@ private:
     bool destroy;
     bool unique;
     bool boss;
+    Dice dam;
     char symbol;
     int rarity;
     Pos lastSeen;
@@ -354,6 +380,16 @@ public:
             colorIndex = 0;
         }
         return colors[colorIndex++];
+    }
+
+    int doDamage() {
+        int damage = 0;
+        for (std::unique_ptr<Object>& obj : equipment) {
+            if (obj == nullptr) { continue; }
+            damage += obj->getDamageBonus().base + obj->getDamageBonus().rolls * (rand() % obj->getDamageBonus().sides + 1);
+        }
+        damage += dam.base + dam.rolls * (rand() % dam.sides + 1);
+        return damage;
     }
 
     bool isIntelligent() { return intelligent; }
@@ -410,6 +446,8 @@ public:
             else if (abil == "BOSS") { boss = true; }
         }
         hitpoints = monType->hp.base + monType->hp.rolls * (rand() % monType->hp.sides + 1);
+        maxHitpoints = hitpoints;
+        dam = Dice(monType->dam.base, monType->dam.rolls, monType->dam.sides);
         symbol = monType->symbol;
         rarity = monType->rarity;
         lastSeen = {-1, -1};

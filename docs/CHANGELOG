@@ -3,26 +3,37 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
-## [unreleased] - 2025-4-23
+## [9.0.0] - 2025-4-23
 
 ### Added
 
 - You can now pick up items and add them to your inventory with the
-  ',' command and view you inventory with 'i'
+  ',' command and view your inventory with 'i'
 - The player can wear items from their inventory with 'w' and take
-  them off with 't' and pressing 'e' will show the players equipment
+  them off with 't' and pressing 'e' will show the player's equipment
   menu
 - The command 'd' will drop an item back on the floor
 - The command 'x' will permanently destroy a specified item
+- The new 'I' command will show an object's description from the
+  player's inventory
+- New status bar showing current player health, speed, and location
 
 ### Changed
 
+- Instead of instant death for occupying spaces, damage and health
+  has been fully incorporated 
+- A monster moving where a monster already is results in the monster
+  being moved out of the way and switching places if necessary
+- The game now ends when the player kills the boss instead of when every
+  monster in the dungeon is dead
 - Monster list has a green border now
 
 ### Fixed
 
 - The player will always go first at the start of the game to prevent
-  losing before their turn ever starts on unfortunate dungeon layouts
+  losing before their turn ever starts on an unfortunate dungeon layout
+- Fixed a bug where teleporting over a monster or item either did not
+  show at all or show its color properly 
 
 ## [8.2.0] - 2025-4-20
 

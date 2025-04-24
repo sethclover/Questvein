@@ -1,13 +1,14 @@
-### Assignment 1.08 README
+### Assignment 1.09 README
 
-For this assignment, I added monsters and objects to the dungeon from
-their corresponding parsed files (monster_desc.txt and object_desc.txt)
-Each monster and object is an instance of its parsed type. Monsters
-have fields for their name, description, colors, speed, abilities, hp,
-damage, symbol, and rarity. In contrast, objects have the fields name,
-description, type(s), symbol (derived from their type), colors, hit,
-damage, dodge, defense, weight, speed, attributes, value, artifact
-status, rarity. Characters show up on top of objects. Artifacts and
-Boss/Unique monsters will not spawn again after they are picked up
-or killed. If a monster/object has more than one color, each time it
-is reprinted, it will cycle to the next color in its list.
+For assignment 1.09, Combat was finally added in the form of health
+and damage takes the place of dying when another character moves to
+the space of another character. Items can be equipped to alter the
+player's stats, including damage and speed. There are a bunch of new
+switches such as 'w' for wearing an item from an inventory slot,
+'t' for taking something off from an equipment slot, 'i' and 'e' for
+the inventory and equipment menus, respectively, 'x' for removing an
+item from the dungeon permanently, 'd' for dropping an item from the
+player's inventory to the group, and 'I' for inspecting the description
+of an object. Monsters also will no longer kill each other with 
+contact because they will instead push them to a different square.
+Killing the boss is the win condition for the dungeon now.
