@@ -6,11 +6,8 @@
 FibNode *insert(FibHeap *heap, int key, Pos pos) {
     FibNode *node = new FibNode(key, pos);
     heap->nodes.push_back(std::unique_ptr<FibNode>(node));
-    if (!node) {
-        return NULL;
-    }
 
-    if (heap->min == NULL) {
+    if (heap->min == nullptr) {
         heap->min = node;
     }
     else {
@@ -37,7 +34,6 @@ int consolidate(FibHeap *heap) {
         maxDegree = (int)(log(heap->numNodes - 1) / log(2)) + 1;
     }
     FibNode **A = new FibNode*[maxDegree]();
-
     FibNode **nodes = new FibNode*[heap->numNodes]();
 
     int count = 0;
@@ -53,7 +49,7 @@ int consolidate(FibHeap *heap) {
         FibNode *node = nodes[i];
         int degree = node->degree;
 
-        while (A[degree] != NULL) {
+        while (A[degree] != nullptr) {
             FibNode *compareNode = A[degree];
 
             if (node->key > compareNode->key) {
@@ -67,7 +63,7 @@ int consolidate(FibHeap *heap) {
             compareNode->parent = node;
             compareNode->marked = 0;
 
-            if (node->child == NULL) {
+            if (node->child == nullptr) {
                 node->child = compareNode;
                 compareNode->left = compareNode;
                 compareNode->right = compareNode;
@@ -80,16 +76,16 @@ int consolidate(FibHeap *heap) {
             }
 
             node->degree++;
-            A[degree] = NULL;
+            A[degree] = nullptr;
             degree++;   
         }
         A[degree] = node;
     }
 
-    heap->min = NULL;
+    heap->min = nullptr;
     for (int i = 0; i < maxDegree; i++) {
-        if (A[i] != NULL) {
-            if (heap->min == NULL) {
+        if (A[i] != nullptr) {
+            if (heap->min == nullptr) {
                 heap->min = A[i];
                 heap->min->left = heap->min;
                 heap->min->right = heap->min;
@@ -115,13 +111,13 @@ int consolidate(FibHeap *heap) {
 FibNode *extractMin(FibHeap *heap) {
     FibNode *minNode = heap->min;
 
-    if (minNode != NULL) {
-        if (minNode->child != NULL) {
+    if (minNode != nullptr) {
+        if (minNode->child != nullptr) {
             FibNode *child = minNode->child;
 
             do {
                 FibNode *next = child->right;
-                child->parent = NULL;
+                child->parent = nullptr;
                 child->right = heap->min->right;
                 child->left = heap->min;
                 heap->min->right->left = child;
@@ -133,12 +129,12 @@ FibNode *extractMin(FibHeap *heap) {
         minNode->right->left = minNode->left;
 
         if (minNode == minNode->right) {
-            heap->min = NULL;
+            heap->min = nullptr;
         }
         else {
             heap->min = minNode->right;
             if (consolidate(heap)) {
-                return NULL;
+                return nullptr;
             }
         }
 
@@ -150,7 +146,7 @@ FibNode *extractMin(FibHeap *heap) {
 
 void cut(FibHeap *heap, FibNode *node, FibNode *parent) {
     if (node == node->right) {
-        parent->child = NULL;
+        parent->child = nullptr;
     }
     else {
         node->left->right = node->right;
@@ -166,7 +162,7 @@ void cut(FibHeap *heap, FibNode *node, FibNode *parent) {
     node->right = heap->min->right;
     heap->min->right->left = node;
     heap->min->right = node;
-    node->parent = NULL;
+    node->parent = nullptr;
     node->marked = 0;
     if (node->key < heap->min->key) {
         heap->min = node;
@@ -175,7 +171,7 @@ void cut(FibHeap *heap, FibNode *node, FibNode *parent) {
 
 void cascadingCut(FibHeap *heap, FibNode *node) {
     FibNode *parent = node->parent;
-    if (parent != NULL) {
+    if (parent != nullptr) {
         if (!node->marked) {
             node->marked = 1;
         }
@@ -193,7 +189,7 @@ void decreaseKey(FibHeap *heap, FibNode *node, int newKey) {
 
     node->key = newKey;
     FibNode *parent = node->parent;
-    if (parent != NULL && node->key < parent->key) {
+    if (parent != nullptr && node->key < parent->key) {
         cut(heap, node, parent);
         cascadingCut(heap, parent);
     }

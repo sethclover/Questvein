@@ -1,3 +1,5 @@
 #pragma once
 
-int generateDistances(const int x, const int y);
+#include "dungeon.hpp"
+
+int generateDistances(Pos pos);

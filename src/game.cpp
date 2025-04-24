@@ -41,6 +41,15 @@ int checkCorridor(int x, int y, bool visited[MAX_HEIGHT][MAX_WIDTH]) {
     return 0;
 }
 
+bool inLineOfSight(Pos pos) {
+    int xDist = abs(player.getPos().x - pos.x);
+    int yDist = abs(player.getPos().y - pos.y);  
+    if (xDist <= 2 && yDist <= 2 && !(xDist == 2 && yDist == 2)) {
+        return true;
+    }
+    return false;
+}
+
 void updateAroundPlayer() {
     for (int i = player.getPos().y - 2; i <= player.getPos().y + 2; i++) {
         for (int j = player.getPos().x - 2; j <= player.getPos().x + 2; j++) {
@@ -254,23 +263,23 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         case 'd':
                             printLine(MESSAGE_LINE, "Choose an inventory slot 0-9");
                             {
-                            int ch = getch();
-                            if (ch >= '0' && ch <= '9') {
-                                int index = ch - '0';
-                                if (player.getInventoryItem(index) == nullptr) {
-                                    printLine(MESSAGE_LINE, "Nothing in that slot.");
-                                    break;
+                                int ch = getch();
+                                if (ch >= '0' && ch <= '9') {
+                                    int index = ch - '0';
+                                    if (player.getInventoryItem(index) == nullptr) {
+                                        printLine(MESSAGE_LINE, "Nothing in that slot.");
+                                        break;
+                                    }
+                                    std::string itemName = player.getInventoryItem(index)->getName();
+                                    player.dropFromInventory(index);
+                                    printLine(MESSAGE_LINE, "%s has been dropped.", itemName.c_str());
                                 }
-                                std::string itemName = player.getInventoryItem(index)->getName();
-                                player.dropFromInventory(index);
-                                printLine(MESSAGE_LINE, "%s has been dropped.", itemName.c_str());
-                            }
-                            else if (ch == 'd' || ch == 27) {
-                                printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
-                            }
-                            else {
-                                printLine(MESSAGE_LINE, "Not a valid slot.");
-                            }
+                                else if (ch == 'd' || ch == 27) {
+                                    printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
+                                }
+                                else {
+                                    printLine(MESSAGE_LINE, "Not a valid slot.");
+                                }
                             }
                             break;
 
@@ -294,7 +303,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 fogOfWarToggle = false;
                                 printDungeon(supportsColor, fogOfWarToggle);
 
-                                int drop = 0;
+                                bool drop = false;
                                 int x = player.getPos().x;
                                 int y = player.getPos().y;
                                 while (!drop) {
@@ -305,15 +314,16 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             
                                     int ch;
                                     ch = getch();
+                                    printLine(MESSAGE_LINE, "Use movement keys to move and 'g' to finalize, or 'r' to be placed randomly.");
                                     switch (ch) {
                                         case 'r':
                                             x = rand() % (MAX_WIDTH - 2) + 1;
                                             y = rand() % (MAX_HEIGHT - 2) + 1;
-                                            drop = 1;
+                                            drop = true;
                                             break;
                             
                                         case 'g':
-                                            drop = 1;
+                                            drop = true;
                                             break;
                             
                                         case KEY_HOME:
@@ -417,10 +427,12 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                             break;
                             
                                         default:
-                                            printLine(MESSAGE_LINE, "Use movement keys to move and 'g' to finalize, or 'r' to be placed randomly.");
                                             break;
                                     }
-                                    if (monsterAt[oldY][oldX]) {
+                                    if (player.getPos().x == oldX && player.getPos().y == oldY) {
+                                        mvaddch(oldY + 1, oldX, '@');
+                                    }
+                                    else if (monsterAt[oldY][oldX]) {
                                         if (supportsColor) {
                                             Color c = monsterAt[oldY][oldX].get()->getColor();
                                             attron(COLOR_PAIR(c));
@@ -443,7 +455,19 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                         }
                                     }
                                     else {
-                                        mvaddch(oldY + 1, oldX, dungeon[oldY][oldX].type);
+                                        if (inLineOfSight((Pos){oldX, oldY})) {
+                                            if (supportsColor) {
+                                                attron(COLOR_PAIR(Color::Yellow));
+                                                mvaddch(oldY + 1, oldX, dungeon[oldY][oldX].visible);
+                                                attroff(COLOR_PAIR(Color::Yellow));
+                                            }
+                                            else {
+                                                mvaddch(oldY + 1, oldX, dungeon[oldY][oldX].visible);
+                                            }
+                                        }
+                                        else {
+                                            mvaddch(oldY + 1, oldX, dungeon[oldY][oldX].type);
+                                        }
                                     }
                                 }
                             
@@ -456,10 +480,22 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 mvaddch(y + 1, x, '@');
 
                                 if (monsterAt[player.getPos().y][player.getPos().x]) {
+                                    Monster *mon = monsterAt[player.getPos().y][player.getPos().x].get();
+                                    if (mon->isBoss()) {
+                                        printDungeon(supportsColor, fogOfWarToggle);
+                                        printLineColor(STATUS_LINE1, Color::Green, supportsColor, "%s has been slain!\n", mon->getName().c_str());
+                                        printLine(STATUS_LINE2, "You win! Press any key to continue...");
+                                        getch();
+                                        winScreen(supportsColor);
+                                        
+                                        clearAll();
+                                        return 0;
+                                    }
+                                    monstersAlive--;
+
                                     std::unique_ptr<FibHeap> tempHeap = std::make_unique<FibHeap>();
                                     FibNode *tempNode = extractMin(heap.get());
-                                    while (tempNode->pos.x != monsterAt[player.getPos().y][player.getPos().x].get()->getPos().x ||
-                                           tempNode->pos.y != monsterAt[player.getPos().y][player.getPos().x].get()->getPos().y) {
+                                    while (tempNode->pos.x != mon->getPos().x || tempNode->pos.y != mon->getPos().y) {
                                         insert(tempHeap.get(), tempNode->key, tempNode->pos);
                                         tempNode = extractMin(heap.get());
                                     }
@@ -468,22 +504,8 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                         insert(heap.get(), tempNode->key, tempNode->pos);
                                     }
 
+                                    printLine(STATUS_LINE1, "Player stomped %s", mon->getName().c_str());
                                     monsterAt[player.getPos().y][player.getPos().x] = nullptr;
-            
-                                    monstersAlive--;
-                                    if (monstersAlive <= 0) {
-                                        printDungeon(supportsColor, fogOfWarToggle);
-                                        printLine(STATUS_LINE1, "Player killed all monsters!\n");
-                                        printLine(STATUS_LINE2, "You win! Press any key to continue...");
-                                        getch();
-                                        winScreen(supportsColor);
-            
-                                        clearAll();
-                                        return 0;
-                                    }
-                                    else {
-                                        printLine(STATUS_LINE1, "Player stomped monster, Monsters alive: %d\n", monstersAlive);
-                                    }
                                 }
                                 fogOfWarToggle = replaceFogOfWar;
                                 updateAroundPlayer();
@@ -511,133 +533,133 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         case 't':
                             printLine(MESSAGE_LINE, "Choose an equipment slot a-l");
                             {
-                            int ch = getch();
-                            if (ch >= 'a' && ch <= 'l') {
-                                int index = ch - 'a';
-                                if (player.getEquipmentItem((Equip)index) == nullptr) {
-                                    printLine(MESSAGE_LINE, "Nothing in that slot.");
-                                    break;
+                                int ch = getch();
+                                if (ch >= 'a' && ch <= 'l') {
+                                    int index = ch - 'a';
+                                    if (player.getEquipmentItem((Equip)index) == nullptr) {
+                                        printLine(MESSAGE_LINE, "Nothing in that slot.");
+                                        break;
+                                    }
+                                    std::string itemName = player.getEquipmentItem((Equip)index)->getName();
+                                    if (player.unequip((Equip)index)) {
+                                        printLine(MESSAGE_LINE, "%s has been unequipped.", itemName.c_str());
+                                    }
+                                    else {
+                                        printLine(MESSAGE_LINE, "Inventory is full. Cannot unequip %s.", itemName.c_str());
+                                    }
                                 }
-                                std::string itemName = player.getEquipmentItem((Equip)index)->getName();
-                                if (player.unequip((Equip)index)) {
-                                    printLine(MESSAGE_LINE, "%s has been unequipped.", itemName.c_str());
+                                else if (ch == 't' || ch == 27) {
+                                    printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
                                 }
                                 else {
-                                    printLine(MESSAGE_LINE, "Inventory is full. Cannot unequip %s.", itemName.c_str());
+                                    printLine(MESSAGE_LINE, "Not a valid slot.");
                                 }
-                            }
-                            else if (ch == 't' || ch == 27) {
-                                printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
-                            }
-                            else {
-                                printLine(MESSAGE_LINE, "Not a valid slot.");
-                            }
                             }
                             break;
 
                         case 'w':
                             printLine(MESSAGE_LINE, "Choose an inventory slot 0-9");
                             {
-                            int ch = getch();
-                            if (ch >= '0' && ch <= '9') {
-                                int index = ch - '0';
-                                if (player.getInventoryItem(index) == nullptr) {
-                                    printLine(MESSAGE_LINE, "Nothing in that slot.");
-                                    break;
-                                }
-                                std::string itemName = player.getInventoryItem(index)->getName();
-                                if (player.getInventoryItem(index)->isTwoHanded()) {
-                                    if (player.inventoryFull() && player.getEquipmentItem(Equip::Weapon) != nullptr &&
-                                        player.getEquipmentItem(Equip::Offhand) != nullptr) {
-                                        printLine(MESSAGE_LINE, "Inventory and weapon slots full. Cannot equip two-handed weapon.");
+                                int ch = getch();
+                                if (ch >= '0' && ch <= '9') {
+                                    int index = ch - '0';
+                                    if (player.getInventoryItem(index) == nullptr) {
+                                        printLine(MESSAGE_LINE, "Nothing in that slot.");
                                         break;
                                     }
-                                    else if (player.getEquipmentItem(Equip::Offhand) != nullptr) {
-                                        player.unequip(Equip::Offhand);
-                                        player.swapEquipment(index);
-                                        printLine(MESSAGE_LINE, "Equipped two-handed weapon and unequipped offhand weapon.");
-                                        break;
-                                    }
-                                    else {
-                                        player.swapEquipment(index);
-                                    }
-                                }
-                                else if (player.getInventoryItem(index)->getEquipmentIndex() == Equip::Offhand) {
-                                    if (player.getEquipmentItem(Equip::Weapon) != nullptr) {
-                                        if (player.getEquipmentItem(Equip::Weapon)->isTwoHanded()) {
-                                            player.unequip(Equip::Weapon);
-                                            player.equip(index);
-                                            printLine(MESSAGE_LINE, "Equipped offhand weapon and unequipped two-handed weapon.");
+                                    std::string itemName = player.getInventoryItem(index)->getName();
+                                    if (player.getInventoryItem(index)->isTwoHanded()) {
+                                        if (player.inventoryFull() && player.getEquipmentItem(Equip::Weapon) != nullptr &&
+                                            player.getEquipmentItem(Equip::Offhand) != nullptr) {
+                                            printLine(MESSAGE_LINE, "Inventory and weapon slots full. Cannot equip two-handed weapon.");
+                                            break;
+                                        }
+                                        else if (player.getEquipmentItem(Equip::Offhand) != nullptr) {
+                                            player.unequip(Equip::Offhand);
+                                            player.swapEquipment(index);
+                                            printLine(MESSAGE_LINE, "Equipped two-handed weapon and unequipped offhand weapon.");
                                             break;
                                         }
                                         else {
                                             player.swapEquipment(index);
                                         }
                                     }
-                                    else {
+                                    else if (player.getInventoryItem(index)->getEquipmentIndex() == Equip::Offhand) {
+                                        if (player.getEquipmentItem(Equip::Weapon) != nullptr) {
+                                            if (player.getEquipmentItem(Equip::Weapon)->isTwoHanded()) {
+                                                player.unequip(Equip::Weapon);
+                                                player.equip(index);
+                                                printLine(MESSAGE_LINE, "Equipped offhand weapon and unequipped two-handed weapon.");
+                                                break;
+                                            }
+                                            else {
+                                                player.swapEquipment(index);
+                                            }
+                                        }
+                                        else {
+                                            player.swapEquipment(index);
+                                        }
+                                    }
+                                    else if (player.getInventoryItem(index)->getEquipmentIndex() == Equip::Ring1 || 
+                                            player.getInventoryItem(index)->getEquipmentIndex() == Equip::Ring2) {
+                                        if (player.getEquipmentItem(Equip::Ring1) == nullptr) {
+                                            player.getInventoryItem(index)->setEquipmentIndex(Equip::Ring1);
+                                            player.equip(index);
+                                        }
+                                        else if (player.getEquipmentItem(Equip::Ring2) == nullptr) {
+                                            player.getInventoryItem(index)->setEquipmentIndex(Equip::Ring2);
+                                            player.equip(index);
+                                        }
+                                        else {
+                                            printLine(MESSAGE_LINE, "Ring slots full. Replace ring (1) or (2)?");
+                                            char ch = getch();
+                                            if (ch == '1') {
+                                                player.getInventoryItem(index)->setEquipmentIndex(Equip::Ring1);
+                                                player.swapEquipment(index);
+                                            }
+                                            else if (ch == '2') {
+                                                player.getInventoryItem(index)->setEquipmentIndex(Equip::Ring2);
+                                                player.swapEquipment(index);
+                                            }
+                                        }
+                                    }
+                                    else if (player.getInventoryItem(index)->getEquipmentIndex() != Equip::None) {
                                         player.swapEquipment(index);
                                     }
-                                }
-                                else if (player.getInventoryItem(index)->getEquipmentIndex() == Equip::Ring1 || 
-                                         player.getInventoryItem(index)->getEquipmentIndex() == Equip::Ring2) {
-                                    if (player.getEquipmentItem(Equip::Ring1) == nullptr) {
-                                        player.getInventoryItem(index)->setEquipmentIndex(Equip::Ring1);
-                                        player.equip(index);
-                                    }
-                                    else if (player.getEquipmentItem(Equip::Ring2) == nullptr) {
-                                        player.getInventoryItem(index)->setEquipmentIndex(Equip::Ring2);
-                                        player.equip(index);
-                                    }
                                     else {
-                                        printLine(MESSAGE_LINE, "Ring slots full. Replace ring (1) or (2)?");
-                                        char ch = getch();
-                                        if (ch == '1') {
-                                            player.getInventoryItem(index)->setEquipmentIndex(Equip::Ring1);
-                                            player.swapEquipment(index);
-                                        }
-                                        else if (ch == '2') {
-                                            player.getInventoryItem(index)->setEquipmentIndex(Equip::Ring2);
-                                            player.swapEquipment(index);
-                                        }
+                                        break;
                                     }
+                                    printLine(MESSAGE_LINE, "%s is now equipped.", itemName.c_str());
                                 }
-                                else if (player.getInventoryItem(index)->getEquipmentIndex() != Equip::None) {
-                                    player.swapEquipment(index);
+                                else if (ch == 'w' || ch == 27) {
+                                    printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
                                 }
                                 else {
-                                    break;
+                                    printLine(MESSAGE_LINE, "Not a valid slot.");
                                 }
-                                printLine(MESSAGE_LINE, "%s is now equipped.", itemName.c_str());
-                            }
-                            else if (ch == 'w' || ch == 27) {
-                                printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
-                            }
-                            else {
-                                printLine(MESSAGE_LINE, "Not a valid slot.");
-                            }
                             }
                             break;
 
                         case 'x':
                             printLine(MESSAGE_LINE, "Choose an inventory slot 0-9");
                             {
-                            int ch = getch();
-                            if (ch >= '0' && ch <= '9') {
-                                int index = ch - '0';
-                                if (player.getInventoryItem(index) == nullptr) {
-                                    printLine(MESSAGE_LINE, "Nothing in that slot.");
-                                    break;
+                                int ch = getch();
+                                if (ch >= '0' && ch <= '9') {
+                                    int index = ch - '0';
+                                    if (player.getInventoryItem(index) == nullptr) {
+                                        printLine(MESSAGE_LINE, "Nothing in that slot.");
+                                        break;
+                                    }
+                                    std::string itemName = player.getInventoryItem(index)->getName();
+                                    player.expungeFromInventory(index);
+                                    printLine(MESSAGE_LINE, "%s has been obliterated.", itemName.c_str());
                                 }
-                                std::string itemName = player.getInventoryItem(index)->getName();
-                                player.expungeFromInventory(index);
-                                printLine(MESSAGE_LINE, "%s has been obliterated.", itemName.c_str());
-                            }
-                            else if (ch == 'd' || ch == 27) {
-                                printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
-                            }
-                            else {
-                                printLine(MESSAGE_LINE, "Not a valid slot.");
-                            }
+                                else if (ch == 'd' || ch == 27) {
+                                    printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
+                                }
+                                else {
+                                    printLine(MESSAGE_LINE, "Not a valid slot.");
+                                }
                             }
                             break;
 
@@ -646,8 +668,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             break;
                         
                         case 'E':
-                            // "inspect equipped item"
-                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
+                            showEquipmentObjectDescription(supportsColor, fogOfWarToggle);
                             break;
 
                         case 'H':
@@ -656,12 +677,280 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             break;
 
                         case 'I':
-                            showObjectDescription(supportsColor, fogOfWarToggle);
+                            showInventoryObjectDescription(supportsColor, fogOfWarToggle);
                             break;
 
                         case 'L':
-                            // "look at monster"
-                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
+                            {
+                                bool view = false;
+                                bool escape = false;
+                                int x = player.getPos().x;
+                                int y = player.getPos().y;
+                                while (!view) {
+                                    int oldX = x;
+                                    int oldY = y;
+                                    mvaddch(y + 1, x, '!');
+                                    refresh();
+
+                                    int ch;
+                                    ch = getch();
+                                    printLine(MESSAGE_LINE, "Use movement keys to move and 't' to finalize, or use 'Esc' or 'L'  exit.");
+                                    switch (ch) {
+                                        case 't':
+                                            if (fogOfWarToggle && !inLineOfSight((Pos){x, y})) {
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            else if (monsterAt[y][x]) {
+                                                view = true;
+                                            }
+                                            else {
+                                                printLine(MESSAGE_LINE, "There is nothing to view there.");
+                                            }
+                                            break;
+
+                                        case KEY_HOME:
+                                        case '7':
+                                        case 'y':
+                                            x -= 1;
+                                            if (fogOfWarToggle && x < player.getPos().x - 2) {
+                                                x++;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            else if (x == 0) {
+                                                x++;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            y -= 1;
+                                            if (fogOfWarToggle && y < player.getPos().y - 2) {
+                                                y++;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            else if (y == 0) {
+                                                y++;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            if (fogOfWarToggle && x == player.getPos().x - 2 && y == player.getPos().y - 2) {
+                                                x++;
+                                                y++;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            break;
+                            
+                                        case KEY_UP:
+                                        case '8':
+                                        case 'k':
+                                            y -= 1;
+                                            if (fogOfWarToggle && y < player.getPos().y - 2) {
+                                                y++;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            else if (y == 0) {
+                                                y++;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            if (fogOfWarToggle && (x == player.getPos().x - 2 || x == player.getPos().x + 2) && y == player.getPos().y - 2) {
+                                                y++;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            break;
+                                        
+                                        case KEY_PPAGE:
+                                        case '9':
+                                        case 'u':
+                                            x += 1;
+                                            if (fogOfWarToggle && x > player.getPos().x + 2) {
+                                                x--;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            } 
+                                            else if (x == MAX_WIDTH - 1) {
+                                                x--;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            y -= 1;
+                                            if (fogOfWarToggle && y < player.getPos().y - 2) {
+                                                y++;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            else if (y == 0) {
+                                                y++;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            if (fogOfWarToggle && x == player.getPos().x + 2 && y == player.getPos().y - 2) {
+                                                x--;
+                                                y++;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            break;
+                            
+                                        case KEY_RIGHT:
+                                        case '6':
+                                        case 'l':
+                                            x += 1;
+                                            if (fogOfWarToggle &&  x > player.getPos().x + 2) {
+                                                x--;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            else if (x == MAX_WIDTH - 1) {
+                                                x--;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            if (fogOfWarToggle && x == player.getPos().x + 2 && (y == player.getPos().y - 2 || y == player.getPos().y + 2)) {
+                                                x--;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            break;
+                            
+                                        case KEY_NPAGE:
+                                        case '3':
+                                        case 'n':
+                                            x += 1;
+                                            if (fogOfWarToggle && x > player.getPos().x + 2) {
+                                                x--;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            else if (x == MAX_WIDTH - 1) {
+                                                x--;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            y += 1;
+                                            if (fogOfWarToggle && y > player.getPos().y + 2) {
+                                                y--;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            else if (y == MAX_HEIGHT - 1) {
+                                                y--;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            if (fogOfWarToggle && x == player.getPos().x + 2 && y == player.getPos().y + 2) {
+                                                x--;
+                                                y--;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            break;
+                            
+                                        case KEY_DOWN:
+                                        case '2':
+                                        case 'j':
+                                            y += 1;
+                                            if (fogOfWarToggle && y > player.getPos().y + 2) {
+                                                y--;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            else if (y == MAX_HEIGHT - 1) {
+                                                y--;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            if (fogOfWarToggle && (x == player.getPos().x + 2 || x == player.getPos().x - 2) && y == player.getPos().y + 2) {
+                                                y--;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            break;
+                            
+                                        case KEY_END:
+                                        case '1':
+                                        case 'b':
+                                            x -= 1;
+                                            if (fogOfWarToggle && x < player.getPos().x - 2) {
+                                                x++;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            else if (x == 0) {
+                                                x++;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            y += 1;
+                                            if (fogOfWarToggle && y > player.getPos().y + 2) {
+                                                y--;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            else if (y == MAX_HEIGHT - 1) {
+                                                y--;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            if (fogOfWarToggle && x == player.getPos().x - 2 && y == player.getPos().y + 2) {
+                                                x++;
+                                                y--;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            break;
+                            
+                                        case KEY_LEFT:
+                                        case '4':
+                                        case 'h':
+                                            x -= 1;
+                                            if (fogOfWarToggle && x < player.getPos().x - 2) {
+                                                x++;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            else if (x == 0) {
+                                                x++;
+                                                printLine(MESSAGE_LINE, "That's an impenetrable wall.");
+                                            }
+                                            if (fogOfWarToggle && x == player.getPos().x - 2 && (y == player.getPos().y + 2 || y == player.getPos().y - 2)) {
+                                                x++;
+                                                printLine(MESSAGE_LINE, "You cannot see that far.");
+                                            }
+                                            break;
+
+                                        case 'L':
+                                        case 27:
+                                            escape = true;
+                                            break;
+                            
+                                        default:
+                                            break;
+                                    }
+                                    if (player.getPos().x == oldX && player.getPos().y == oldY) {
+                                        mvaddch(oldY + 1, oldX, '@');
+                                    }
+                                    else if (monsterAt[oldY][oldX]) {
+                                        if (supportsColor) {
+                                            Color c = monsterAt[oldY][oldX].get()->getColor();
+                                            attron(COLOR_PAIR(c));
+                                            mvaddch(oldY + 1, oldX, monsterAt[oldY][oldX].get()->getSymbol());
+                                            attroff(COLOR_PAIR(c));
+                                        }
+                                        else {
+                                            mvaddch(oldY + 1, oldX, monsterAt[oldY][oldX].get()->getSymbol());
+                                        }
+                                    }
+                                    else if (objectsAt[oldY][oldX].size() > 0) {
+                                        if (supportsColor) {
+                                            Color c = objectsAt[oldY][oldX].back()->getColor();
+                                            attron(COLOR_PAIR(c));
+                                            mvaddch(oldY + 1, oldX, objectsAt[oldY][oldX].back()->getSymbol());
+                                            attroff(COLOR_PAIR(c));
+                                        }
+                                        else {
+                                            mvaddch(oldY + 1, oldX, objectsAt[oldY][oldX].back()->getSymbol());
+                                        }
+                                    }
+                                    else {
+                                        if (inLineOfSight((Pos){oldX, oldY})) {
+                                            if (supportsColor) {
+                                                attron(COLOR_PAIR(Color::Yellow));
+                                                mvaddch(oldY + 1, oldX, dungeon[oldY][oldX].visible);
+                                                attroff(COLOR_PAIR(Color::Yellow));
+                                            }
+                                            else {
+                                                mvaddch(oldY + 1, oldX, dungeon[oldY][oldX].visible);
+                                            }
+                                        }
+                                        else {
+                                            mvaddch(oldY + 1, oldX, dungeon[oldY][oldX].type);
+                                        }
+                                    }
+
+                                    if (escape) {
+                                        break;
+                                    }
+                                }
+                                if (escape) {
+                                    printDungeon(supportsColor, fogOfWarToggle);
+                                    break;
+                                }
+                                showMonsterInfo((Pos){x, y}, supportsColor, fogOfWarToggle);
+                            }
                             break;
 
                         case 'Q':
@@ -715,7 +1004,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         if (hpLeft <= 0) {
                             if (mon->isBoss()) {
                                 printDungeon(supportsColor, fogOfWarToggle);
-                                printLine(STATUS_LINE1, "%s has been slain!\n", mon->getName());
+                                printLine(STATUS_LINE1, "%s has been slain!\n", mon->getName().c_str());
                                 printLine(STATUS_LINE2, "You win! Press any key to continue...");
                                 getch();
                                 winScreen(supportsColor);
@@ -736,14 +1025,17 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 insert(heap.get(), tempNode->key, tempNode->pos);
                             }
 
-                            printLine(STATUS_LINE1, "%s has been slain.\n", mon->getName());
+                            printLine(STATUS_LINE1, "%s has been slain.\n", mon->getName().c_str());
                             monsterAt[player.getPos().y + yDir][player.getPos().x + xDir] = nullptr;
                         }
                         else {
-                            printLine(STATUS_LINE1, "You dealt %d damage to %s.\n", dam, mon->getName().c_str());
+                            printLineColor(STATUS_LINE1, Color::Green, supportsColor, "You dealt %d damage to %s.\n", dam, mon->getName().c_str());
+                            napms(500);
+                            flushinp();
                         }
                     }
                     else {
+                        printLine(STATUS_LINE1, "");
                         player.setPos((Pos){player.getPos().x + xDir, player.getPos().y + yDir});
                     }
                     insert(heap.get(), time + 1000 / player.getSpeed(), player.getPos());
@@ -799,10 +1091,10 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
             }
             else if (canSee || hasLastSeen) {
                 if (canSee) {
-                    generateDistances(player.getPos().x, player.getPos().y);
+                    generateDistances(player.getPos());
                 }
                 else {
-                    generateDistances(mon->getLastSeen().x, mon->getLastSeen().y);
+                    generateDistances(mon->getLastSeen());
                 }
                 
                 if (mon->isIntelligent()) {
@@ -901,8 +1193,8 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         int displaceX = newX + directions[i][0];
                         int displaceY = newY + directions[i][1];
                         if (((dungeon[displaceY][displaceX].type == CORRIDOR || dungeon[displaceY][displaceX].type == FLOOR ||
-                             dungeon[displaceY][displaceX].type == STAIR_UP || dungeon[displaceY][displaceX].type == STAIR_DOWN) &&
-                             (!monsterAt[displaceY][displaceX]) && (player.getPos().x != displaceX || player.getPos().y != displaceY))) {
+                            dungeon[displaceY][displaceX].type == STAIR_UP || dungeon[displaceY][displaceX].type == STAIR_DOWN) &&
+                            !monsterAt[displaceY][displaceX] && (displaceX != player.getPos().x || displaceY != player.getPos().y))) {
                             numPossible++;
                             possibleDir[numPossible - 1] = i;
                         }
@@ -933,10 +1225,10 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());
                     }
                     else {
-                        std::unique_ptr<Monster> tmp = std::move(monsterAt[mon->getPos().y][mon->getPos().x]);
                         monDisplace->setPos((Pos){x, y});
                         mon->setPos((Pos){newX, newY});
 
+                        std::unique_ptr<Monster> tmp = std::move(monsterAt[y][x]);
                         monsterAt[y][x] = std::move(monsterAt[newY][newX]);
                         monsterAt[newY][newX] = std::move(tmp);
 
@@ -948,6 +1240,18 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     if (!godmodeFlag) {
                         int dam = mon->doDamage();
                         int hpLeft = player.takeDamage(dam);
+
+                        if (dam > 0) {
+                            printDungeon(supportsColor, fogOfWarToggle);
+                            if (supportsColor) {
+                                attron(COLOR_PAIR(Color::Red));
+                                mvaddch(player.getPos().y + 1, player.getPos().x, '@');
+                                attroff(COLOR_PAIR(Color::Red));
+                            }
+                            printLineColor(STATUS_LINE1, Color::Red, supportsColor, "%s dealt %d damage to you.\n", mon->getName().c_str(), dam);
+                            napms(500);
+                            flushinp();
+                        }
                         if (hpLeft <= 0) {
                             updateAroundPlayer();
                             printDungeon(supportsColor, fogOfWarToggle);

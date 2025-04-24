@@ -39,11 +39,12 @@ static const CommandInfo switches[] = {
     {"t", "Take off item"},
     {"w", "Wear item"},
     {"x", "Expunge item"},
-    {"D", "Show tunneling map"},
-    {"I", "Inspect item"},
+    {"D", "Show mon-tunneling map"},
+    {"E", "Inspect equipment item"},
+    {"I", "Inspect inventory item"},
     {"L", "Look at monster"},
     {"Q", "Quit the game"},
-    {"T", "Show non-tunneling map"},
+    {"T", "Show tunneling map"},
     {",", "Pick up item"},
     {"?", "Show help"}
 };
@@ -116,6 +117,27 @@ void printLine(int line, const char* format, ...) {
     refresh();
 }
 
+void printLineColor(int line, Color color, bool supportsColor, const char* format, ...) {
+    char buffer[MAX_WIDTH];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, MAX_WIDTH, format, args);
+    va_end(args);
+
+    move(line, 0);
+    clrtoeol();
+    if (supportsColor) {
+        attron(COLOR_PAIR(color));
+        printw("%s", buffer);
+        attroff(COLOR_PAIR(color));
+    }
+    else {
+        printw("%s", buffer);
+    }
+
+    refresh();
+}
+
 void openEquipment(bool supportsColor, bool fogOfWarToggle) {
     clear();
 
@@ -160,24 +182,18 @@ void openEquipment(bool supportsColor, bool fogOfWarToggle) {
             std::string nameLine = "Name: " + player.getEquipmentItem((Equip)i)->getName();
             lines.push_back(nameLine);
 
-            std::string descLine = "Description: ";
-            lines.push_back(descLine);
-            std::string desc = player.getEquipmentItem((Equip)i)->getDescription();
-            int j = 0;
-            for (size_t i = 0; i < desc.length(); i++) {
-                if (desc[i] == '\n') {
-                    lines.push_back(desc.substr(j, i - j));
-                    j = i + 1;
-                }
-            }
-            if (obj->getHitBonus() > 0) {
-                std::string hitBonusLine = "Hit Bonus: " + std::to_string(obj->getHitBonus());
-                lines.push_back(hitBonusLine);
-            }
             if (obj->getDamageBonus().base > 0 || (obj->getDamageBonus().rolls > 0 && obj->getDamageBonus().sides > 0)) {
                 std::string damageBonusLine = "Damage Bonus: " + std::to_string(obj->getDamageBonus().base) + "+";
                 damageBonusLine += std::to_string(obj->getDamageBonus().rolls) + "d" + std::to_string(obj->getDamageBonus().sides);
                 lines.push_back(damageBonusLine);
+            }
+            if (obj->getSpeedBonus() > 0) {
+                std::string speedBonusLine = "Speed Bonus: " + std::to_string(obj->getSpeedBonus());
+                lines.push_back(speedBonusLine);
+            }
+            if (obj->getHitBonus() > 0) {
+                std::string hitBonusLine = "Hit Bonus: " + std::to_string(obj->getHitBonus());
+                lines.push_back(hitBonusLine);
             }
             if (obj->getDodgeBonus() > 0) {
                 std::string dodgeBonusLine = "Dodge Bonus: " + std::to_string(obj->getDodgeBonus());
@@ -191,10 +207,6 @@ void openEquipment(bool supportsColor, bool fogOfWarToggle) {
                 std::string weightLine = "Weight: " + std::to_string(obj->getWeight());
                 lines.push_back(weightLine);
             }
-            if (obj->getSpeedBonus() > 0) {
-                std::string speedBonusLine = "Speed Bonus: " + std::to_string(obj->getSpeedBonus());
-                lines.push_back(speedBonusLine);
-            }
             if (obj->getSpecialAttribute() > 0) {
                 std::string specialAttributeLine = "Special Attribute: " + std::to_string(obj->getSpecialAttribute());
                 lines.push_back(specialAttributeLine);
@@ -206,6 +218,16 @@ void openEquipment(bool supportsColor, bool fogOfWarToggle) {
             }
             else {
                 lines.push_back("Artifact: false");
+            }
+
+            lines.push_back("Description: ");
+            std::string desc = player.getEquipmentItem((Equip)i)->getDescription();
+            int j = 0;
+            for (size_t i = 0; i < desc.length(); i++) {
+                if (desc[i] == '\n') {
+                    lines.push_back(desc.substr(j, i - j));
+                    j = i + 1;
+                }
             }
         }
         allLines.push_back(lines);
@@ -244,7 +266,8 @@ void openEquipment(bool supportsColor, bool fogOfWarToggle) {
                 printw("%s", line.c_str());
             }
         }
-        move(MAX_HEIGHT - 1, 0);
+        move(MAX_HEIGHT - 1, 1);
+
         if (topLine + maxDisplay < allLines[cursor].size()) {
             addch('v');
         }
@@ -259,7 +282,7 @@ void openEquipment(bool supportsColor, bool fogOfWarToggle) {
             ch = getch();
         } while (ch != KEY_RIGHT && ch != '6' && ch != 'l' &&
                  ch != KEY_LEFT && ch != '4' && ch != 'h' &&
-                 ch != KEY_UP && ch != KEY_DOWN && ch != 'e');
+                 ch != KEY_UP && ch != KEY_DOWN && ch != 'e' && ch != 27);
 
         switch (ch) {
             case KEY_RIGHT:
@@ -293,6 +316,7 @@ void openEquipment(bool supportsColor, bool fogOfWarToggle) {
                 break;
 
             case 'e':
+            case 27:
                 clear();
                 printDungeon(supportsColor, fogOfWarToggle);
                 return;
@@ -306,13 +330,13 @@ void openInventory(bool supportsColor, bool fogOfWarToggle) {
     printLine(MESSAGE_LINE, "Inventory:");
     printLine(STATUS_LINE1, "Press 'i' to return to the game.");
 
-    mvhline(1, 0, '"', MAX_WIDTH - 1);
-    mvhline(MAX_HEIGHT, 0, '"', MAX_WIDTH - 1);
+    mvhline(1, 0, '-', MAX_WIDTH - 1);
+    mvhline(MAX_HEIGHT, 0, '-', MAX_WIDTH - 1);
 
-    mvaddch(1, 0, '@');
-    mvaddch(1, MAX_WIDTH - 1, '@');
-    mvaddch(MAX_HEIGHT, 0, '@');
-    mvaddch(MAX_HEIGHT, MAX_WIDTH - 1, '@');
+    mvaddch(1, 0, '+');
+    mvaddch(1, MAX_WIDTH - 1, '+');
+    mvaddch(MAX_HEIGHT, 0, '+');
+    mvaddch(MAX_HEIGHT, MAX_WIDTH - 1, '+');
 
     for (int i = 0; i < INVENTORY_SIZE; i++) {
         mvaddch(4, 1 + i * 3, ' ');
@@ -335,18 +359,105 @@ void openInventory(bool supportsColor, bool fogOfWarToggle) {
         mvaddch(5, 2 + i * 3, (char)('0' + i));
     }
 
+    std::vector<std::vector<std::string>> allLines;
+    for (int i = 0; i < INVENTORY_SIZE; i++) {
+        std::vector<std::string> lines;
+        if (player.getInventoryItem(i) != nullptr) {
+            Object *obj = player.getInventoryItem(i);
+
+            std::string nameLine = "Name: " + player.getInventoryItem(i)->getName();
+            lines.push_back(nameLine);
+
+            if (obj->getDamageBonus().base > 0 || (obj->getDamageBonus().rolls > 0 && obj->getDamageBonus().sides > 0)) {
+                std::string damageBonusLine = "Damage Bonus: " + std::to_string(obj->getDamageBonus().base) + "+";
+                damageBonusLine += std::to_string(obj->getDamageBonus().rolls) + "d" + std::to_string(obj->getDamageBonus().sides);
+                lines.push_back(damageBonusLine);
+            }
+            if (obj->getSpeedBonus() > 0) {
+                std::string speedBonusLine = "Speed Bonus: " + std::to_string(obj->getSpeedBonus());
+                lines.push_back(speedBonusLine);
+            }
+            if (obj->getHitBonus() > 0) {
+                std::string hitBonusLine = "Hit Bonus: " + std::to_string(obj->getHitBonus());
+                lines.push_back(hitBonusLine);
+            }
+            if (obj->getDodgeBonus() > 0) {
+                std::string dodgeBonusLine = "Dodge Bonus: " + std::to_string(obj->getDodgeBonus());
+                lines.push_back(dodgeBonusLine);
+            }
+            if (obj->getDefenseBonus() > 0) {
+                std::string defenseBonusLine = "Defense Bonus: " + std::to_string(obj->getDefenseBonus());
+                lines.push_back(defenseBonusLine);
+            }
+            if (obj->getWeight() > 0) {
+                std::string weightLine = "Weight: " + std::to_string(obj->getWeight());
+                lines.push_back(weightLine);
+            }
+            if (obj->getSpecialAttribute() > 0) {
+                std::string specialAttributeLine = "Special Attribute: " + std::to_string(obj->getSpecialAttribute());
+                lines.push_back(specialAttributeLine);
+            }
+            std::string valueLine = "Value: " + std::to_string(obj->getValue());
+            lines.push_back(valueLine);
+            if (obj->isArtifact()) {
+                lines.push_back("Artifact: true");
+            }
+            else {
+                lines.push_back("Artifact: false");
+            }
+
+            lines.push_back("Description: ");
+            std::string desc = player.getInventoryItem(i)->getDescription();
+            int j = 0;
+            for (size_t i = 0; i < desc.length(); i++) {
+                if (desc[i] == '\n') {
+                    lines.push_back(desc.substr(j, i - j));
+                    j = i + 1;
+                }
+            }
+        }
+        allLines.push_back(lines);
+    }
+
+    size_t maxDisplay = MAX_HEIGHT - 9;
+    size_t topLine = 0;
     int cursor = 0;
+
     while(true) {
         mvaddch(3, 2 + cursor * 3, 'v');
 
-        for (int i = 8; i < MAX_HEIGHT - 1; i++) {
+        for (int i = 6; i < MAX_HEIGHT - 1; i++) {
             move(i, 0);
             clrtoeol();
         }
-        if (player.getInventoryItem(cursor) != nullptr) {
-            mvprintw(8, 0, "NAME: %s", player.getInventoryItem(cursor)->getName().c_str());
-            mvprintw(9, 0, "DESCRIPTION:");
-            mvprintw(10, 0, "%s", player.getInventoryItem(cursor)->getDescription().c_str());
+        
+        move(7, 1);
+        clrtoeol();
+        if (topLine > 0) {
+            addch('^');
+        }
+        else {
+            addch(' ');
+        }
+
+        for (size_t i = 0; i < maxDisplay; i++) {
+            int row = i + 8;
+            size_t lineIndex = topLine + i;
+
+            move(row, 0);
+            clrtoeol();
+            if (lineIndex < allLines[cursor].size()) {
+                std::string line = allLines[cursor][lineIndex];
+                printw("%s", line.c_str());
+            }
+        }
+
+        move(MAX_HEIGHT - 1, 1);
+        if (topLine + maxDisplay < allLines[cursor].size()) {
+            addch('v');
+        }
+        else {
+            addch(' ');
         }
 
         refresh();
@@ -355,7 +466,8 @@ void openInventory(bool supportsColor, bool fogOfWarToggle) {
         do {
             ch = getch();
         } while (ch != KEY_RIGHT && ch != '6' && ch != 'l' &&
-                 ch != KEY_LEFT && ch != '4' && ch != 'h' && ch != 'i');
+                 ch != KEY_LEFT && ch != '4' && ch != 'h' && 
+                 ch != KEY_UP && ch != KEY_DOWN && ch != 'i' && ch != 27);
 
         switch (ch) {
             case KEY_RIGHT:
@@ -376,7 +488,20 @@ void openInventory(bool supportsColor, bool fogOfWarToggle) {
                 }
                 break;
 
+            case KEY_UP:
+                if (topLine > 0) {
+                    topLine--;
+                }
+                break;
+
+            case KEY_DOWN:
+                if (topLine + maxDisplay < allLines[cursor].size()) {
+                    topLine++;
+                }
+                break;
+
             case 'i':
+            case 27:
                 clear();
                 printDungeon(supportsColor, fogOfWarToggle);
                 return;
@@ -388,8 +513,30 @@ void printStatus(bool supportsColor) {
     move(23, 0);
     clrtoeol();
     if (supportsColor) {
-        printw("HP: %d/%d  Speed: %d  Position: (%d, %d)", player.getHitpoints(), player.getMaxHitpoints(), player.getSpeed(),  
-            player.getPos().x, player.getPos().y);
+        
+        printw("HP: ");
+
+        double percent = static_cast<double>(player.getHitpoints()) / player.getMaxHitpoints();
+        if (percent >= 0.75) {
+            attron(COLOR_PAIR(Color::Green));
+            printw("%d/%d", player.getHitpoints(), player.getMaxHitpoints());
+            attroff(COLOR_PAIR(Color::Green));
+        }
+        else if (percent >= 0.25) {
+            attron(COLOR_PAIR(Color::Yellow));
+            printw("%d/%d", player.getHitpoints(), player.getMaxHitpoints());
+            attroff(COLOR_PAIR(Color::Yellow));
+        }
+        else {
+            attron(COLOR_PAIR(Color::Red));
+            printw("%d/%d", player.getHitpoints(), player.getMaxHitpoints());
+            attroff(COLOR_PAIR(Color::Red));
+        }
+        printw("   Speed: %d   Position: (%d, %d)", player.getSpeed(), player.getPos().x, player.getPos().y);
+    }
+    else {
+        printw("HP: %d/%d   Speed: %d   Position: (%d, %d)", player.getHitpoints(), player.getMaxHitpoints(), 
+                                                             player.getSpeed(), player.getPos().x, player.getPos().y);
     }
 }
 
@@ -562,8 +709,8 @@ void printDungeon(bool supportsColor, bool fogOfWarToggle) {
     }
     
     printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help.");
-    move(STATUS_LINE1, 0);
-    clrtoeol();
+    // move(STATUS_LINE1, 0);
+    // clrtoeol();
     printStatus(supportsColor);
 
     refresh();
@@ -733,7 +880,7 @@ void monsterList(bool supportsColor, bool fogOfWarToggle) {
         int ch;
         do {
             ch = getch();
-        } while (ch != KEY_UP && ch != KEY_DOWN && ch != 27);
+        } while (ch != KEY_UP && ch != KEY_DOWN && ch != 'm' && ch != 27);
 
         switch (ch) {
             case KEY_UP:
@@ -748,6 +895,7 @@ void monsterList(bool supportsColor, bool fogOfWarToggle) {
                 }
                 break;
 
+            case 'm':
             case 27:
                 clear();
                 printDungeon(supportsColor, fogOfWarToggle);
@@ -892,7 +1040,7 @@ void objectList(bool supportsColor, bool fogOfWarToggle) {
         int ch;
         do {
             ch = getch();
-        } while (ch != KEY_UP && ch != KEY_DOWN && ch != 27);
+        } while (ch != KEY_UP && ch != KEY_DOWN && ch != 'o' && ch != 27);
 
         switch (ch) {
             case KEY_UP:
@@ -907,6 +1055,7 @@ void objectList(bool supportsColor, bool fogOfWarToggle) {
                 }
                 break;
 
+            case 'o':
             case 27:
                 clear();
                 printDungeon(supportsColor, fogOfWarToggle);
@@ -915,95 +1064,12 @@ void objectList(bool supportsColor, bool fogOfWarToggle) {
     }
 }
 
-void tunnelingDistMap(bool supportsColor, bool fogOfWarToggle) {
-    clear();
-    printLine(MESSAGE_LINE, "Press ESC to return");
-    printLine(STATUS_LINE2, "Tunneling distance map.");
-
-    generateDistances(player.getPos().x, player.getPos().y);   
-    for (int i = 0; i < MAX_HEIGHT; i++) {
-        for (int j = 0; j < MAX_WIDTH; j++) {
-            move(i + 1, j);
-            if (dungeon[i][j].tunnelingDist == UNREACHABLE) {
-                addch(' ');
-            }
-            else if (dungeon[i][j].tunnelingDist == 0) {
-                addch('@');
-            }
-            else {
-                if (supportsColor) {
-                    if (dungeon[i][j].tunnelingDist < 10) {
-                        attron(COLOR_PAIR(Color::Red));
-                        addch(dungeon[i][j].tunnelingDist % 10 + '0');
-                        attroff(COLOR_PAIR(Color::Red));
-                    }
-                    else if (dungeon[i][j].tunnelingDist < 20) {
-                        attron(COLOR_PAIR(Color::Yellow));
-                        addch(dungeon[i][j].tunnelingDist % 10 + '0');
-                        attroff(COLOR_PAIR(Color::Yellow));
-                    }
-                    else if (dungeon[i][j].tunnelingDist < 30) {
-                        attron(COLOR_PAIR(Color::Green));
-                        addch(dungeon[i][j].tunnelingDist % 10 + '0');
-                        attroff(COLOR_PAIR(Color::Green));
-                    }
-                    else if (dungeon[i][j].tunnelingDist < 40) {
-                        attron(COLOR_PAIR(Color::Cyan));
-                        addch(dungeon[i][j].tunnelingDist % 10 + '0');
-                        attroff(COLOR_PAIR(Color::Cyan));
-                    }
-                    else {
-                        attron(COLOR_PAIR(Color::Blue));
-                        addch(dungeon[i][j].tunnelingDist % 10 + '0');
-                        attroff(COLOR_PAIR(Color::Blue));
-                    }
-                }
-                else {
-                    addch(dungeon[i][j].tunnelingDist % 10 + '0');
-                } 
-            }
-        }
-    }
-
-    refresh();
-
-    int ch;
-    do {
-        ch = getch();
-    } while (ch != 27);
-
-    printDungeon(supportsColor, fogOfWarToggle);
-}
-
-void showObjectDescription(bool supportsColor, bool fogOfWarToggle) {
-    printLine(MESSAGE_LINE, "Choose an inventory slot 0-9");
-    int ch = getch();
-    if (ch >= '0' && ch <= '9') {
-        int index = ch - '0';
-        if (player.getInventoryItem(index) == nullptr) {
-            printLine(MESSAGE_LINE, "Nothing in that slot.");
-            return;
-        }
-        std::string itemName = player.getInventoryItem(index)->getDescription();
-        clear();
-        mvprintw(1, 0, "%s", itemName.c_str());
-        getch();
-        printDungeon(supportsColor, fogOfWarToggle);
-    }
-    else if (ch == 'd' || ch == 27) {
-        printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
-    }
-    else {
-        printLine(MESSAGE_LINE, "Not a valid slot.");
-    }
-}
-
 void nonTunnelingDistMap(bool supportsColor, bool fogOfWarToggle) {
     clear();
-    printLine(MESSAGE_LINE, "Press ESC to return");
+    printLine(MESSAGE_LINE, "Press 'ESC' or 'T' to return");
     printLine(STATUS_LINE2, "Non-tunneling distance map.");
 
-    generateDistances(player.getPos().x, player.getPos().y);
+    generateDistances(player.getPos());
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
             move(i + 1, j);
@@ -1053,7 +1119,126 @@ void nonTunnelingDistMap(bool supportsColor, bool fogOfWarToggle) {
     int ch;
     do {
         ch = getch();
-    } while (ch != 27);
+    } while (ch != 27 && ch != 'T');
+
+    printDungeon(supportsColor, fogOfWarToggle);
+}
+
+void showEquipmentObjectDescription(bool supportsColor, bool fogOfWarToggle) {
+    printLine(MESSAGE_LINE, "Choose an equipment slot a-l");
+    int ch = getch();
+    if (ch >= 'a' && ch <= 'l') {
+        int index = ch - 'a';
+        if (player.getEquipmentItem((Equip)index) == nullptr) {
+            printLine(MESSAGE_LINE, "Nothing in that slot.");
+            return;
+        }
+        std::string itemName = player.getEquipmentItem((Equip)index)->getDescription();
+        clear();
+        mvprintw(0, 0, "%s", itemName.c_str());
+        getch();
+        printDungeon(supportsColor, fogOfWarToggle);
+    }
+    else if (ch == 'E' || ch == 27) {
+        printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
+    }
+    else {
+        printLine(MESSAGE_LINE, "Not a valid slot.");
+    }
+}
+
+void showInventoryObjectDescription(bool supportsColor, bool fogOfWarToggle) {
+    printLine(MESSAGE_LINE, "Choose an inventory slot 0-9");
+    int ch = getch();
+    if (ch >= '0' && ch <= '9') {
+        int index = ch - '0';
+        if (player.getInventoryItem(index) == nullptr) {
+            printLine(MESSAGE_LINE, "Nothing in that slot.");
+            return;
+        }
+        std::string itemName = player.getInventoryItem(index)->getDescription();
+        clear();
+        mvprintw(0, 0, "%s", itemName.c_str());
+        getch();
+        printDungeon(supportsColor, fogOfWarToggle);
+    }
+    else if (ch == 'I' || ch == 27) {
+        printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
+    }
+    else {
+        printLine(MESSAGE_LINE, "Not a valid slot.");
+    }
+}
+
+void showMonsterInfo(Pos pos, bool supportsColor, bool fogOfWarToggle) {
+    Monster *mon = monsterAt[pos.y][pos.x].get();
+    if (mon == nullptr) {
+        return;
+    }
+    clear();
+    mvprintw(0, 0, "%s", mon->getName().c_str());
+    mvprintw(2, 0, "%s", mon->getDescription().c_str());
+    
+    getch();
+    printDungeon(supportsColor, fogOfWarToggle);    
+}
+
+void tunnelingDistMap(bool supportsColor, bool fogOfWarToggle) {
+    clear();
+    printLine(MESSAGE_LINE, "Press 'ESC' or 'D' to return");
+    printLine(STATUS_LINE2, "Tunneling distance map.");
+
+    generateDistances(player.getPos());   
+    for (int i = 0; i < MAX_HEIGHT; i++) {
+        for (int j = 0; j < MAX_WIDTH; j++) {
+            move(i + 1, j);
+            if (dungeon[i][j].tunnelingDist == UNREACHABLE) {
+                addch(' ');
+            }
+            else if (dungeon[i][j].tunnelingDist == 0) {
+                addch('@');
+            }
+            else {
+                if (supportsColor) {
+                    if (dungeon[i][j].tunnelingDist < 10) {
+                        attron(COLOR_PAIR(Color::Red));
+                        addch(dungeon[i][j].tunnelingDist % 10 + '0');
+                        attroff(COLOR_PAIR(Color::Red));
+                    }
+                    else if (dungeon[i][j].tunnelingDist < 20) {
+                        attron(COLOR_PAIR(Color::Yellow));
+                        addch(dungeon[i][j].tunnelingDist % 10 + '0');
+                        attroff(COLOR_PAIR(Color::Yellow));
+                    }
+                    else if (dungeon[i][j].tunnelingDist < 30) {
+                        attron(COLOR_PAIR(Color::Green));
+                        addch(dungeon[i][j].tunnelingDist % 10 + '0');
+                        attroff(COLOR_PAIR(Color::Green));
+                    }
+                    else if (dungeon[i][j].tunnelingDist < 40) {
+                        attron(COLOR_PAIR(Color::Cyan));
+                        addch(dungeon[i][j].tunnelingDist % 10 + '0');
+                        attroff(COLOR_PAIR(Color::Cyan));
+                    }
+                    else {
+                        attron(COLOR_PAIR(Color::Blue));
+                        addch(dungeon[i][j].tunnelingDist % 10 + '0');
+                        attroff(COLOR_PAIR(Color::Blue));
+                    }
+                }
+                else {
+                    addch(dungeon[i][j].tunnelingDist % 10 + '0');
+                } 
+            }
+        }
+    }
+
+    refresh();
+
+    int ch;
+    do {
+        ch = getch();
+    } while (ch != 27 && ch != 'D');
 
     printDungeon(supportsColor, fogOfWarToggle);
 }
@@ -1142,7 +1327,7 @@ void commandList(bool supportsColor, bool fogOfWarToggle) {
         int ch;
         do {
             ch = getch();
-        } while (ch != KEY_UP && ch != KEY_DOWN && ch != 27);
+        } while (ch != KEY_UP && ch != KEY_DOWN && ch != '?' && ch != 27);
 
         switch (ch) {
             case KEY_UP:
@@ -1157,6 +1342,7 @@ void commandList(bool supportsColor, bool fogOfWarToggle) {
                 }
                 break;
 
+            case '?':
             case 27:
                 clear();
                 printDungeon(supportsColor, fogOfWarToggle);

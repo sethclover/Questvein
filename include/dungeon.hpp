@@ -7,7 +7,6 @@
 #include <utility>
 #include <vector>
 
-#include "display.hpp"
 #include "parser.hpp"
 
 static const int MAX_WIDTH = 80;
@@ -23,7 +22,7 @@ static const char CORRIDOR = '#';
 static const char STAIR_UP = '<';
 static const char STAIR_DOWN = '>';
 static const char ROCK = ' ';
-static const char FOG = '*';
+static const char FOG = ' ';
 
 enum class Color {
     Black = 1,
@@ -96,6 +95,7 @@ private:
     std::string name;
     std::string description;
     std::vector<std::string> types;
+    std::string typeString;
     Equip equipIndex;
     std::vector<Color> colors;
     int colorCount;
@@ -121,6 +121,7 @@ public:
     std::string getDescription() { return description; }
 
     std::vector<std::string> getTypes() { return types; }
+    std::string getTypeString() { return typeString; }
 
     bool isTwoHanded() {
         return types.size() == 2;
@@ -181,28 +182,28 @@ public:
         value = objType->val.base + objType->val.rolls * (rand() % objType->val.sides + 1);
         artifact = objType->art;
         if (types.size() == 2) {
-            symbol = ')'; equipIndex = Equip::Weapon;
+            symbol = ')'; equipIndex = Equip::Weapon; typeString = "Weapon";
         }
         if (types.size() == 1) {
-            if (types.front() == "WEAPON") { symbol = '|'; equipIndex = Equip::Weapon; }
-            else if (types.front() == "OFFHAND") { symbol = ')'; equipIndex = Equip::Offhand; }
-            else if (types.front() == "RANGED") { symbol = '}'; equipIndex = Equip::Ranged; }
-            else if (types.front() == "ARMOR") { symbol = '['; equipIndex = Equip::Armor; }
-            else if (types.front() == "HELMET") { symbol = ']'; equipIndex = Equip::Helmet; }
-            else if (types.front() == "CLOAK") { symbol = '('; equipIndex = Equip::Cloak; }
-            else if (types.front() == "GLOVES") { symbol = '{'; equipIndex = Equip::Gloves; }
-            else if (types.front() == "BOOTS") { symbol = '\\'; equipIndex = Equip::Boots; }
-            else if (types.front() == "RING") { symbol = '='; equipIndex = Equip::Ring1; }
-            else if (types.front() == "AMULET") { symbol = '"'; equipIndex = Equip::Amulet; }
-            else if (types.front() == "LIGHT") { symbol = '_'; equipIndex = Equip::Light; }
-            else if (types.front() == "SCROLL") { symbol = '~'; equipIndex = Equip::None; }
-            else if (types.front() == "BOOK") { symbol = '?'; equipIndex = Equip::None; }
-            else if (types.front() == "FLASK") { symbol = '!'; equipIndex = Equip::None; }
-            else if (types.front() == "GOLD") { symbol = '$'; equipIndex = Equip::None; }
-            else if (types.front() == "AMMUNITION") { symbol = '/'; equipIndex = Equip::None; }
-            else if (types.front() == "FOOD") { symbol = ','; equipIndex = Equip::None; }
-            else if (types.front() == "WAND") { symbol = '-'; equipIndex = Equip::None; }
-            else if (types.front() == "CONTAINER") { symbol = '%'; equipIndex = Equip::None; }
+            if (types.front() == "WEAPON") { symbol = '|'; equipIndex = Equip::Weapon; typeString = "Weapon"; }
+            else if (types.front() == "OFFHAND") { symbol = ')'; equipIndex = Equip::Offhand; typeString = "Offhand"; }
+            else if (types.front() == "RANGED") { symbol = '}'; equipIndex = Equip::Ranged; typeString = "Ranged"; }
+            else if (types.front() == "ARMOR") { symbol = '['; equipIndex = Equip::Armor; typeString = "Armor"; }
+            else if (types.front() == "HELMET") { symbol = ']'; equipIndex = Equip::Helmet; typeString = "Helmet"; }
+            else if (types.front() == "CLOAK") { symbol = '('; equipIndex = Equip::Cloak; typeString = "Cloak"; }
+            else if (types.front() == "GLOVES") { symbol = '{'; equipIndex = Equip::Gloves; typeString = "Gloves"; }
+            else if (types.front() == "BOOTS") { symbol = '\\'; equipIndex = Equip::Boots; typeString = "Boots"; }
+            else if (types.front() == "RING") { symbol = '='; equipIndex = Equip::Ring1; typeString = "Ring"; }
+            else if (types.front() == "AMULET") { symbol = '"'; equipIndex = Equip::Amulet; typeString = "Ring"; }
+            else if (types.front() == "LIGHT") { symbol = '_'; equipIndex = Equip::Light; typeString = "Light"; }
+            else if (types.front() == "SCROLL") { symbol = '~'; equipIndex = Equip::None; typeString = "Scroll"; }
+            else if (types.front() == "BOOK") { symbol = '?'; equipIndex = Equip::None; typeString = "Book"; }
+            else if (types.front() == "FLASK") { symbol = '!'; equipIndex = Equip::None; typeString = "Flask"; }
+            else if (types.front() == "GOLD") { symbol = '$'; equipIndex = Equip::None; typeString = "Gold"; }
+            else if (types.front() == "AMMUNITION") { symbol = '/'; equipIndex = Equip::None; typeString = "Ammunition"; }
+            else if (types.front() == "FOOD") { symbol = ','; equipIndex = Equip::None; typeString = "Food"; }
+            else if (types.front() == "WAND") { symbol = '-'; equipIndex = Equip::None; typeString = "Wand"; }
+            else if (types.front() == "CONTAINER") { symbol = '%'; equipIndex = Equip::None; typeString = "Container"; }
             else { symbol = '*'; }
         }
         rarity = objType->rarity;

@@ -3,6 +3,40 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [9.1.0] - 2025-4-24
+
+### Added 
+
+- The new 'L' command can be used to look at a monster, which will
+  allow the player to see the name and description of a monster in sight
+- Implemented the 'E' command to show the description of an equipment
+  item
+- Displays the damage taken from a monster for half a second before
+  the PC's turn
+- Added color to some status commands (damage taken)
+- Added color when the player takes damage from a monster
+- Added color to the status bar denote health percentage
+
+### Changed
+
+- The player inventory now shows every piece of information that is
+  relevant to the item, similar to the equipment menu
+- Small tweaks to the appearance of the inventory menu
+- Each menu (inventory, equipment, distance map, monster list, etc.)
+  can now be exited with both the escape key and the key that is used
+  to open the window
+- Updated the message text inside the teleport feature
+
+### Fixed
+
+- Swapped the 'T' and 'D' commands to accurately show the tunneling and
+  non-tunneling distance maps, respectively, instead of vice versa
+- Slain monster names displaying incorrectly has been patched
+- Fixed the queueing of inputs while the player does or receives
+  damage from a monster
+- Fixed a bug where the colors were changing to white when they should
+  not have been
+
 ## [9.0.0] - 2025-4-23
 
 ### Added

@@ -3,24 +3,24 @@
 #include "dungeon.hpp"
 #include "fibonacciHeap.hpp"
 
-int tunnelingDistances(const int x, const int y) {
+int tunnelingDistances(Pos pos) {
     std::unique_ptr<FibHeap> heap = std::make_unique<FibHeap>();
-    FibNode *nodes[MAX_HEIGHT][MAX_WIDTH] = {NULL};
+    FibNode *nodes[MAX_HEIGHT][MAX_WIDTH] = {nullptr};
 
-    dungeon[y][x].tunnelingDist = 0;
-    nodes[y][x] = insert(heap.get(), 0, (Pos){x, y});
+    dungeon[pos.y][pos.x].tunnelingDist = 0;
+    nodes[pos.y][pos.x] = insert(heap.get(), 0, pos);
 
-    while (heap->min != NULL) {
+    while (heap->min != nullptr) {
         FibNode *minNode = extractMin(heap.get());
 
-        Pos pos = minNode->pos;
+        Pos minPos = minNode->pos;
         int dist = minNode->key;
 
-        nodes[pos.y][pos.x] = NULL;
+        nodes[minPos.y][minPos.x] = nullptr;
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
-                int newX = pos.x + j;
-                int newY = pos.y + i;
+                int newX = minPos.x + j;
+                int newY = minPos.y + i;
 
                 if ((i == 0 && j == 0) || dungeon[newY][newX].hardness == 255) {
                     continue;
@@ -30,7 +30,7 @@ int tunnelingDistances(const int x, const int y) {
                 if (newDist < dungeon[newY][newX].tunnelingDist) {
                     dungeon[newY][newX].tunnelingDist = newDist;
 
-                    if (nodes[newY][newX] == NULL) {
+                    if (nodes[newY][newX] == nullptr) {
                         nodes[newY][newX] = insert(heap.get(), newDist, (Pos){newX, newY});
                     }
                     else {
@@ -39,30 +39,28 @@ int tunnelingDistances(const int x, const int y) {
                 }
             }
         }
-
-        //delete minNode;     
     }
 
     return 0;
 }
 
-int nonTunnelingDistances(const int x, const int y) {
+int nonTunnelingDistances(Pos pos) {
     std::unique_ptr<FibHeap> heap = std::make_unique<FibHeap>();
-    FibNode *nodes[MAX_HEIGHT][MAX_WIDTH] = {NULL};
+    FibNode *nodes[MAX_HEIGHT][MAX_WIDTH] = {nullptr};
 
-    dungeon[y][x].nonTunnelingDist = 0;
-    nodes[y][x] = insert(heap.get(), 0, (Pos){x, y});
+    dungeon[pos.y][pos.x].nonTunnelingDist = 0;
+    nodes[pos.y][pos.x] = insert(heap.get(), 0, pos);
 
-    while (heap.get()->min != NULL) {
+    while (heap.get()->min != nullptr) {
         FibNode *minNode = extractMin(heap.get());
-        Pos pos = minNode->pos;
+        Pos minPos = minNode->pos;
         int dist = minNode->key;
 
-        nodes[pos.y][pos.x] = NULL;
+        nodes[minPos.y][minPos.x] = nullptr;
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
-                int newX = pos.x + j;
-                int newY = pos.y + i;
+                int newX = minPos.x + j;
+                int newY = minPos.y + i;
                 
                 if ((i == 0 && j == 0) || dungeon[newY][newX].hardness > 0) {
                     continue;
@@ -72,7 +70,7 @@ int nonTunnelingDistances(const int x, const int y) {
                 if (newDist < dungeon[newY][newX].nonTunnelingDist) {
                     dungeon[newY][newX].nonTunnelingDist = newDist;
 
-                    if (nodes[newY][newX] == NULL) {
+                    if (nodes[newY][newX] == nullptr) {
                         nodes[newY][newX] = insert(heap.get(), newDist, (Pos){newX, newY});
                     }
                     else {
@@ -81,22 +79,20 @@ int nonTunnelingDistances(const int x, const int y) {
                 }
             }
         }
-
-        //delete minNode;       
     }
 
     return 0;
 }
 
-int generateDistances(const int x, const int y) {
+int generateDistances(Pos pos) {
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
             dungeon[i][j].tunnelingDist = UNREACHABLE;
             dungeon[i][j].nonTunnelingDist = UNREACHABLE;
         }
     }
-    tunnelingDistances(x, y);
-    nonTunnelingDistances(x, y);
+    tunnelingDistances(pos);
+    nonTunnelingDistances(pos);
 
     return 0;
 }
