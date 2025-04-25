@@ -3,6 +3,17 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [9.2.0] - 2025-4-24
+
+### Added
+
+- Defense will now reduce the damage taken from a monster by a
+  percentage calculated from the total defense stat
+
+### Fixed
+
+- Parser error that incorrectly read ability values is patched
+
 ## [9.1.0] - 2025-4-24
 
 ### Added 

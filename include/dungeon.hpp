@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <array>
 #include <memory>
 #include <ncurses.h>
@@ -16,6 +17,7 @@ static const int ATTEMPTS = 1000;
 static const int UNREACHABLE = 9999;
 
 static const int INVENTORY_SIZE = 10;
+static const int DEFENSE_SCALE = 50;
 
 static const char FLOOR = '.';
 static const char CORRIDOR = '#';
@@ -220,6 +222,7 @@ protected:
     Pos pos;
     int hitpoints;
     int maxHitpoints;
+    int defense;
     int speed;
     std::array<std::unique_ptr<Object>, static_cast<int>(Equip::Count)> equipment;
     std::array<std::unique_ptr<Object>, static_cast<int>(Equip::Count)> inventory;
@@ -231,15 +234,18 @@ public:
     int getHitpoints() { return hitpoints; }
     int getMaxHitpoints() { return maxHitpoints; }
     int takeDamage(int damage) {
-        hitpoints -= damage;
+        int damageTaken = std::round(damage * (1.0 - static_cast<double>(defense) / (defense + DEFENSE_SCALE))); 
+
+        hitpoints -= damageTaken;
         if (hitpoints < 0) {
             hitpoints = 0;
         }
-        return hitpoints;
+        return damageTaken;
     }
 
-    int getSpeed() { return speed; }
-    void setSpeed(int spd) { speed = spd; }
+    int getDefense() { return defense > 0 ? defense : 0; }
+
+    int getSpeed() { return speed > 0 ? speed : 0; }
 
     Object *getEquipmentItem(Equip e) {
         return equipment[static_cast<int>(e)].get();
@@ -265,7 +271,7 @@ public:
         Object *obj = equipment[static_cast<int>(e)].get();
         //hit bonus
         //dodge bonus
-        //defense bonus
+        defense += obj->getDefenseBonus();
         // weight
         speed += obj->getSpeedBonus();
     }
@@ -282,7 +288,7 @@ public:
                 Object *obj = inventory[i].get();
                 //hit bonus
                 //dodge bonus
-                //defense bonus
+                defense -= obj->getDefenseBonus();
                 // weight
                 speed -= obj->getSpeedBonus();
 
@@ -339,6 +345,7 @@ public:
         this->pos = pos;
         hitpoints = 100;
         maxHitpoints = 100;
+        defense = 0;
         speed = 10;
     }
     Player() = delete;
@@ -426,6 +433,7 @@ public:
         colorCount = colors.size();
         colorIndex = 0;
         speed = monType->speed.base + monType->speed.rolls * (rand() % monType->speed.sides + 1);
+        defense = 0;
         intelligent = false;
         telepathic = false;
         tunneling = false;

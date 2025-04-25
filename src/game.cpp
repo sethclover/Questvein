@@ -999,7 +999,8 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         Monster *mon = monsterAt[player.getPos().y + yDir][player.getPos().x + xDir].get();
 
                         int dam = player.doDamage();
-                        int hpLeft = mon->takeDamage(dam);
+                        int damageTaken = mon->takeDamage(dam);
+                        int hpLeft = mon->getHitpoints();
 
                         if (hpLeft <= 0) {
                             if (mon->isBoss()) {
@@ -1029,7 +1030,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             monsterAt[player.getPos().y + yDir][player.getPos().x + xDir] = nullptr;
                         }
                         else {
-                            printLineColor(STATUS_LINE1, Color::Green, supportsColor, "You dealt %d damage to %s.\n", dam, mon->getName().c_str());
+                            printLineColor(STATUS_LINE1, Color::Green, supportsColor, "You dealt %d damage to %s.\n", damageTaken, mon->getName().c_str());
                             napms(500);
                             flushinp();
                         }
@@ -1239,7 +1240,8 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                 else if (newX == player.getPos().x && newY == player.getPos().y) {
                     if (!godmodeFlag) {
                         int dam = mon->doDamage();
-                        int hpLeft = player.takeDamage(dam);
+                        int damageTaken = player.takeDamage(dam);
+                        int hpLeft = player.getHitpoints();
 
                         if (dam > 0) {
                             printDungeon(supportsColor, fogOfWarToggle);
@@ -1248,7 +1250,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 mvaddch(player.getPos().y + 1, player.getPos().x, '@');
                                 attroff(COLOR_PAIR(Color::Red));
                             }
-                            printLineColor(STATUS_LINE1, Color::Red, supportsColor, "%s dealt %d damage to you.\n", mon->getName().c_str(), dam);
+                            printLineColor(STATUS_LINE1, Color::Red, supportsColor, "%s dealt %d damage to you.\n", mon->getName().c_str(), damageTaken);
                             napms(500);
                             flushinp();
                         }

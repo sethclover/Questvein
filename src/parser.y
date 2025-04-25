@@ -64,8 +64,8 @@ void reset_object() {
 %token <bo> ART_VAL_TRUE ART_VAL_FALSE
 %token NEWLINE PERIOD 
 
-%type <str_vec> color_content abil_content val_content
-%type <str> desc_content
+%type <str_vec> color_content abil_content val_content abil_list
+%type <str> desc_content 
 
 %%
 
@@ -311,12 +311,17 @@ color_content: COLOR_VAL {
 abil_content:  /* empty */ {
                 $$ = new std::vector<std::string>();
             }
-            | ABIL_VAL {
+            | abil_list {
+                $$ = $1;
+            }
+            ;
+
+abil_list: ABIL_VAL {
                 $$ = new std::vector<std::string>();
                 $$->push_back($1);
                 free($1);
             }
-            | abil_content ABIL_VAL {
+            | abil_list ABIL_VAL {
                 $$ = $1;
                 $$->push_back($2);
                 free($2);
@@ -333,4 +338,5 @@ val_content: TYPE_VAL {
                 $$->push_back($2);
                 free($2);
             }
+            ;
 %%
