@@ -1,6 +1,6 @@
-CC = g++
+CC = g++ -g
 CFLAGS = -Wall -Werror -Iinclude -std=c++17 -MMD
-LDFLAGS = -lm -lncurses -lfl
+LDFLAGS = -lm -lncurses
 
 SRC_DIR = src
 BUILD_DIR = build
@@ -13,16 +13,13 @@ LEX_SRC = $(SRC_DIR)/lexer.l
 YACC_SRC = $(SRC_DIR)/parser.y
 LEX_OBJ = $(BUILD_DIR)/lex.yy.o
 YACC_OBJ = $(BUILD_DIR)/y.tab.o
-PARSER_EXEC = $(BUILD_DIR)/parser
 EXEC = $(BUILD_DIR)/dungeon
 
-all: $(EXEC) $(PARSER_EXEC)
+all: $(EXEC)
 
 $(EXEC): $(OBJECTS) $(YACC_OBJ) $(LEX_OBJ)
 	$(CC) $(OBJECTS) $(YACC_OBJ) $(LEX_OBJ) -o $@ $(LDFLAGS)
 
-$(PARSER_EXEC): $(LEX_OBJ) $(YACC_OBJ)
-	$(CC) $(LEX_OBJ) $(YACC_OBJ) -o $@ $(LDFLAGS)
 
 $(LEX_OBJ): $(BUILD_DIR)/lex.yy.c $(BUILD_DIR)/parser.tab.h
 	$(CC) -c $< -o $@ $(CFLAGS)
