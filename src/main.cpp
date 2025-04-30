@@ -12,6 +12,9 @@
 #include "pathFinding.hpp"
 #include "saveLoad.hpp"
 
+//
+#include "fibonacciHeap.hpp"
+
 class SwitchInfo {
 public:
     const char *shortOp;

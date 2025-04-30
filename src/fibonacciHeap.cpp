@@ -1,11 +1,12 @@
+#include <climits>
 #include <cmath>
 
 #include "dungeon.hpp"
 #include "fibonacciHeap.hpp"
 
-FibNode *insert(FibHeap *heap, int key, Pos pos) {
-    FibNode *node = new FibNode(key, pos);
-    heap->nodes.push_back(std::unique_ptr<FibNode>(node));
+FibNode *insertNew(FibHeap *heap, int key, Pos pos) {
+    heap->nodes.emplace_back(std::make_unique<FibNode>(key, pos));
+    FibNode *node = heap->nodes.back().get();
 
     if (heap->min == nullptr) {
         heap->min = node;
@@ -22,7 +23,33 @@ FibNode *insert(FibHeap *heap, int key, Pos pos) {
     }
 
     heap->numNodes++;
-    return heap->nodes.back().get();
+    return node;
+}
+
+FibNode *insertNode(FibHeap *heap, FibNode *node) {
+    node->parent = nullptr;
+    node->child = nullptr;
+    node->left = node;
+    node->right = node;
+    node->degree = 0;
+    node->marked = 0;
+
+    if (heap->min == nullptr) {
+        heap->min = node;
+    }
+    else {
+        node->right = heap->min->right;
+        node->left = heap->min;
+        heap->min->right->left = node;
+        heap->min->right = node;
+
+        if (node->key < heap->min->key) {
+            heap->min = node;
+        }
+    }
+
+    heap->numNodes++;
+    return node;
 }
 
 int consolidate(FibHeap *heap) {
@@ -42,7 +69,7 @@ int consolidate(FibHeap *heap) {
         do {
             nodes[count++] = curr;
             curr = curr->right;
-        } while (curr != heap->min);
+        } while (curr != heap->min && count < heap->numNodes);
     }
 
     for (int i = 0; i < count; i++) {
@@ -114,6 +141,7 @@ FibNode *extractMin(FibHeap *heap) {
     if (minNode != nullptr) {
         if (minNode->child != nullptr) {
             FibNode *child = minNode->child;
+            FibNode *startChild = child;
 
             do {
                 FibNode *next = child->right;
@@ -123,19 +151,20 @@ FibNode *extractMin(FibHeap *heap) {
                 heap->min->right->left = child;
                 heap->min->right = child;
                 child = next;
-            } while (child != minNode->child);
+            } while (child != startChild);
+
+            minNode->child = nullptr;
         }
-        minNode->left->right = minNode->right;
-        minNode->right->left = minNode->left;
 
         if (minNode == minNode->right) {
             heap->min = nullptr;
         }
         else {
+            minNode->left->right = minNode->right;
+            minNode->right->left = minNode->left;
+
             heap->min = minNode->right;
-            if (consolidate(heap)) {
-                return nullptr;
-            }
+            consolidate(heap);
         }
 
         heap->numNodes--;
@@ -196,4 +225,15 @@ void decreaseKey(FibHeap *heap, FibNode *node, int newKey) {
     if (node->key < heap->min->key) {
         heap->min = node;
     }
+}
+
+void removeNode(FibHeap *heap, FibNode *node) {
+    if (node == nullptr) {
+        return;
+    }
+
+    int key = node->key;
+    decreaseKey(heap, node, INT_MIN);
+    extractMin(heap);
+    node->key = key;
 }

@@ -175,8 +175,8 @@ int spawnMonsters(int numMonsters, int playerX, int playerY) {
     for (int i = 0; i < numMonsters; i++) {
         for (int j = 0; j < ATTEMPTS; j++) {
             int placed = 0;
-            int x = rand() % MAX_WIDTH;
-            int y = rand() % MAX_HEIGHT;
+            int x = rand() % (MAX_WIDTH - 2) + 1;
+            int y = rand() % (MAX_HEIGHT - 2) + 1;
             if (dungeon[y][x].type != FLOOR) {
                 continue;
             }
@@ -193,7 +193,7 @@ int spawnMonsters(int numMonsters, int playerX, int playerY) {
 
                     int monTypeIndex = rand() % monsterTypeListSize;
                     MonsterType *monType = &monsterTypeList[monTypeIndex];
-                    int rarityCheck = rand() % 100;
+                    int rarityCheck = rand() % 100 + 1;
                     if (rarityCheck >= monType->rarity || !monType->eligible || !monType->valid) {
                         continue;
                     }

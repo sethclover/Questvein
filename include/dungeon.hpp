@@ -57,6 +57,10 @@ enum class Equip {
 struct Pos {
     int x;
     int y;
+
+    bool operator==(const Pos& other) const {
+        return x == other.x && y == other.y;
+    }
 };    
 
 class Room {

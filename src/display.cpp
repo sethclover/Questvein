@@ -544,8 +544,7 @@ void printDungeon(bool supportsColor, bool fogOfWarToggle) {
     if (fogOfWarToggle) {
         for (int i = 0; i < MAX_HEIGHT; i++) {
             for (int j = 0; j < MAX_WIDTH; j++) {
-                if (((i >= player.getPos().y - 2 && i <= player.getPos().y + 2) && (j >= player.getPos().x - 2 && j <= player.getPos().x + 2)) &&
-                   !((i == player.getPos().y - 2 || i == player.getPos().y + 2) && (j == player.getPos().x - 2 || j == player.getPos().x + 2))) {
+                if (inLineOfSight((Pos){j, i})) {
                     if (monsterAt[i][j]) {
                         Color c =  monsterAt[i][j].get()->getColor();
                         if (supportsColor) {
@@ -690,8 +689,7 @@ void printDungeon(bool supportsColor, bool fogOfWarToggle) {
                 }
                 else {
                     if (supportsColor) {
-                        if (((i >= player.getPos().y - 2 && i <= player.getPos().y + 2) && (j >= player.getPos().x - 2 && j <= player.getPos().x + 2)) &&
-                           !((i == player.getPos().y - 2 || i == player.getPos().y + 2) && (j == player.getPos().x - 2 || j == player.getPos().x + 2))) {
+                        if (inLineOfSight((Pos){j, i})) {
                             attron(COLOR_PAIR(Color::Yellow));
                             mvaddch(i + 1, j, dungeon[i][j].type);
                             attroff(COLOR_PAIR(Color::Yellow));
@@ -709,8 +707,6 @@ void printDungeon(bool supportsColor, bool fogOfWarToggle) {
     }
     
     printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help.");
-    // move(STATUS_LINE1, 0);
-    // clrtoeol();
     printStatus(supportsColor);
 
     refresh();

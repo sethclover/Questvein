@@ -8,7 +8,7 @@ int tunnelingDistances(Pos pos) {
     FibNode *nodes[MAX_HEIGHT][MAX_WIDTH] = {nullptr};
 
     dungeon[pos.y][pos.x].tunnelingDist = 0;
-    nodes[pos.y][pos.x] = insert(heap.get(), 0, pos);
+    nodes[pos.y][pos.x] = insertNew(heap.get(), 0, pos);
 
     while (heap->min != nullptr) {
         FibNode *minNode = extractMin(heap.get());
@@ -31,7 +31,7 @@ int tunnelingDistances(Pos pos) {
                     dungeon[newY][newX].tunnelingDist = newDist;
 
                     if (nodes[newY][newX] == nullptr) {
-                        nodes[newY][newX] = insert(heap.get(), newDist, (Pos){newX, newY});
+                        nodes[newY][newX] = insertNew(heap.get(), newDist, (Pos){newX, newY});
                     }
                     else {
                         decreaseKey(heap.get(), nodes[newY][newX], newDist);
@@ -49,7 +49,7 @@ int nonTunnelingDistances(Pos pos) {
     FibNode *nodes[MAX_HEIGHT][MAX_WIDTH] = {nullptr};
 
     dungeon[pos.y][pos.x].nonTunnelingDist = 0;
-    nodes[pos.y][pos.x] = insert(heap.get(), 0, pos);
+    nodes[pos.y][pos.x] = insertNew(heap.get(), 0, pos);
 
     while (heap.get()->min != nullptr) {
         FibNode *minNode = extractMin(heap.get());
@@ -71,7 +71,7 @@ int nonTunnelingDistances(Pos pos) {
                     dungeon[newY][newX].nonTunnelingDist = newDist;
 
                     if (nodes[newY][newX] == nullptr) {
-                        nodes[newY][newX] = insert(heap.get(), newDist, (Pos){newX, newY});
+                        nodes[newY][newX] = insertNew(heap.get(), newDist, (Pos){newX, newY});
                     }
                     else {
                         decreaseKey(heap.get(), nodes[newY][newX], newDist);

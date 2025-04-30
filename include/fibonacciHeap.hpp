@@ -39,6 +39,8 @@ public:
     FibNode *getMin() { return min; }
 };
 
-FibNode *insert(FibHeap *heap, int key, Pos pos);
+FibNode *insertNew(FibHeap *heap, int key, Pos pos);
+FibNode *insertNode(FibHeap *heap, FibNode *node);
 FibNode *extractMin(FibHeap *heap);
 void decreaseKey(FibHeap *heap, FibNode *node, int newKey);
+void removeNode(FibHeap *heap, FibNode *node);

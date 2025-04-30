@@ -4,6 +4,7 @@
 #include <cstring>
 #include <ncurses.h>
 #include <memory>
+#include <unordered_map>
 
 #include "display.hpp"
 #include "dungeon.hpp"
@@ -42,21 +43,39 @@ int checkCorridor(int x, int y, bool visited[MAX_HEIGHT][MAX_WIDTH]) {
 }
 
 bool inLineOfSight(Pos pos) {
-    int xDist = abs(player.getPos().x - pos.x);
-    int yDist = abs(player.getPos().y - pos.y);  
-    if (xDist <= 2 && yDist <= 2 && !(xDist == 2 && yDist == 2)) {
+    int visionRadius = 2;
+    if (player.getEquipmentItem(Equip::Light) != nullptr) {
+        visionRadius += player.getEquipmentItem(Equip::Light)->getSpecialAttribute();
+    }
+    float effectiveRadius = visionRadius + 0.5f;
+    float xDist = static_cast<float>(pos.x - player.getPos().x);
+    float yDist = static_cast<float>(pos.y - player.getPos().y);
+    float dist = std::sqrt(xDist * xDist + yDist * yDist);
+    if (dist > effectiveRadius) {
+        return false;
+    }
+    else {
         return true;
     }
-    return false;
 }
 
 void updateAroundPlayer() {
-    for (int i = player.getPos().y - 2; i <= player.getPos().y + 2; i++) {
-        for (int j = player.getPos().x - 2; j <= player.getPos().x + 2; j++) {
-            if (((i == player.getPos().y - 2 || i == player.getPos().y + 2) && (j == player.getPos().x - 2 || j == player.getPos().x + 2)) ||
-                (i < 0 || i >= MAX_HEIGHT || j < 0 || j >= MAX_WIDTH)) {
+    int visionRadius = 2;
+    if (player.getEquipmentItem(Equip::Light) != nullptr) {
+        visionRadius += player.getEquipmentItem(Equip::Light)->getSpecialAttribute();
+    }
+    float effectiveRadius = visionRadius + 0.5f;
+    for (int i = player.getPos().y - effectiveRadius; i <= player.getPos().y + effectiveRadius; i++) {
+        for (int j = player.getPos().x - effectiveRadius; j <= player.getPos().x + effectiveRadius; j++) {
+            if (i < 0 || i >= MAX_HEIGHT || j < 0 || j >= MAX_WIDTH) {
                 continue;
-                }
+            }
+            float xDist = static_cast<float>(j - player.getPos().x);
+            float yDist = static_cast<float>(i - player.getPos().y);
+            float dist = std::sqrt(xDist * xDist + yDist * yDist);
+            if (dist > effectiveRadius) {
+                continue;
+            }
             dungeon[i][j].visible = dungeon[i][j].type;
         }
     }
@@ -64,29 +83,29 @@ void updateAroundPlayer() {
 
 int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, bool supportsColor) {
     int time = 0;
-    int monstersAlive = numMonsters;
     std::unique_ptr<FibHeap> heap = std::make_unique<FibHeap>();
+    std::unordered_map<Monster*, FibNode*> monMap;
 
     for (int i = 0; i < MAX_HEIGHT; i++) {
         for (int j = 0; j < MAX_WIDTH; j++) {
             if (monsterAt[i][j]) {
-                insert(heap.get(), 1000 / monsterAt[i][j].get()->getSpeed(), monsterAt[i][j].get()->getPos());
+                Monster *mon = monsterAt[i][j].get();
+                monMap.insert(std::make_pair(mon, insertNew(heap.get(), 1000 / mon->getSpeed(), mon->getPos())));
             }
-            
             dungeon[i][j].visible = FOG;
         }
     }
-    insert(heap.get(), 1, player.getPos());
+    insertNew(heap.get(), 1, player.getPos());
 
     if (autoFlag) {
         fogOfWarToggle = false;
     }
-     
+
     while (1) {
         FibNode *node = extractMin(heap.get());
         time = node->key;
 
-        if (node->pos.x == player.getPos().x && node->pos.y == player.getPos().y) {
+        if (node->pos == player.getPos()) {
             updateAroundPlayer();
             printDungeon(supportsColor, fogOfWarToggle);
             bool turnEnd = false;
@@ -98,7 +117,9 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     ch = getch();
                     if (ch == 'Q') {
                         printLine(MESSAGE_LINE, "Goodbye!");
-                        napms(1000);
+                        //
+                        //napms(1000);
+                        //
                         
                         clearAll();
                         return 0;
@@ -106,7 +127,9 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
 
                     xDir = rand() % 3 - 1;
                     yDir = rand() % 3 - 1;
-                    napms(500);
+                    //
+                    //napms(500);
+                    //
                     turnEnd = true;
                 }
                 else {
@@ -491,18 +514,9 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                         clearAll();
                                         return 0;
                                     }
-                                    monstersAlive--;
 
-                                    std::unique_ptr<FibHeap> tempHeap = std::make_unique<FibHeap>();
-                                    FibNode *tempNode = extractMin(heap.get());
-                                    while (tempNode->pos.x != mon->getPos().x || tempNode->pos.y != mon->getPos().y) {
-                                        insert(tempHeap.get(), tempNode->key, tempNode->pos);
-                                        tempNode = extractMin(heap.get());
-                                    }
-                                    while (tempHeap.get()->min) {
-                                        tempNode = extractMin(tempHeap.get());
-                                        insert(heap.get(), tempNode->key, tempNode->pos);
-                                    }
+                                    removeNode(heap.get(), monMap.at(mon));
+                                    monMap.erase(mon);
 
                                     printLine(STATUS_LINE1, "Player stomped %s", mon->getName().c_str());
                                     monsterAt[player.getPos().y][player.getPos().x] = nullptr;
@@ -622,6 +636,11 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                                 player.swapEquipment(index);
                                             }
                                         }
+                                    }
+                                    else if (player.getInventoryItem(index)->getEquipmentIndex() == Equip::Light) {
+                                        player.swapEquipment(index);
+                                        updateAroundPlayer();
+                                        printDungeon(supportsColor, fogOfWarToggle);
                                     }
                                     else if (player.getInventoryItem(index)->getEquipmentIndex() != Equip::None) {
                                         player.swapEquipment(index);
@@ -997,6 +1016,19 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                 else if (dungeon[player.getPos().y + yDir][player.getPos().x + xDir].hardness == 0) {
                     if (monsterAt[player.getPos().y + yDir][player.getPos().x + xDir]) {
                         Monster *mon = monsterAt[player.getPos().y + yDir][player.getPos().x + xDir].get();
+                        //
+                        if (mon == nullptr) {
+                            printDungeon(supportsColor, fogOfWarToggle);
+                            printLine(MESSAGE_LINE, "monsterAt does not reflect node during player turn");
+                            napms(1000);
+                            flushinp();
+                            int ch = getch();
+                            while (ch != 27) {
+                                ch = getch();
+                            }
+                            return 0;
+                        }
+                        //
 
                         int dam = player.doDamage();
                         int damageTaken = mon->takeDamage(dam);
@@ -1013,33 +1045,32 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 clearAll();
                                 return 0;
                             }
-                            monstersAlive--;
 
-                            std::unique_ptr<FibHeap> tempHeap = std::make_unique<FibHeap>();
-                            FibNode *tempNode = extractMin(heap.get());
-                            while (tempNode->pos.x != mon->getPos().x || tempNode->pos.y != mon->getPos().y) {
-                                insert(tempHeap.get(), tempNode->key, tempNode->pos);
-                                tempNode = extractMin(heap.get());
-                            }
-                            while (tempHeap.get()->min) {
-                                tempNode = extractMin(tempHeap.get());
-                                insert(heap.get(), tempNode->key, tempNode->pos);
-                            }
+                            removeNode(heap.get(), monMap.at(mon));
+                            monMap.erase(mon);
 
                             printLine(STATUS_LINE1, "%s has been slain.\n", mon->getName().c_str());
-                            monsterAt[player.getPos().y + yDir][player.getPos().x + xDir] = nullptr;
+                            monsterAt[mon->getPos().y][mon->getPos().x] = nullptr;
                         }
                         else {
                             printLineColor(STATUS_LINE1, Color::Green, supportsColor, "You dealt %d damage to %s.\n", damageTaken, mon->getName().c_str());
-                            napms(500);
+                            //
+                            //napms(500);
+                            //
                             flushinp();
                         }
+
+                        node->key = time + 1000 / player.getSpeed();
+                        insertNode(heap.get(), node);
                     }
                     else {
                         printLine(STATUS_LINE1, "");
+
                         player.setPos((Pos){player.getPos().x + xDir, player.getPos().y + yDir});
+                        node->key = time + 1000 / player.getSpeed();
+                        node->pos = player.getPos();
+                        insertNode(heap.get(), node);
                     }
-                    insert(heap.get(), time + 1000 / player.getSpeed(), player.getPos());
                 }
                 else {
                     printLine(MESSAGE_LINE, "There's a wall there, adventurer!");
@@ -1049,6 +1080,22 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
         }
         else {
             Monster *mon = monsterAt[node->pos.y][node->pos.x].get();
+            if (mon == nullptr) {
+                continue;
+            }
+            //
+            if (mon == nullptr) {
+                printDungeon(supportsColor, fogOfWarToggle);
+                printLine(MESSAGE_LINE, "monsterAt does not reflect node during monster turn");
+                napms(1000);
+                flushinp();
+                int ch = getch();
+                while (ch != 27) {
+                    ch = getch();
+                }
+                return 0;
+            }
+            //
             int x = mon->getPos().x;
             int y = mon->getPos().y;
 
@@ -1067,7 +1114,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                 }
             }
 
-            bool visited[MAX_HEIGHT][MAX_WIDTH] = {false};
+            bool visited[MAX_HEIGHT][MAX_WIDTH] = {{false}};
             int sameCorridor = checkCorridor(x, y, visited);
 
             bool hasLastSeen = (mon->getLastSeen().x != -1 && mon->getLastSeen().y != -1);
@@ -1103,12 +1150,12 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     int possibleDir[8] = {0};
                     int numPossible = 0;
                     for (int i = 0; i < 8; i++) {
-                        int newX = x + directions[i][0];
-                        int newY = y + directions[i][1];
-                        if ((mon->isTunneling() && dungeon[newY][newX].tunnelingDist < minDist) ||
-                           (!mon->isTunneling() && dungeon[newY][newX].nonTunnelingDist < minDist)) {
+                        int possibleX = x + directions[i][0];
+                        int possibleY = y + directions[i][1];
+                        if ((mon->isTunneling() && dungeon[possibleY][possibleX].tunnelingDist < minDist) ||
+                           (!mon->isTunneling() && dungeon[possibleY][possibleX].nonTunnelingDist < minDist)) {
                             numPossible = 1;
-                            minDist = (mon->isTunneling()) ? dungeon[newY][newX].tunnelingDist : dungeon[newY][newX].nonTunnelingDist;
+                            minDist = mon->isTunneling() ? dungeon[possibleY][possibleX].tunnelingDist : dungeon[possibleY][possibleX].nonTunnelingDist;
                             possibleDir[0] = i;
                         }
                         else if ((mon->isTunneling() && dungeon[newY][newX].tunnelingDist == minDist) ||
@@ -1160,20 +1207,25 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     newY = y + yDir;
                     if ((mon->isTunneling() && dungeon[newY][newX].tunnelingDist == UNREACHABLE) ||
                         (!mon->isTunneling() && dungeon[newY][newX].nonTunnelingDist == UNREACHABLE)) {
-                        insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());
+
+                        node->key = time + 1000 / mon->getSpeed();
+                        insertNode(heap.get(), node);
                         continue;
                     }
                 }
-            } 
-            else {
-                insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());
-                continue;
             }
 
-            if (dungeon[newY][newX].type == ROCK) {
+            if (newX == x && newY == y) {
+                node->key = time + 1000 / mon->getSpeed();
+                insertNode(heap.get(), node);
+                continue;
+            }
+            else if (dungeon[newY][newX].type == ROCK) {
                 if (dungeon[newY][newX].hardness > 85) {
                     dungeon[newY][newX].hardness -= 85;
-                    insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());
+
+                    node->key = time + 1000 / mon->getSpeed();
+                    insertNode(heap.get(), node);
                 }
                 else {
                     dungeon[newY][newX].hardness = 0;
@@ -1182,12 +1234,27 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     mon->setPos((Pos){newX, newY});
                     monsterAt[newY][newX] = std::move(monsterAt[y][x]);
 
-                    insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());
+                    node->key = time + 1000 / mon->getSpeed();
+                    node->pos = (Pos){newX, newY};
+                    insertNode(heap.get(), node);
                 }
             }
             else {
                 if (monsterAt[newY][newX]) {
                     Monster* monDisplace = monsterAt[newY][newX].get();
+                    //
+                    if (monDisplace == nullptr) {
+                        printDungeon(supportsColor, fogOfWarToggle);
+                        printLine(MESSAGE_LINE, "monster not found at (%d, %d)", newX, newY);
+                        napms(1000);
+                        flushinp();                        
+                        int ch = getch();
+                        while (ch != 27) {
+                            ch = getch();
+                        }
+                        return 0;
+                    }
+                    //
                     int possibleDir[8] = {0};
                     int numPossible = 0;
                     for (int i = 0; i < 8; i++) {
@@ -1201,29 +1268,23 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         }
                     }
 
-                    std::unique_ptr<FibHeap> tempHeap = std::make_unique<FibHeap>();
-                    FibNode *tempNode = extractMin(heap.get());
-                    while (tempNode->pos.x != monDisplace->getPos().x || tempNode->pos.y != monDisplace->getPos().y) {
-                        insert(tempHeap.get(), tempNode->key, tempNode->pos);
-                        tempNode = extractMin(heap.get());
-                    }
-                    while (tempHeap.get()->min) {
-                        tempNode = extractMin(tempHeap.get());
-                        insert(heap.get(), tempNode->key, tempNode->pos);
-                    }
-
                     if (numPossible > 0) {
                         int dir = possibleDir[rand() % numPossible];
                         int displaceX = newX + directions[dir][0];
                         int displaceY = newY + directions[dir][1];
 
                         monDisplace->setPos((Pos){displaceX, displaceY});
-                        monsterAt[displaceY][displaceX] = std::move(monsterAt[newY][newX]);
-                        insert(heap.get(), tempNode->key, monDisplace->getPos());
-
                         mon->setPos((Pos){newX, newY});
+
+                        monsterAt[displaceY][displaceX] = std::move(monsterAt[newY][newX]);
                         monsterAt[newY][newX] = std::move(monsterAt[y][x]);
-                        insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());
+
+                        node->key = time + 1000 / mon->getSpeed();
+                        node->pos = (Pos){newX, newY};
+                        insertNode(heap.get(), node);
+
+                        FibNode *displaceNode = monMap.at(monDisplace);
+                        displaceNode->pos = (Pos){displaceX, displaceY};
                     }
                     else {
                         monDisplace->setPos((Pos){x, y});
@@ -1233,8 +1294,12 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         monsterAt[y][x] = std::move(monsterAt[newY][newX]);
                         monsterAt[newY][newX] = std::move(tmp);
 
-                        insert(heap.get(), tempNode->key, monDisplace->getPos());
-                        insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());
+                        node->key = time + 1000 / mon->getSpeed();
+                        node->pos = (Pos){newX, newY};
+                        insertNode(heap.get(), node);
+
+                        FibNode *displaceNode = monMap.at(monDisplace);
+                        displaceNode->pos = (Pos){x, y};
                     }
                 }
                 else if (newX == player.getPos().x && newY == player.getPos().y) {
@@ -1244,6 +1309,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         int hpLeft = player.getHitpoints();
 
                         if (dam > 0) {
+                            updateAroundPlayer();
                             printDungeon(supportsColor, fogOfWarToggle);
                             if (supportsColor) {
                                 attron(COLOR_PAIR(Color::Red));
@@ -1251,7 +1317,9 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 attroff(COLOR_PAIR(Color::Red));
                             }
                             printLineColor(STATUS_LINE1, Color::Red, supportsColor, "%s dealt %d damage to you.\n", mon->getName().c_str(), damageTaken);
-                            napms(500);
+                            //
+                            //napms(500);
+                            //
                             flushinp();
                         }
                         if (hpLeft <= 0) {
@@ -1269,12 +1337,18 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         
                     }
 
-                    insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());                    
+                    node->key = time + 1000 / mon->getSpeed();
+                    insertNode(heap.get(), node);
                 }
                 else {
                     mon->setPos((Pos){newX, newY});
+
                     monsterAt[newY][newX] = std::move(monsterAt[y][x]);
-                    insert(heap.get(), time + 1000 / mon->getSpeed(), mon->getPos());
+
+                    node->key = time + 1000 / mon->getSpeed();
+                    node->pos = (Pos){newX, newY};
+
+                    insertNode(heap.get(), node);
                 }
             }
         }
