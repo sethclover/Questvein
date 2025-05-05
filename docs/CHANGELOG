@@ -3,6 +3,18 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [9.3.0] - 2025-5-5
+
+### Added
+
+- Light equipment now extends the view distance of the player, and the 
+  special attribute stat of the Light determines how many spaces
+  outward it adds (rounding the corners using Euclidean distance)
+
+### Fixed
+
+- Rare occurences of crashes when killing a monster have been patched
+
 ## [9.2.1] - 2025-4-28
 
 ### Fixed

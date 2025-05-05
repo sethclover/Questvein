@@ -665,7 +665,7 @@ void printDungeon(bool supportsColor, bool fogOfWarToggle) {
                     mvaddch(i + 1, j, '@');
                 }
                 else if (!objectsAt[i][j].empty()) {
-                    Color c = objectsAt[i][j].back()->getColor();
+                    Color c = objectsAt[i][j].back().get()->getColor();
                     if (objectsAt[i][j].size() > 1) {
                         if (supportsColor) {
                             attron(COLOR_PAIR(c));
@@ -679,11 +679,11 @@ void printDungeon(bool supportsColor, bool fogOfWarToggle) {
                     else {
                         if (supportsColor) {
                             attron(COLOR_PAIR(c));
-                            mvaddch(i + 1, j, objectsAt[i][j].back()->getSymbol());
+                            mvaddch(i + 1, j, objectsAt[i][j].back().get()->getSymbol());
                             attroff(COLOR_PAIR(c));
                         }
                         else {
-                            mvaddch(i + 1, j, objectsAt[i][j].back()->getSymbol());
+                            mvaddch(i + 1, j, objectsAt[i][j].back().get()->getSymbol());
                         }
                     }
                 }

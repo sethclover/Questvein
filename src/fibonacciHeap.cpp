@@ -69,7 +69,7 @@ int consolidate(FibHeap *heap) {
         do {
             nodes[count++] = curr;
             curr = curr->right;
-        } while (curr != heap->min && count < heap->numNodes);
+        } while (curr != heap->min);
     }
 
     for (int i = 0; i < count; i++) {
@@ -146,10 +146,17 @@ FibNode *extractMin(FibHeap *heap) {
             do {
                 FibNode *next = child->right;
                 child->parent = nullptr;
-                child->right = heap->min->right;
-                child->left = heap->min;
-                heap->min->right->left = child;
-                heap->min->right = child;
+                if (heap->min == nullptr) {
+                    heap->min = child;
+                    child->left = child;
+                    child->right = child;
+                }
+                else {
+                    child->right = heap->min->right;
+                    child->left = heap->min;
+                    heap->min->right->left = child;
+                    heap->min->right = child;
+                }
                 child = next;
             } while (child != startChild);
 
@@ -162,7 +169,6 @@ FibNode *extractMin(FibHeap *heap) {
         else {
             minNode->left->right = minNode->right;
             minNode->right->left = minNode->left;
-
             heap->min = minNode->right;
             consolidate(heap);
         }

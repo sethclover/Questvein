@@ -103,6 +103,9 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
 
     while (1) {
         FibNode *node = extractMin(heap.get());
+        if (node == nullptr) {
+            continue;
+        }
         time = node->key;
 
         if (node->pos == player.getPos()) {
@@ -117,9 +120,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     ch = getch();
                     if (ch == 'Q') {
                         printLine(MESSAGE_LINE, "Goodbye!");
-                        //
-                        //napms(1000);
-                        //
+                        napms(1000);
                         
                         clearAll();
                         return 0;
@@ -127,9 +128,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
 
                     xDir = rand() % 3 - 1;
                     yDir = rand() % 3 - 1;
-                    //
-                    //napms(500);
-                    //
+                    napms(500);
                     turnEnd = true;
                 }
                 else {
@@ -1016,19 +1015,6 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                 else if (dungeon[player.getPos().y + yDir][player.getPos().x + xDir].hardness == 0) {
                     if (monsterAt[player.getPos().y + yDir][player.getPos().x + xDir]) {
                         Monster *mon = monsterAt[player.getPos().y + yDir][player.getPos().x + xDir].get();
-                        //
-                        if (mon == nullptr) {
-                            printDungeon(supportsColor, fogOfWarToggle);
-                            printLine(MESSAGE_LINE, "monsterAt does not reflect node during player turn");
-                            napms(1000);
-                            flushinp();
-                            int ch = getch();
-                            while (ch != 27) {
-                                ch = getch();
-                            }
-                            return 0;
-                        }
-                        //
 
                         int dam = player.doDamage();
                         int damageTaken = mon->takeDamage(dam);
@@ -1046,17 +1032,15 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 return 0;
                             }
 
-                            removeNode(heap.get(), monMap.at(mon));
-                            monMap.erase(mon);
+                            //removeNode(heap.get(), monMap.at(mon));
+                            //monMap.erase(mon);
 
                             printLine(STATUS_LINE1, "%s has been slain.\n", mon->getName().c_str());
                             monsterAt[mon->getPos().y][mon->getPos().x] = nullptr;
                         }
                         else {
                             printLineColor(STATUS_LINE1, Color::Green, supportsColor, "You dealt %d damage to %s.\n", damageTaken, mon->getName().c_str());
-                            //
-                            //napms(500);
-                            //
+                            napms(500);
                             flushinp();
                         }
 
@@ -1083,19 +1067,6 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
             if (mon == nullptr) {
                 continue;
             }
-            //
-            if (mon == nullptr) {
-                printDungeon(supportsColor, fogOfWarToggle);
-                printLine(MESSAGE_LINE, "monsterAt does not reflect node during monster turn");
-                napms(1000);
-                flushinp();
-                int ch = getch();
-                while (ch != 27) {
-                    ch = getch();
-                }
-                return 0;
-            }
-            //
             int x = mon->getPos().x;
             int y = mon->getPos().y;
 
@@ -1242,19 +1213,6 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
             else {
                 if (monsterAt[newY][newX]) {
                     Monster* monDisplace = monsterAt[newY][newX].get();
-                    //
-                    if (monDisplace == nullptr) {
-                        printDungeon(supportsColor, fogOfWarToggle);
-                        printLine(MESSAGE_LINE, "monster not found at (%d, %d)", newX, newY);
-                        napms(1000);
-                        flushinp();                        
-                        int ch = getch();
-                        while (ch != 27) {
-                            ch = getch();
-                        }
-                        return 0;
-                    }
-                    //
                     int possibleDir[8] = {0};
                     int numPossible = 0;
                     for (int i = 0; i < 8; i++) {
@@ -1317,9 +1275,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 attroff(COLOR_PAIR(Color::Red));
                             }
                             printLineColor(STATUS_LINE1, Color::Red, supportsColor, "%s dealt %d damage to you.\n", mon->getName().c_str(), damageTaken);
-                            //
-                            //napms(500);
-                            //
+                            napms(500);
                             flushinp();
                         }
                         if (hpLeft <= 0) {

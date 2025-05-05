@@ -337,7 +337,7 @@ public:
         int damage = 0;
         for (std::unique_ptr<Object>& obj : equipment) {
             if (obj == nullptr) { continue; }
-            damage += obj->getDamageBonus().base + obj->getDamageBonus().rolls * (rand() % obj->getDamageBonus().sides + 1);
+            damage += obj.get()->getDamageBonus().base + obj.get()->getDamageBonus().rolls * (rand() % obj.get()->getDamageBonus().sides + 1);
         }
         if (equipment[static_cast<int>(Equip::Weapon)] == nullptr) {
             damage += 0 + 1 * (rand() % 4 + 1);
@@ -398,7 +398,7 @@ public:
         int damage = 0;
         for (std::unique_ptr<Object>& obj : equipment) {
             if (obj == nullptr) { continue; }
-            damage += obj->getDamageBonus().base + obj->getDamageBonus().rolls * (rand() % obj->getDamageBonus().sides + 1);
+            damage += obj.get()->getDamageBonus().base + obj.get()->getDamageBonus().rolls * (rand() % obj.get()->getDamageBonus().sides + 1);
         }
         damage += dam.base + dam.rolls * (rand() % dam.sides + 1);
         return damage;
