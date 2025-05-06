@@ -8,13 +8,13 @@ int tunnelingDistances(Pos pos) {
     FibNode *nodes[MAX_HEIGHT][MAX_WIDTH] = {nullptr};
 
     dungeon[pos.y][pos.x].tunnelingDist = 0;
-    nodes[pos.y][pos.x] = insertNew(heap.get(), 0, pos);
+    nodes[pos.y][pos.x] = heap.get()->insertNew(0, pos);
 
-    while (heap->min != nullptr) {
-        FibNode *minNode = extractMin(heap.get());
+    while (heap.get()->getMin() != nullptr) {
+        FibNode *minNode = heap.get()->extractMin();
 
-        Pos minPos = minNode->pos;
-        int dist = minNode->key;
+        Pos minPos = minNode->getPos();
+        int dist = minNode->getKey();
 
         nodes[minPos.y][minPos.x] = nullptr;
         for (int i = -1; i <= 1; i++) {
@@ -31,10 +31,10 @@ int tunnelingDistances(Pos pos) {
                     dungeon[newY][newX].tunnelingDist = newDist;
 
                     if (nodes[newY][newX] == nullptr) {
-                        nodes[newY][newX] = insertNew(heap.get(), newDist, (Pos){newX, newY});
+                        nodes[newY][newX] = heap.get()->insertNew(newDist, (Pos){newX, newY});
                     }
                     else {
-                        decreaseKey(heap.get(), nodes[newY][newX], newDist);
+                        heap.get()->decreaseKey(nodes[newY][newX], newDist);
                     }
                 }
             }
@@ -49,12 +49,12 @@ int nonTunnelingDistances(Pos pos) {
     FibNode *nodes[MAX_HEIGHT][MAX_WIDTH] = {nullptr};
 
     dungeon[pos.y][pos.x].nonTunnelingDist = 0;
-    nodes[pos.y][pos.x] = insertNew(heap.get(), 0, pos);
+    nodes[pos.y][pos.x] = heap.get()->insertNew(0, pos);
 
-    while (heap.get()->min != nullptr) {
-        FibNode *minNode = extractMin(heap.get());
-        Pos minPos = minNode->pos;
-        int dist = minNode->key;
+    while (heap.get()->getMin() != nullptr) {
+        FibNode *minNode = heap.get()->extractMin();
+        Pos minPos = minNode->getPos();
+        int dist = minNode->getKey();
 
         nodes[minPos.y][minPos.x] = nullptr;
         for (int i = -1; i <= 1; i++) {
@@ -71,10 +71,10 @@ int nonTunnelingDistances(Pos pos) {
                     dungeon[newY][newX].nonTunnelingDist = newDist;
 
                     if (nodes[newY][newX] == nullptr) {
-                        nodes[newY][newX] = insertNew(heap.get(), newDist, (Pos){newX, newY});
+                        nodes[newY][newX] = heap.get()->insertNew(newDist, (Pos){newX, newY});
                     }
                     else {
-                        decreaseKey(heap.get(), nodes[newY][newX], newDist);
+                        heap.get()->decreaseKey(nodes[newY][newX], newDist);
                     }
                 }
             }

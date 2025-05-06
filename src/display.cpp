@@ -45,6 +45,7 @@ static const CommandInfo switches[] = {
     {"L", "Look at monster"},
     {"Q", "Quit the game"},
     {"T", "Show tunneling map"},
+    {"U", "Use item"},
     {",", "Pick up item"},
     {"?", "Show help"}
 };
@@ -182,32 +183,32 @@ void openEquipment(bool supportsColor, bool fogOfWarToggle) {
             std::string nameLine = "Name: " + player.getEquipmentItem((Equip)i)->getName();
             lines.push_back(nameLine);
 
-            if (obj->getDamageBonus().base > 0 || (obj->getDamageBonus().rolls > 0 && obj->getDamageBonus().sides > 0)) {
+            if (obj->getDamageBonus().base != 0 || (obj->getDamageBonus().rolls > 0 && obj->getDamageBonus().sides > 0)) {
                 std::string damageBonusLine = "Damage Bonus: " + std::to_string(obj->getDamageBonus().base) + "+";
                 damageBonusLine += std::to_string(obj->getDamageBonus().rolls) + "d" + std::to_string(obj->getDamageBonus().sides);
                 lines.push_back(damageBonusLine);
             }
-            if (obj->getSpeedBonus() > 0) {
+            if (obj->getSpeedBonus() != 0) {
                 std::string speedBonusLine = "Speed Bonus: " + std::to_string(obj->getSpeedBonus());
                 lines.push_back(speedBonusLine);
             }
-            if (obj->getHitBonus() > 0) {
+            if (obj->getHitBonus() != 0) {
                 std::string hitBonusLine = "Hit Bonus: " + std::to_string(obj->getHitBonus());
                 lines.push_back(hitBonusLine);
             }
-            if (obj->getDodgeBonus() > 0) {
+            if (obj->getDodgeBonus() != 0) {
                 std::string dodgeBonusLine = "Dodge Bonus: " + std::to_string(obj->getDodgeBonus());
                 lines.push_back(dodgeBonusLine);
             }
-            if (obj->getDefenseBonus() > 0) {
+            if (obj->getDefenseBonus() != 0) {
                 std::string defenseBonusLine = "Defense Bonus: " + std::to_string(obj->getDefenseBonus());
                 lines.push_back(defenseBonusLine);
             }
-            if (obj->getWeight() > 0) {
+            if (obj->getWeight() != 0) {
                 std::string weightLine = "Weight: " + std::to_string(obj->getWeight());
                 lines.push_back(weightLine);
             }
-            if (obj->getSpecialAttribute() > 0) {
+            if (obj->getSpecialAttribute() != 0) {
                 std::string specialAttributeLine = "Special Attribute: " + std::to_string(obj->getSpecialAttribute());
                 lines.push_back(specialAttributeLine);
             }
@@ -368,32 +369,35 @@ void openInventory(bool supportsColor, bool fogOfWarToggle) {
             std::string nameLine = "Name: " + player.getInventoryItem(i)->getName();
             lines.push_back(nameLine);
 
-            if (obj->getDamageBonus().base > 0 || (obj->getDamageBonus().rolls > 0 && obj->getDamageBonus().sides > 0)) {
+            std::string typeLine = "Type: " + obj->getTypeString();
+            lines.push_back(typeLine);
+
+            if (obj->getDamageBonus().base != 0 || (obj->getDamageBonus().rolls > 0 && obj->getDamageBonus().sides > 0)) {
                 std::string damageBonusLine = "Damage Bonus: " + std::to_string(obj->getDamageBonus().base) + "+";
                 damageBonusLine += std::to_string(obj->getDamageBonus().rolls) + "d" + std::to_string(obj->getDamageBonus().sides);
                 lines.push_back(damageBonusLine);
             }
-            if (obj->getSpeedBonus() > 0) {
+            if (obj->getSpeedBonus() != 0) {
                 std::string speedBonusLine = "Speed Bonus: " + std::to_string(obj->getSpeedBonus());
                 lines.push_back(speedBonusLine);
             }
-            if (obj->getHitBonus() > 0) {
+            if (obj->getHitBonus() != 0) {
                 std::string hitBonusLine = "Hit Bonus: " + std::to_string(obj->getHitBonus());
                 lines.push_back(hitBonusLine);
             }
-            if (obj->getDodgeBonus() > 0) {
+            if (obj->getDodgeBonus() != 0) {
                 std::string dodgeBonusLine = "Dodge Bonus: " + std::to_string(obj->getDodgeBonus());
                 lines.push_back(dodgeBonusLine);
             }
-            if (obj->getDefenseBonus() > 0) {
+            if (obj->getDefenseBonus() != 0) {
                 std::string defenseBonusLine = "Defense Bonus: " + std::to_string(obj->getDefenseBonus());
                 lines.push_back(defenseBonusLine);
             }
-            if (obj->getWeight() > 0) {
+            if (obj->getWeight() != 0) {
                 std::string weightLine = "Weight: " + std::to_string(obj->getWeight());
                 lines.push_back(weightLine);
             }
-            if (obj->getSpecialAttribute() > 0) {
+            if (obj->getSpecialAttribute() != 0) {
                 std::string specialAttributeLine = "Special Attribute: " + std::to_string(obj->getSpecialAttribute());
                 lines.push_back(specialAttributeLine);
             }

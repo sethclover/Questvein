@@ -345,6 +345,22 @@ public:
         return damage;
     }
 
+    int heal(int amount) {
+        if (amount < 0) {
+            return -takeDamage(-amount);
+        }
+
+        int hpBefore = hitpoints;
+        hitpoints += amount;
+        if (hitpoints > maxHitpoints) {
+            hitpoints = maxHitpoints;
+        }
+        else if (hitpoints < 0) {
+            hitpoints = 0;
+        }
+        return hitpoints - hpBefore;
+    }
+
     Player(Pos pos) {
         this->pos = pos;
         hitpoints = 100;

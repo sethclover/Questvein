@@ -3,6 +3,29 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [9.4.0] - 2025-5-5
+
+### Added
+
+- Quips now display when building or cleaning the project
+- Flasks ('!') are now incorporated, which can heal (or damage)
+  the player by using the 'U' command to use the item in their
+  inventory
+- Equipment can now have negative attributes, so be careful 
+  with what you equip from now on
+
+### Changed
+
+- Killing a monster now is shown in green instead of white
+- Dying to a monster is shown in red instead of white
+
+### Fixed
+
+- Stomping a monster will no longer have a chance to crash
+- Smart monsters will now stay where the last seen location is
+  instead of moving back and forth
+- Fixed teleporting not resetting the status message
+
 ## [9.3.0] - 2025-5-5
 
 ### Added

@@ -68,7 +68,7 @@ int curr_context = 0;
 <LIST_STATE>\n      { BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); return NEWLINE; }
 
 <FIELD_STATE>[1-9][0-9]?|100                { BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); yylval.num = atoi(yytext); return RARITY; }         
-<FIELD_STATE>[0-9]+\+[0-9]+d[0-9]+          { BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); yylval.str = strdup(yytext); return DICE; }
+<FIELD_STATE>-?[0-9]+\+[0-9]+d[0-9]+        { BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); yylval.str = strdup(yytext); return DICE; }
 <FIELD_STATE>[&$%+=?/!^a-zA-Z0-9]           { BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); yylval.ch = yytext[0]; return SYMBOL; }
 <FIELD_STATE>[a-zA-Z].*                     { BEGIN(curr_context == 1 ? MONSTER_STATE : OBJECT_STATE); yylval.str = strdup(yytext); return STRING; }
 

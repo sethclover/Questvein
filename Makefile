@@ -16,31 +16,38 @@ YACC_OBJ = $(BUILD_DIR)/y.tab.o
 EXEC = $(BUILD_DIR)/dungeon
 
 all: $(EXEC)
+	@if [ -z "$(MAKE_RESTARTS)" ]; then echo "$(shell shuf -n 1 quips/nothing.txt)"; fi
 
 $(EXEC): $(OBJECTS) $(YACC_OBJ) $(LEX_OBJ)
-	$(CC) $(OBJECTS) $(YACC_OBJ) $(LEX_OBJ) -o $@ $(LDFLAGS)
-
+	@echo "$(shell shuf -n 1 quips/start.txt)"
+	@$(CC) $(OBJECTS) $(YACC_OBJ) $(LEX_OBJ) -o $@ $(LDFLAGS)
 
 $(LEX_OBJ): $(BUILD_DIR)/lex.yy.c $(BUILD_DIR)/parser.tab.h
-	$(CC) -c $< -o $@ $(CFLAGS)
+	@echo "$(shell shuf -n 1 quips/start.txt)"
+	@$(CC) -c $< -o $@ $(CFLAGS)
 
 $(YACC_OBJ): $(BUILD_DIR)/parser.tab.c
-	$(CC) -c $< -o $@ $(CFLAGS)
+	@echo "$(shell shuf -n 1 quips/start.txt)"
+	@$(CC) -c $< -o $@ $(CFLAGS)
 
 $(BUILD_DIR)/parser.tab.c $(BUILD_DIR)/parser.tab.h: $(YACC_SRC)
+	@echo "$(shell shuf -n 1 quips/start.txt)"
 	@mkdir -p $(BUILD_DIR)
-	bison -d -o $(BUILD_DIR)/parser.tab.c $<
+	@bison -d -o $(BUILD_DIR)/parser.tab.c $<
 
 $(BUILD_DIR)/lex.yy.c: $(LEX_SRC) $(BUILD_DIR)/parser.tab.h
+	@echo "$(shell shuf -n 1 quips/start.txt)"
 	@mkdir -p $(BUILD_DIR)
-	flex -o $@ $<
+	@flex -o $@ $<
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@echo "$(shell shuf -n 1 quips/start.txt)"
 	@mkdir -p $(BUILD_DIR)
-	$(CC) -c $< -o $@ $(CFLAGS)
+	@$(CC) -c $< -o $@ $(CFLAGS)
 
 clean:
-	rm -f $(BUILD_DIR)/* $(SRC_DIR)/*~
+	@echo "$(shell shuf -n 1 quips/clean.txt)"
+	@rm -f $(BUILD_DIR)/* $(SRC_DIR)/*~
 
 .PHONY: all clean
 

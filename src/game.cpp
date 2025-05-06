@@ -90,25 +90,25 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
         for (int j = 0; j < MAX_WIDTH; j++) {
             if (monsterAt[i][j]) {
                 Monster *mon = monsterAt[i][j].get();
-                monMap.insert(std::make_pair(mon, insertNew(heap.get(), 1000 / mon->getSpeed(), mon->getPos())));
+                monMap.insert(std::make_pair(mon, heap.get()->insertNew(1000 / mon->getSpeed(), mon->getPos())));
             }
             dungeon[i][j].visible = FOG;
         }
     }
-    insertNew(heap.get(), 1, player.getPos());
+    heap.get()->insertNew(1, player.getPos());
 
     if (autoFlag) {
         fogOfWarToggle = false;
     }
 
     while (1) {
-        FibNode *node = extractMin(heap.get());
+        FibNode *node = heap.get()->extractMin();
         if (node == nullptr) {
             continue;
         }
-        time = node->key;
+        time = node->getKey();
 
-        if (node->pos == player.getPos()) {
+        if (node->getPos() == player.getPos()) {
             updateAroundPlayer();
             printDungeon(supportsColor, fogOfWarToggle);
             bool turnEnd = false;
@@ -288,11 +288,13 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 int ch = getch();
                                 if (ch >= '0' && ch <= '9') {
                                     int index = ch - '0';
-                                    if (player.getInventoryItem(index) == nullptr) {
+
+                                    Object *item = player.getInventoryItem(index);
+                                    if (item == nullptr) {
                                         printLine(MESSAGE_LINE, "Nothing in that slot.");
                                         break;
                                     }
-                                    std::string itemName = player.getInventoryItem(index)->getName();
+                                    std::string itemName = item->getName();
                                     player.dropFromInventory(index);
                                     printLine(MESSAGE_LINE, "%s has been dropped.", itemName.c_str());
                                 }
@@ -331,7 +333,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 while (!drop) {
                                     int oldX = x;
                                     int oldY = y;
-                                    mvaddch(y + 1, x, '!');
+                                    mvaddch(y + 1, x, '*');
                                     refresh();
                             
                                     int ch;
@@ -514,15 +516,16 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                         return 0;
                                     }
 
-                                    removeNode(heap.get(), monMap.at(mon));
-                                    monMap.erase(mon);
+                                    //removeNode(heap.get(), monMap.at(mon));
+                                    //monMap.erase(mon);
 
-                                    printLine(STATUS_LINE1, "Player stomped %s", mon->getName().c_str());
+                                    printLineColor(STATUS_LINE1, Color::Green, supportsColor, "Player stomped %s", mon->getName().c_str());
                                     monsterAt[player.getPos().y][player.getPos().x] = nullptr;
                                 }
                                 fogOfWarToggle = replaceFogOfWar;
                                 updateAroundPlayer();
                                 printDungeon(supportsColor, fogOfWarToggle);
+                                printLine(STATUS_LINE1, "");
                             }
                             break;
                         
@@ -576,12 +579,18 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 int ch = getch();
                                 if (ch >= '0' && ch <= '9') {
                                     int index = ch - '0';
-                                    if (player.getInventoryItem(index) == nullptr) {
+
+                                    Object *item = player.getInventoryItem(index);
+                                    if (item == nullptr) {
                                         printLine(MESSAGE_LINE, "Nothing in that slot.");
                                         break;
                                     }
-                                    std::string itemName = player.getInventoryItem(index)->getName();
-                                    if (player.getInventoryItem(index)->isTwoHanded()) {
+                                    std::string itemName = item->getName();
+                                    if (item->getEquipmentIndex() == Equip::None) {
+                                        printLine(MESSAGE_LINE, "%s is not an equipment item.", itemName.c_str());
+                                        break;
+                                    }
+                                    if (item->isTwoHanded()) {
                                         if (player.inventoryFull() && player.getEquipmentItem(Equip::Weapon) != nullptr &&
                                             player.getEquipmentItem(Equip::Offhand) != nullptr) {
                                             printLine(MESSAGE_LINE, "Inventory and weapon slots full. Cannot equip two-handed weapon.");
@@ -597,7 +606,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                             player.swapEquipment(index);
                                         }
                                     }
-                                    else if (player.getInventoryItem(index)->getEquipmentIndex() == Equip::Offhand) {
+                                    else if (item->getEquipmentIndex() == Equip::Offhand) {
                                         if (player.getEquipmentItem(Equip::Weapon) != nullptr) {
                                             if (player.getEquipmentItem(Equip::Weapon)->isTwoHanded()) {
                                                 player.unequip(Equip::Weapon);
@@ -613,41 +622,42 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                             player.swapEquipment(index);
                                         }
                                     }
-                                    else if (player.getInventoryItem(index)->getEquipmentIndex() == Equip::Ring1 || 
-                                            player.getInventoryItem(index)->getEquipmentIndex() == Equip::Ring2) {
+                                    else if (item->getEquipmentIndex() == Equip::Ring1 || 
+                                            item->getEquipmentIndex() == Equip::Ring2) {
                                         if (player.getEquipmentItem(Equip::Ring1) == nullptr) {
-                                            player.getInventoryItem(index)->setEquipmentIndex(Equip::Ring1);
+                                            item->setEquipmentIndex(Equip::Ring1);
                                             player.equip(index);
                                         }
                                         else if (player.getEquipmentItem(Equip::Ring2) == nullptr) {
-                                            player.getInventoryItem(index)->setEquipmentIndex(Equip::Ring2);
+                                            item->setEquipmentIndex(Equip::Ring2);
                                             player.equip(index);
                                         }
                                         else {
                                             printLine(MESSAGE_LINE, "Ring slots full. Replace ring (1) or (2)?");
                                             char ch = getch();
                                             if (ch == '1') {
-                                                player.getInventoryItem(index)->setEquipmentIndex(Equip::Ring1);
+                                                item->setEquipmentIndex(Equip::Ring1);
                                                 player.swapEquipment(index);
                                             }
                                             else if (ch == '2') {
-                                                player.getInventoryItem(index)->setEquipmentIndex(Equip::Ring2);
+                                                item->setEquipmentIndex(Equip::Ring2);
                                                 player.swapEquipment(index);
                                             }
                                         }
                                     }
-                                    else if (player.getInventoryItem(index)->getEquipmentIndex() == Equip::Light) {
+                                    else if (item->getEquipmentIndex() == Equip::Light) {
                                         player.swapEquipment(index);
                                         updateAroundPlayer();
                                         printDungeon(supportsColor, fogOfWarToggle);
                                     }
-                                    else if (player.getInventoryItem(index)->getEquipmentIndex() != Equip::None) {
+                                    else if (item->getEquipmentIndex() != Equip::None) {
                                         player.swapEquipment(index);
                                     }
                                     else {
                                         break;
                                     }
                                     printLine(MESSAGE_LINE, "%s is now equipped.", itemName.c_str());
+                                    printStatus(supportsColor);
                                 }
                                 else if (ch == 'w' || ch == 27) {
                                     printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
@@ -664,11 +674,13 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 int ch = getch();
                                 if (ch >= '0' && ch <= '9') {
                                     int index = ch - '0';
-                                    if (player.getInventoryItem(index) == nullptr) {
+
+                                    Object *item = player.getInventoryItem(index);
+                                    if (item == nullptr) {
                                         printLine(MESSAGE_LINE, "Nothing in that slot.");
                                         break;
                                     }
-                                    std::string itemName = player.getInventoryItem(index)->getName();
+                                    std::string itemName = item->getName();
                                     player.expungeFromInventory(index);
                                     printLine(MESSAGE_LINE, "%s has been obliterated.", itemName.c_str());
                                 }
@@ -982,6 +994,61 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             nonTunnelingDistMap(supportsColor, fogOfWarToggle);
                             break;
 
+                        case 'U':
+                            printLine(MESSAGE_LINE, "Choose an inventory slot 0-9");
+                            {
+                                int ch = getch();
+                                if (ch >= '0' && ch <= '9') {
+                                    int index = ch - '0';
+
+                                    Object *item = player.getInventoryItem(index);
+                                    if (item == nullptr) {
+                                        printLine(MESSAGE_LINE, "Nothing in that slot.");
+                                        break;
+                                    }
+                                    std::string itemName = item->getName();
+                                    if (item->getTypes().front() == "FLASK") {
+                                        int amountHealed = player.heal(item->getSpecialAttribute());
+                                        int hp = player.getHitpoints();
+                                        player.expungeFromInventory(index);
+                                        if (amountHealed > 0) {
+                                            printLine(MESSAGE_LINE, "You drank %s and heal %d HP.", itemName.c_str(), amountHealed);
+                                            printStatus(supportsColor);
+                                        }
+                                        else if (amountHealed < 0) {
+                                            if (hp <= 0) {
+                                                printLine(MESSAGE_LINE, "");
+                                                printLineColor(STATUS_LINE1, Color::Red, supportsColor, "Player has died from %s", itemName.c_str());
+                                                printLine(STATUS_LINE2, "Press any key to continue...");
+                                                getch();
+                                                lossScreen(supportsColor);
+                    
+                                                clearAll();
+                                                return 0;
+                                            }
+                                            else {
+                                                printLine(MESSAGE_LINE, "You drank %s and took %d damage.", itemName.c_str(), amountHealed * -1);
+                                                printStatus(supportsColor);
+                                            }
+                                        }
+                                        else {
+                                            printLine(MESSAGE_LINE, "You drank %s and nothing happened.", itemName.c_str());
+                                        }
+                                    }
+                                    else {
+                                        printLine(MESSAGE_LINE, "Not a valid item to use.");
+                                        break;
+                                    }
+                                }
+                                else if (ch == 'u' || ch == 27) {
+                                    printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
+                                }
+                                else {
+                                    printLine(MESSAGE_LINE, "Not a valid slot.");
+                                }
+                            }
+                            break;
+
                         case ',':
                             if (!objectsAt[player.getPos().y][player.getPos().x].empty()) {
                                 std::string itemName = objectsAt[player.getPos().y][player.getPos().x].back()->getName();
@@ -1035,7 +1102,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             //removeNode(heap.get(), monMap.at(mon));
                             //monMap.erase(mon);
 
-                            printLine(STATUS_LINE1, "%s has been slain.\n", mon->getName().c_str());
+                            printLineColor(STATUS_LINE1, Color::Green, supportsColor, "%s has been slain.\n", mon->getName().c_str());
                             monsterAt[mon->getPos().y][mon->getPos().x] = nullptr;
                         }
                         else {
@@ -1044,16 +1111,16 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             flushinp();
                         }
 
-                        node->key = time + 1000 / player.getSpeed();
-                        insertNode(heap.get(), node);
+                        node->setKey(time + 1000 / player.getSpeed());
+                        heap.get()->insertNode(node);
                     }
                     else {
                         printLine(STATUS_LINE1, "");
 
                         player.setPos((Pos){player.getPos().x + xDir, player.getPos().y + yDir});
-                        node->key = time + 1000 / player.getSpeed();
-                        node->pos = player.getPos();
-                        insertNode(heap.get(), node);
+                        node->setKey(time + 1000 / player.getSpeed());
+                        node->setPos(player.getPos());
+                        heap.get()->insertNode(node);
                     }
                 }
                 else {
@@ -1063,7 +1130,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
             }
         }
         else {
-            Monster *mon = monsterAt[node->pos.y][node->pos.x].get();
+            Monster *mon = monsterAt[node->getPos().y][node->getPos().x].get();
             if (mon == nullptr) {
                 continue;
             }
@@ -1117,28 +1184,31 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                 }
                 
                 if (mon->isIntelligent()) {
-                    int minDist = UNREACHABLE;
-                    int possibleDir[8] = {0};
-                    int numPossible = 0;
-                    for (int i = 0; i < 8; i++) {
-                        int possibleX = x + directions[i][0];
-                        int possibleY = y + directions[i][1];
-                        if ((mon->isTunneling() && dungeon[possibleY][possibleX].tunnelingDist < minDist) ||
-                           (!mon->isTunneling() && dungeon[possibleY][possibleX].nonTunnelingDist < minDist)) {
-                            numPossible = 1;
-                            minDist = mon->isTunneling() ? dungeon[possibleY][possibleX].tunnelingDist : dungeon[possibleY][possibleX].nonTunnelingDist;
-                            possibleDir[0] = i;
+                    if (!((mon->isTunneling() && dungeon[y][x].tunnelingDist == 0) ||
+                        (!mon->isTunneling() && dungeon[y][x].nonTunnelingDist == 0))) {
+                        int minDist = UNREACHABLE;
+                        int possibleDir[8] = {0};
+                        int numPossible = 0;
+                        for (int i = 0; i < 8; i++) {
+                            int possibleX = x + directions[i][0];
+                            int possibleY = y + directions[i][1];
+                            if ((mon->isTunneling() && dungeon[possibleY][possibleX].tunnelingDist < minDist) ||
+                            (!mon->isTunneling() && dungeon[possibleY][possibleX].nonTunnelingDist < minDist)) {
+                                numPossible = 1;
+                                minDist = mon->isTunneling() ? dungeon[possibleY][possibleX].tunnelingDist : dungeon[possibleY][possibleX].nonTunnelingDist;
+                                possibleDir[0] = i;
+                            }
+                            else if ((mon->isTunneling() && dungeon[newY][newX].tunnelingDist == minDist) ||
+                                    (!mon->isTunneling() && dungeon[newY][newX].nonTunnelingDist == minDist)) {
+                                numPossible++;
+                                possibleDir[numPossible - 1] = i;
+                            }
                         }
-                        else if ((mon->isTunneling() && dungeon[newY][newX].tunnelingDist == minDist) ||
-                                (!mon->isTunneling() && dungeon[newY][newX].nonTunnelingDist == minDist)) {
-                            numPossible++;
-                            possibleDir[numPossible - 1] = i;
-                        }
-                    }
-                    int dir = possibleDir[rand() % numPossible];
+                        int dir = possibleDir[rand() % numPossible];
 
-                    newX = x + directions[dir][0];
-                    newY = y + directions[dir][1];
+                        newX = x + directions[dir][0];
+                        newY = y + directions[dir][1];
+                    }
                 }
                 else {
                     int targetX = mon->getLastSeen().x;
@@ -1179,24 +1249,24 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     if ((mon->isTunneling() && dungeon[newY][newX].tunnelingDist == UNREACHABLE) ||
                         (!mon->isTunneling() && dungeon[newY][newX].nonTunnelingDist == UNREACHABLE)) {
 
-                        node->key = time + 1000 / mon->getSpeed();
-                        insertNode(heap.get(), node);
+                        node->setKey(time + 1000 / mon->getSpeed());
+                        heap.get()->insertNode(node);
                         continue;
                     }
                 }
             }
 
             if (newX == x && newY == y) {
-                node->key = time + 1000 / mon->getSpeed();
-                insertNode(heap.get(), node);
+                node->setKey(time + 1000 / mon->getSpeed());
+                heap.get()->insertNode(node);
                 continue;
             }
             else if (dungeon[newY][newX].type == ROCK) {
                 if (dungeon[newY][newX].hardness > 85) {
                     dungeon[newY][newX].hardness -= 85;
 
-                    node->key = time + 1000 / mon->getSpeed();
-                    insertNode(heap.get(), node);
+                    node->setKey(time + 1000 / mon->getSpeed());
+                    heap.get()->insertNode(node);
                 }
                 else {
                     dungeon[newY][newX].hardness = 0;
@@ -1205,9 +1275,9 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     mon->setPos((Pos){newX, newY});
                     monsterAt[newY][newX] = std::move(monsterAt[y][x]);
 
-                    node->key = time + 1000 / mon->getSpeed();
-                    node->pos = (Pos){newX, newY};
-                    insertNode(heap.get(), node);
+                    node->setKey(time + 1000 / mon->getSpeed());
+                    node->setPos((Pos){newX, newY});
+                    heap.get()->insertNode(node);
                 }
             }
             else {
@@ -1237,12 +1307,12 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         monsterAt[displaceY][displaceX] = std::move(monsterAt[newY][newX]);
                         monsterAt[newY][newX] = std::move(monsterAt[y][x]);
 
-                        node->key = time + 1000 / mon->getSpeed();
-                        node->pos = (Pos){newX, newY};
-                        insertNode(heap.get(), node);
+                        node->setKey(time + 1000 / mon->getSpeed());
+                        node->setPos((Pos){newX, newY});
+                        heap.get()->insertNode(node);
 
                         FibNode *displaceNode = monMap.at(monDisplace);
-                        displaceNode->pos = (Pos){displaceX, displaceY};
+                        displaceNode->setPos((Pos){displaceX, displaceY});
                     }
                     else {
                         monDisplace->setPos((Pos){x, y});
@@ -1252,12 +1322,12 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         monsterAt[y][x] = std::move(monsterAt[newY][newX]);
                         monsterAt[newY][newX] = std::move(tmp);
 
-                        node->key = time + 1000 / mon->getSpeed();
-                        node->pos = (Pos){newX, newY};
-                        insertNode(heap.get(), node);
+                        node->setKey(time + 1000 / mon->getSpeed());
+                        node->setPos((Pos){newX, newY});
+                        heap.get()->insertNode(node);
 
                         FibNode *displaceNode = monMap.at(monDisplace);
-                        displaceNode->pos = (Pos){x, y};
+                        displaceNode->setPos((Pos){x, y});
                     }
                 }
                 else if (newX == player.getPos().x && newY == player.getPos().y) {
@@ -1282,7 +1352,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             updateAroundPlayer();
                             printDungeon(supportsColor, fogOfWarToggle);
                             printLine(MESSAGE_LINE, "");
-                            printLine(STATUS_LINE1, "Player killed by %s, gg", mon->getName().c_str());
+                            printLineColor(STATUS_LINE1, Color::Red, supportsColor, "Player killed by %s", mon->getName().c_str());
                             printLine(STATUS_LINE2, "Press any key to continue...");
                             getch();
                             lossScreen(supportsColor);
@@ -1293,18 +1363,18 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         
                     }
 
-                    node->key = time + 1000 / mon->getSpeed();
-                    insertNode(heap.get(), node);
+                    node->setKey(time + 1000 / mon->getSpeed());
+                    heap.get()->insertNode(node);
                 }
                 else {
                     mon->setPos((Pos){newX, newY});
 
                     monsterAt[newY][newX] = std::move(monsterAt[y][x]);
 
-                    node->key = time + 1000 / mon->getSpeed();
-                    node->pos = (Pos){newX, newY};
+                    node->setKey(time + 1000 / mon->getSpeed());
+                    node->setPos((Pos){newX, newY});
 
-                    insertNode(heap.get(), node);
+                    heap.get()->insertNode(node);
                 }
             }
         }
