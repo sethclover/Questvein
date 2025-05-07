@@ -10,21 +10,29 @@
 
 #include "parser.hpp"
 
-static const int MAX_WIDTH = 80;
-static const int MAX_HEIGHT = 21;
-static const int MAX_HARDNESS = 255;
-static const int ATTEMPTS = 1000;
-static const int UNREACHABLE = 9999;
-
-static const int INVENTORY_SIZE = 10;
-static const int DEFENSE_SCALE = 50;
-
 static const char FLOOR = '.';
 static const char CORRIDOR = '#';
 static const char STAIR_UP = '<';
 static const char STAIR_DOWN = '>';
 static const char ROCK = ' ';
 static const char FOG = ' ';
+
+static const int MAX_WIDTH = 80;
+static const int MAX_HEIGHT = 21;
+static const int MAX_HARDNESS = 255;
+static const int ATTEMPTS = 1000;
+static const int UNREACHABLE = 9999;
+
+// change with class/race
+static const int BASE_HP = 100;
+static const int BASE_HIT_BONUS = 0;
+static const int BASE_DODGE_BONUS = 0;
+static const int BASE_DEFENSE = 0;
+static const int BASE_SPEED = 10;
+
+static const int INVENTORY_SIZE = 10;
+static const int DEFENSE_SCALE = 50;
+static const int HIT_SCALE = 75;
 
 enum class Color {
     Black = 1,
@@ -224,8 +232,10 @@ extern std::vector<std::unique_ptr<Object>> objectsAt[MAX_HEIGHT][MAX_WIDTH];
 class Character {
 protected:
     Pos pos;
-    int hitpoints;
     int maxHitpoints;
+    int hitpoints;
+    int hitBonus;
+    int dodgeBonus;
     int defense;
     int speed;
     std::array<std::unique_ptr<Object>, static_cast<int>(Equip::Count)> equipment;
@@ -247,9 +257,19 @@ public:
         return damageTaken;
     }
 
+    bool attemptHit(int defendingDodgeBonus) {
+        int hitCheck = rand() % 100 + 1;
+        int effectiveBonus = this->hitBonus - defendingDodgeBonus;
+        return hitCheck < HIT_SCALE + effectiveBonus;
+    }
+
+    int getHitBonus() { return hitBonus; }
+
+    int getDodgeBonus() { return dodgeBonus; }
+
     int getDefense() { return defense > 0 ? defense : 0; }
 
-    int getSpeed() { return speed > 0 ? speed : 0; }
+    int getSpeed() { return speed > 0 ? speed : 1; }
 
     Object *getEquipmentItem(Equip e) {
         return equipment[static_cast<int>(e)].get();
@@ -273,8 +293,9 @@ public:
         Equip e = inventory[index].get()->getEquipmentIndex();
         equipment[static_cast<int>(e)] = std::move(inventory[index]);
         Object *obj = equipment[static_cast<int>(e)].get();
-        //hit bonus
-        //dodge bonus
+
+        hitBonus += obj->getHitBonus();
+        dodgeBonus += obj->getDodgeBonus();
         defense += obj->getDefenseBonus();
         // weight
         speed += obj->getSpeedBonus();
@@ -290,8 +311,8 @@ public:
                 inventory[i] = std::move(equipment[static_cast<int>(e)]);
 
                 Object *obj = inventory[i].get();
-                //hit bonus
-                //dodge bonus
+                hitBonus -= obj->getHitBonus();
+                dodgeBonus -= obj->getDodgeBonus();
                 defense -= obj->getDefenseBonus();
                 // weight
                 speed -= obj->getSpeedBonus();
@@ -363,10 +384,12 @@ public:
 
     Player(Pos pos) {
         this->pos = pos;
-        hitpoints = 100;
-        maxHitpoints = 100;
-        defense = 0;
-        speed = 10;
+        maxHitpoints = BASE_HP;
+        hitpoints = maxHitpoints;
+        hitBonus = BASE_HIT_BONUS;
+        dodgeBonus = BASE_DODGE_BONUS;
+        defense = BASE_DEFENSE;
+        speed = BASE_SPEED;
     }
     Player() = delete;
     ~Player() = default;
@@ -437,6 +460,14 @@ public:
     void setLastSeen(Pos p) { lastSeen = p; }
 
     Monster(MonsterType* monType, int monTypeIndex, Pos pos) {
+        this->pos = pos;
+        maxHitpoints = monType->hp.base + monType->hp.rolls * (rand() % monType->hp.sides + 1);
+        hitpoints = maxHitpoints;
+        hitBonus = BASE_HIT_BONUS;
+        dodgeBonus = BASE_DODGE_BONUS;
+        defense = BASE_DEFENSE;
+        speed = monType->speed.base + monType->speed.rolls * (rand() % monType->speed.sides + 1);
+
         this->monTypeIndex = monTypeIndex;
         name = monType->name;
         description = monType->desc;
@@ -452,8 +483,7 @@ public:
         }
         colorCount = colors.size();
         colorIndex = 0;
-        speed = monType->speed.base + monType->speed.rolls * (rand() % monType->speed.sides + 1);
-        defense = 0;
+        
         intelligent = false;
         telepathic = false;
         tunneling = false;
@@ -474,13 +504,10 @@ public:
             else if (abil == "UNIQ") { unique = true; }
             else if (abil == "BOSS") { boss = true; }
         }
-        hitpoints = monType->hp.base + monType->hp.rolls * (rand() % monType->hp.sides + 1);
-        maxHitpoints = hitpoints;
         dam = Dice(monType->dam.base, monType->dam.rolls, monType->dam.sides);
         symbol = monType->symbol;
         rarity = monType->rarity;
         lastSeen = {-1, -1};
-        this->pos = pos;
     }
     Monster() = delete;
     ~Monster() = default;  

@@ -269,7 +269,6 @@ int main(int argc, char *argv[]) {
     if (has_colors()) {
         start_color();
         supportsColor = true;
-
         init_pair(1, COLOR_WHITE, COLOR_BLACK);
         init_pair(2, COLOR_RED, COLOR_BLACK);
         init_pair(3, COLOR_GREEN, COLOR_BLACK);

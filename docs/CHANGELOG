@@ -3,6 +3,31 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [9.5.0] - 2025-5-6
+
+### Added
+
+- Hit bonuses and dodge bonuses are now fully functional, so
+  when a character attacks another character, it calculates
+  whether the attack lands based on a base success rate of
+  75%, and adjusts based on the attacker's hit bonus and the
+  defender's dodge bonus
+- Monster and object colors will now change in intervals
+  while waiting for the PC's action
+
+### Changed
+
+- When a character takes damage, it appears red briefly, and when it
+  dodges an attack, it flashes yellow
+- When the player takes damage, the status line flashes red, and when
+  the player or monster dodges an attack, it flashes yellow on the
+  status line
+
+### Fixed
+
+- Patched the monster showing above the player when stomping
+  on the boss
+
 ## [9.4.0] - 2025-5-5
 
 ### Added

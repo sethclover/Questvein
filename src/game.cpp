@@ -4,6 +4,9 @@
 #include <cstring>
 #include <ncurses.h>
 #include <memory>
+#include <sys/select.h>
+#include <sys/time.h>
+#include <unistd.h>
 #include <unordered_map>
 
 #include "display.hpp"
@@ -100,7 +103,6 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
     if (autoFlag) {
         fogOfWarToggle = false;
     }
-
     while (1) {
         FibNode *node = heap.get()->extractMin();
         if (node == nullptr) {
@@ -132,6 +134,16 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     turnEnd = true;
                 }
                 else {
+                    fd_set readfs;
+                    struct timeval tv;
+                    do {
+                        FD_ZERO(&readfs);
+                        FD_SET(STDIN_FILENO, &readfs);
+                        tv.tv_sec = 0;
+                        tv.tv_usec = 180000;
+                        redisplayColors(supportsColor, fogOfWarToggle);
+                    } while (!select(STDIN_FILENO + 1, &readfs, nullptr, nullptr, &tv));
+                    
                     ch = getch();
                     switch (ch) {
                         case KEY_HOME:
@@ -278,8 +290,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             break;
 
                         case 'c':
-                            // "character info"
-                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
+                            characterInfo(supportsColor, fogOfWarToggle);
                             break;
                         
                         case 'd':
@@ -516,16 +527,15 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                         return 0;
                                     }
 
-                                    //removeNode(heap.get(), monMap.at(mon));
-                                    //monMap.erase(mon);
-
                                     printLineColor(STATUS_LINE1, Color::Green, supportsColor, "Player stomped %s", mon->getName().c_str());
                                     monsterAt[player.getPos().y][player.getPos().x] = nullptr;
+                                }
+                                else {
+                                    printLine(STATUS_LINE1, "");
                                 }
                                 fogOfWarToggle = replaceFogOfWar;
                                 updateAroundPlayer();
                                 printDungeon(supportsColor, fogOfWarToggle);
-                                printLine(STATUS_LINE1, "");
                             }
                             break;
                         
@@ -1083,32 +1093,50 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     if (monsterAt[player.getPos().y + yDir][player.getPos().x + xDir]) {
                         Monster *mon = monsterAt[player.getPos().y + yDir][player.getPos().x + xDir].get();
 
-                        int dam = player.doDamage();
-                        int damageTaken = mon->takeDamage(dam);
-                        int hpLeft = mon->getHitpoints();
+                        if (player.attemptHit(mon->getDodgeBonus())) {
+                            int dam = player.doDamage();
+                            int damageTaken = mon->takeDamage(dam);
+                            int hpLeft = mon->getHitpoints();
 
-                        if (hpLeft <= 0) {
-                            if (mon->isBoss()) {
-                                printDungeon(supportsColor, fogOfWarToggle);
-                                printLine(STATUS_LINE1, "%s has been slain!\n", mon->getName().c_str());
-                                printLine(STATUS_LINE2, "You win! Press any key to continue...");
-                                getch();
-                                winScreen(supportsColor);
-                                
-                                clearAll();
-                                return 0;
+                            if (hpLeft <= 0) {
+                                if (mon->isBoss()) {
+                                    printDungeon(supportsColor, fogOfWarToggle);
+                                    printLine(STATUS_LINE1, "%s has been slain!\n", mon->getName().c_str());
+                                    printLine(STATUS_LINE2, "You win! Press any key to continue...");
+                                    getch();
+                                    winScreen(supportsColor);
+                                    
+                                    clearAll();
+                                    return 0;
+                                }
+
+                                printLineColor(STATUS_LINE1, Color::Green, supportsColor, "%s has been slain.\n", mon->getName().c_str());
+                                monsterAt[mon->getPos().y][mon->getPos().x] = nullptr;
                             }
-
-                            //removeNode(heap.get(), monMap.at(mon));
-                            //monMap.erase(mon);
-
-                            printLineColor(STATUS_LINE1, Color::Green, supportsColor, "%s has been slain.\n", mon->getName().c_str());
-                            monsterAt[mon->getPos().y][mon->getPos().x] = nullptr;
+                            else {
+                                if (supportsColor) {
+                                    attron(COLOR_PAIR(Color::Red));
+                                    mvaddch(mon->getPos().y + 1, mon->getPos().x, mon->getSymbol());
+                                    attroff(COLOR_PAIR(Color::Red));
+                                }
+                                printLineColor(STATUS_LINE1, Color::Green, supportsColor, "You dealt %d damage to %s.\n", damageTaken, mon->getName().c_str());
+                                napms(400);
+                                flushinp();
+                                printLine(STATUS_LINE1, "You dealt %d damage to %s.\n", damageTaken, mon->getName().c_str());
+                                napms(100);
+                            }
                         }
                         else {
-                            printLineColor(STATUS_LINE1, Color::Green, supportsColor, "You dealt %d damage to %s.\n", damageTaken, mon->getName().c_str());
-                            napms(500);
+                            if (supportsColor) {
+                                attron(COLOR_PAIR(Color::Yellow));
+                                mvaddch(mon->getPos().y + 1, mon->getPos().x, mon->getSymbol());
+                                attroff(COLOR_PAIR(Color::Yellow));
+                            }
+                            printLineColor(STATUS_LINE1, Color::Yellow, supportsColor, "You missed %s.\n", mon->getName().c_str());
+                            napms(400);
                             flushinp();
+                            printLine(STATUS_LINE1, "You missed %s.\n", mon->getName().c_str());
+                            napms(100);
                         }
 
                         node->setKey(time + 1000 / player.getSpeed());
@@ -1331,23 +1359,31 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     }
                 }
                 else if (newX == player.getPos().x && newY == player.getPos().y) {
-                    if (!godmodeFlag) {
+                    if (godmodeFlag) {
+                        updateAroundPlayer();
+                        printDungeon(supportsColor, fogOfWarToggle);
+
+                        if (supportsColor) {
+                            attron(COLOR_PAIR(Color::Yellow));
+                            mvaddch(player.getPos().y + 1, player.getPos().x, '@');
+                            attroff(COLOR_PAIR(Color::Yellow));
+                        }
+                        printLineColor(STATUS_LINE1, Color::Yellow, supportsColor, "%s fails to realize they are in the presence of a god.");
+                        napms(400);
+                        flushinp(); 
+                        if (supportsColor) {
+                            attron(COLOR_PAIR(Color::White));
+                            mvaddch(player.getPos().y + 1, player.getPos().x, '@');
+                            attroff(COLOR_PAIR(Color::White));
+                        }                  
+                        printLine(STATUS_LINE1, "%s fails to realize they are in the presence of a god.");
+                        napms(100);
+                    }
+                    else if (mon->attemptHit(player.getDodgeBonus())) {
                         int dam = mon->doDamage();
                         int damageTaken = player.takeDamage(dam);
                         int hpLeft = player.getHitpoints();
 
-                        if (dam > 0) {
-                            updateAroundPlayer();
-                            printDungeon(supportsColor, fogOfWarToggle);
-                            if (supportsColor) {
-                                attron(COLOR_PAIR(Color::Red));
-                                mvaddch(player.getPos().y + 1, player.getPos().x, '@');
-                                attroff(COLOR_PAIR(Color::Red));
-                            }
-                            printLineColor(STATUS_LINE1, Color::Red, supportsColor, "%s dealt %d damage to you.\n", mon->getName().c_str(), damageTaken);
-                            napms(500);
-                            flushinp();
-                        }
                         if (hpLeft <= 0) {
                             updateAroundPlayer();
                             printDungeon(supportsColor, fogOfWarToggle);
@@ -1360,7 +1396,65 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             clearAll();
                             return 0;
                         }
-                        
+                        else {
+                            updateAroundPlayer();
+                            printDungeon(supportsColor, fogOfWarToggle);
+
+                            if (dam > 0) {
+                                if (supportsColor) {
+                                    attron(COLOR_PAIR(Color::Red));
+                                    mvaddch(player.getPos().y + 1, player.getPos().x, '@');
+                                    attroff(COLOR_PAIR(Color::Red));
+                                }
+                                printLineColor(STATUS_LINE1, Color::Red, supportsColor, "%s dealt %d damage to you.\n", mon->getName().c_str(), damageTaken);
+                                napms(400);
+                                flushinp();
+                                if (supportsColor) {
+                                    attron(COLOR_PAIR(Color::White));
+                                    mvaddch(player.getPos().y + 1, player.getPos().x, '@');
+                                    attroff(COLOR_PAIR(Color::White));
+                                }           
+                                printLine(STATUS_LINE1, "%s dealt %d damage to you.\n", mon->getName().c_str(), damageTaken);
+                                napms(100);
+                            }
+                            else {
+                                if (supportsColor) {
+                                    attron(COLOR_PAIR(Color::Yellow));
+                                    mvaddch(player.getPos().y + 1, player.getPos().x, '@');
+                                    attroff(COLOR_PAIR(Color::Yellow));
+                                }
+                                printLineColor(STATUS_LINE1, Color::Yellow, supportsColor, "%s did nothing to you.\n", mon->getName().c_str());
+                                napms(400);
+                                flushinp();
+                                if (supportsColor) {
+                                    attron(COLOR_PAIR(Color::White));
+                                    mvaddch(player.getPos().y + 1, player.getPos().x, '@');
+                                    attroff(COLOR_PAIR(Color::White));
+                                }           
+                                printLine(STATUS_LINE1, "%s did nothing to you.\n", mon->getName().c_str());
+                                napms(100);
+                            }
+                        }
+                    }
+                    else {
+                        updateAroundPlayer();
+                        printDungeon(supportsColor, fogOfWarToggle);
+
+                        if (supportsColor) {
+                            attron(COLOR_PAIR(Color::Yellow));
+                            mvaddch(player.getPos().y + 1, player.getPos().x, '@');
+                            attroff(COLOR_PAIR(Color::Yellow));
+                        }
+                        printLineColor(STATUS_LINE1, Color::Yellow, supportsColor, "You dodged %s's attack.\n", mon->getName().c_str());
+                        napms(400);
+                        flushinp();
+                        if (supportsColor) {
+                            attron(COLOR_PAIR(Color::White));
+                            mvaddch(player.getPos().y + 1, player.getPos().x, '@');
+                            attroff(COLOR_PAIR(Color::White));
+                        }           
+                        printLine(STATUS_LINE1, "You dodged %s's attack.\n", mon->getName().c_str());
+                        napms(100);
                     }
 
                     node->setKey(time + 1000 / mon->getSpeed());

@@ -11,6 +11,8 @@ void printParsedObjects();
 void printLine(int line, const char *format, ...);
 void printLineColor(int line, Color color, bool supportsColor, const char *format, ...);
 void printStatus(bool supportsColor);
+void redisplayColors(bool supportsColor, bool fogOfWarToggle);
+void characterInfo(bool supportsColor, bool fogOfWarToggle);
 void openEquipment(bool supportsColor, bool fogOfWarToggle);
 void openInventory(bool supportsColor, bool fogOfWarToggle);
 void printDungeon(bool supportsColor, bool fogOfWarToggle);
