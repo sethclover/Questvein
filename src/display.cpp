@@ -5,10 +5,17 @@
 #include <cstring>
 #include <iostream>
 #include <ncurses.h>
+#include <string>
+#include <sys/select.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include <utility>
+#include <vector>
 
 #include "display.hpp"
 #include "dungeon.hpp"
 #include "game.hpp"
+#include "globals.hpp"
 #include "pathFinding.hpp"
 
 class CommandInfo {
@@ -38,6 +45,7 @@ static const CommandInfo switches[] = {
     {"m", "Show monster list"},
     {"o", "Show object list"},
     {"t", "Take off item"},
+    {"v", "View actions"},
     {"w", "Wear item"},
     {"x", "Expunge item"},
     {"D", "Show mon-tunneling map"},
@@ -106,28 +114,73 @@ void printParsedObjects() {
     }
 }
 
+void fitString(std::string& str, int maxWidth) {
+    if (static_cast<int>(str.length()) > maxWidth) {
+        if (str[maxWidth - 3] == ' ') {
+            str = str.substr(0, maxWidth - 4) + "...";
+        } 
+        else {
+            str = str.substr(0, maxWidth - 3) + "...";
+        }       
+    }
+}
+
 void printLine(int line, const char* format, ...) {
     char buffer[MAX_WIDTH];
     va_list args;
     va_start(args, format);
-    vsnprintf(buffer, MAX_WIDTH, format, args);
+    vsnprintf(buffer, MAX_WIDTH + 2, format, args);
     va_end(args);
 
     move(line, 0);
     clrtoeol();
+
+    int len = strlen(buffer);
+    if (len > MAX_WIDTH) {
+        if (buffer[MAX_WIDTH - 3] == ' ') {
+            buffer[MAX_WIDTH - 4] = '.';
+            buffer[MAX_WIDTH - 3] = '.';
+            buffer[MAX_WIDTH - 2] = '.';
+            buffer[MAX_WIDTH - 1] = '\0';
+        }
+        else {
+            buffer[MAX_WIDTH - 3] = '.';
+            buffer[MAX_WIDTH - 2] = '.';
+            buffer[MAX_WIDTH - 1] = '.';
+            buffer[MAX_WIDTH] = '\0';
+        }
+    }
+
     printw("%s", buffer);
     refresh();
 }
 
-void printLineColor(int line, Color color, bool supportsColor, const char* format, ...) {
+void printLineColor(int line, Color color, const char* format, ...) {
     char buffer[MAX_WIDTH];
     va_list args;
     va_start(args, format);
-    vsnprintf(buffer, MAX_WIDTH, format, args);
+    vsnprintf(buffer, MAX_WIDTH + 2, format, args);
     va_end(args);
 
     move(line, 0);
     clrtoeol();
+
+    int len = strlen(buffer);
+    if (len > MAX_WIDTH) {
+        if (buffer[MAX_WIDTH - 3] == ' ') {
+            buffer[MAX_WIDTH - 4] = '.';
+            buffer[MAX_WIDTH - 3] = '.';
+            buffer[MAX_WIDTH - 2] = '.';
+            buffer[MAX_WIDTH - 1] = '\0';
+        }
+        else {
+            buffer[MAX_WIDTH - 3] = '.';
+            buffer[MAX_WIDTH - 2] = '.';
+            buffer[MAX_WIDTH - 1] = '.';
+            buffer[MAX_WIDTH] = '\0';
+        }
+    }
+
     if (supportsColor) {
         attron(COLOR_PAIR(color));
         printw("%s", buffer);
@@ -136,11 +189,10 @@ void printLineColor(int line, Color color, bool supportsColor, const char* forma
     else {
         printw("%s", buffer);
     }
-
     refresh();
 }
 
-void redisplayColors(bool supportsColor, bool fogOfWarToggle) {
+void redisplayColors() {
     if (!supportsColor) {
         return;
     }
@@ -157,9 +209,16 @@ void redisplayColors(bool supportsColor, bool fogOfWarToggle) {
                     }
                     else if (!objectsAt[y][x].empty()) {
                         Color c = objectsAt[y][x].back().get()->getColor();
-                        attron(COLOR_PAIR(c));
-                        mvaddch(y + 1, x, objectsAt[y][x].back().get()->getSymbol());
-                        attroff(COLOR_PAIR(c));
+                        if (objectsAt[y][x].size() > 1) {
+                            attron(COLOR_PAIR(c));
+                            mvaddch(y + 1, x, '&');
+                            attroff(COLOR_PAIR(c));
+                        }
+                        else {
+                            attron(COLOR_PAIR(c));
+                            mvaddch(y + 1, x, objectsAt[y][x].back().get()->getSymbol());
+                            attroff(COLOR_PAIR(c));
+                        }
                     }
                 }
             }
@@ -180,18 +239,93 @@ void redisplayColors(bool supportsColor, bool fogOfWarToggle) {
                 }
                 else if (!objectsAt[y][x].empty()) {
                     Color c = objectsAt[y][x].back().get()->getColor();
-                    attron(COLOR_PAIR(c));
-                    mvaddch(y + 1, x, objectsAt[y][x].back().get()->getSymbol());
-                    attroff(COLOR_PAIR(c));
+                    if (objectsAt[y][x].size() > 1) {
+                        attron(COLOR_PAIR(c));
+                        mvaddch(y + 1, x, '&');
+                        attroff(COLOR_PAIR(c));
+                    }
+                    else {
+                        attron(COLOR_PAIR(c));
+                        mvaddch(y + 1, x, objectsAt[y][x].back().get()->getSymbol());
+                        attroff(COLOR_PAIR(c));
+                    }
                 }
             }
         }
     }
-
-    refresh();
 }
 
-void characterInfo(bool supportsColor, bool fogOfWarToggle) {
+void redisplayColorsOutsideWindow(int height, int width, int startY, int startX) {
+    if (!supportsColor) {
+        return;
+    }
+
+    if (fogOfWarToggle) {
+        for (int y = 0; y < MAX_HEIGHT; y++) {
+            for (int x = 0; x < MAX_WIDTH; x++) {
+                if (inLineOfSight((Pos){x, y}) && (x != player.getPos().x || y != player.getPos().y)) {
+                    if ((x >= startX && x < startX + width) && (y + 1 >= startY && y + 1 < startY + height)) {
+                        continue;
+                    }
+
+                    if (monsterAt[y][x] != nullptr) {
+                        Color c = monsterAt[y][x].get()->getColor();
+                        attron(COLOR_PAIR(c));
+                        mvaddch(y + 1, x, monsterAt[y][x].get()->getSymbol());
+                        attroff(COLOR_PAIR(c));
+                    }
+                    else if (!objectsAt[y][x].empty()) {
+                        Color c = objectsAt[y][x].back().get()->getColor();
+                        if (objectsAt[y][x].size() > 1) {
+                            attron(COLOR_PAIR(c));
+                            mvaddch(y + 1, x, '&');
+                            attroff(COLOR_PAIR(c));
+                        }
+                        else {
+                            attron(COLOR_PAIR(c));
+                            mvaddch(y + 1, x, objectsAt[y][x].back().get()->getSymbol());
+                            attroff(COLOR_PAIR(c));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else {
+        for (int y = 0; y < MAX_HEIGHT; y++) {
+            for (int x = 0; x < MAX_WIDTH; x++) {
+                if ((x >= startX && x < startX + width) && (y + 1 >= startY && y + 1 < startY + height)) {
+                    continue;
+                }
+                if (x == player.getPos().x && y == player.getPos().y) {
+                    continue;
+                }
+
+                if (monsterAt[y][x] != nullptr) {
+                    Color c = monsterAt[y][x].get()->getColor();
+                    attron(COLOR_PAIR(c));
+                    mvaddch(y + 1, x, monsterAt[y][x].get()->getSymbol());
+                    attroff(COLOR_PAIR(c));
+                }
+                else if (!objectsAt[y][x].empty()) {
+                    Color c = objectsAt[y][x].back().get()->getColor();
+                    if (objectsAt[y][x].size() > 1) {
+                        attron(COLOR_PAIR(c));
+                        mvaddch(y + 1, x, '&');
+                        attroff(COLOR_PAIR(c));
+                    }
+                    else {
+                        attron(COLOR_PAIR(c));
+                        mvaddch(y + 1, x, objectsAt[y][x].back().get()->getSymbol());
+                        attroff(COLOR_PAIR(c));
+                    }
+                }
+            }
+        }
+    }
+}
+
+void characterInfo() {
     clear();
 
     printLine(MESSAGE_LINE, "Character Info:");
@@ -199,7 +333,7 @@ void characterInfo(bool supportsColor, bool fogOfWarToggle) {
 
     mvhline(1, 0, '.', MAX_WIDTH);
 
-    while(true) {
+    while (true) {
 
         int ch;
         do {
@@ -209,14 +343,13 @@ void characterInfo(bool supportsColor, bool fogOfWarToggle) {
         switch (ch) {
             case 'c':
             case 27:
-                clear();
-                printDungeon(supportsColor, fogOfWarToggle);
+                printDungeon();
                 return;
         }
     }
 }
 
-void openEquipment(bool supportsColor, bool fogOfWarToggle) {
+void openEquipment() {
     clear();
 
     printLine(MESSAGE_LINE, "Equipment:");
@@ -315,7 +448,7 @@ void openEquipment(bool supportsColor, bool fogOfWarToggle) {
     size_t topLine = 0;
     int cursor = 0;
 
-    while(true) {
+    while (true) {
         mvaddch(3, 2 + cursor * 3, 'v');
 
         for (int i = 6; i < MAX_HEIGHT - 1; i++) {
@@ -396,13 +529,13 @@ void openEquipment(bool supportsColor, bool fogOfWarToggle) {
             case 'e':
             case 27:
                 clear();
-                printDungeon(supportsColor, fogOfWarToggle);
+                printDungeon();
                 return;
         }
     }
 }
 
-void openInventory(bool supportsColor, bool fogOfWarToggle) {
+void openInventory() {
     clear();
 
     printLine(MESSAGE_LINE, "Inventory:");
@@ -504,7 +637,7 @@ void openInventory(bool supportsColor, bool fogOfWarToggle) {
     size_t topLine = 0;
     int cursor = 0;
 
-    while(true) {
+    while (true) {
         mvaddch(3, 2 + cursor * 3, 'v');
 
         for (int i = 6; i < MAX_HEIGHT - 1; i++) {
@@ -584,13 +717,13 @@ void openInventory(bool supportsColor, bool fogOfWarToggle) {
             case 'i':
             case 27:
                 clear();
-                printDungeon(supportsColor, fogOfWarToggle);
+                printDungeon();
                 return;
         }
     }
 }
 
-void printStatus(bool supportsColor) {
+void printStatus() {
     move(23, 0);
     clrtoeol();
     if (supportsColor) {
@@ -621,7 +754,7 @@ void printStatus(bool supportsColor) {
     }
 }
 
-void printDungeon(bool supportsColor, bool fogOfWarToggle) {
+void printDungeon() {
     if (fogOfWarToggle) {
         for (int i = 0; i < MAX_HEIGHT; i++) {
             for (int j = 0; j < MAX_WIDTH; j++) {
@@ -788,12 +921,10 @@ void printDungeon(bool supportsColor, bool fogOfWarToggle) {
     }
     
     printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help.");
-    printStatus(supportsColor);
-
-    refresh();
+    printStatus();
 }
 
-void monsterList(bool supportsColor, bool fogOfWarToggle) {
+void monsterList() {
     std::vector<std::string> allLines;
     std::vector<Color> colorList;
     int count = 0;
@@ -905,7 +1036,7 @@ void monsterList(bool supportsColor, bool fogOfWarToggle) {
     mvprintw(1, titleCol, "%s", title);
     mvprintw(3, leftCol + 2, "Monsters alive: %d", count);
 
-    while (1) {
+    while (true) {
         move(4, leftCol + cols / 2);
         if (topLine > 0) {
             printw("^");
@@ -934,13 +1065,15 @@ void monsterList(bool supportsColor, bool fogOfWarToggle) {
                     printw("%s", line.c_str());
                 }
             } 
+            move(row, leftCol + cols - 1);
+            clrtoeol();
             if (supportsColor) {
                 attron(COLOR_PAIR(Color::Green));
-                mvaddch(row, leftCol + cols - 1, '|');
+                addch('|');
                 attroff(COLOR_PAIR(Color::Green));
             }
             else {
-                mvaddch(row, leftCol + cols - 1, '|');
+                addch('|');
             }
         }
 
@@ -975,13 +1108,13 @@ void monsterList(bool supportsColor, bool fogOfWarToggle) {
             case 'm':
             case 27:
                 clear();
-                printDungeon(supportsColor, fogOfWarToggle);
+                printDungeon();
                 return;
         }
     }
 }
 
-void objectList(bool supportsColor, bool fogOfWarToggle) {
+void objectList() {
     std::vector<std::string> allLines;
     std::vector<Color> colorList;
     int count = 0;
@@ -1023,6 +1156,7 @@ void objectList(bool supportsColor, bool fogOfWarToggle) {
 
     int cols = 55;
     int rows = 24;
+    int displayStartRow = 5;
     int leftCol = (MAX_WIDTH - cols) / 2;
     if (leftCol < 0) leftCol = 0;
     size_t topLine = 0;
@@ -1065,7 +1199,7 @@ void objectList(bool supportsColor, bool fogOfWarToggle) {
     mvprintw(1, titleCol, "%s", title);
     mvprintw(3, leftCol + 2, "Objects in Dungeon: %d", count);
     
-    while (1) {
+    while (true) {
         move(4, leftCol + cols / 2);
         if (topLine > 0) {
             printw("^");
@@ -1074,7 +1208,6 @@ void objectList(bool supportsColor, bool fogOfWarToggle) {
             printw(" ");
         }
 
-        int displayStartRow = 5;
         for (size_t i = 0; i < maxDisplay; i++) {
             int row = displayStartRow + i;
             size_t lineIndex = topLine + i;
@@ -1094,13 +1227,15 @@ void objectList(bool supportsColor, bool fogOfWarToggle) {
                     printw("%s", line.c_str());
                 }
             } 
+            move(row, leftCol + cols - 1);
+            clrtoeol();
             if (supportsColor) {
                 attron(COLOR_PAIR(Color::Cyan));
-                mvaddch(row, leftCol + cols - 1, '|');
+                addch('|');
                 attroff(COLOR_PAIR(Color::Cyan));
             }
             else {
-                mvaddch(row, leftCol + cols - 1, '|');
+                addch('|');
             }
         }
 
@@ -1135,15 +1270,109 @@ void objectList(bool supportsColor, bool fogOfWarToggle) {
             case 'o':
             case 27:
                 clear();
-                printDungeon(supportsColor, fogOfWarToggle);
+                printDungeon();
                 return;
         }
     }
 }
 
-void nonTunnelingDistMap(bool supportsColor, bool fogOfWarToggle) {
+void viewActions(std::vector<std::pair<std::string, Color>>& actions) {    
+    size_t maxStringLength = 0;
+    for (const auto& action : actions) {
+        if (action.first.length() > maxStringLength) {
+            maxStringLength = action.first.length();
+        }
+    }
+
+    int width = maxStringLength + 1;
+    int height = actions.size() > 17 ? 19 : actions.size();
+    int startX = 0;
+    int startY = MAX_HEIGHT - height + 2;
+
+    size_t topLine = 0;
+    size_t maxDisplay = 17;
+
+    WINDOW *actionWin = newwin(height, width, startY, startX);
+
+    while (true) {
+        if (actions.size() > maxDisplay) {
+            mvwaddch(actionWin, 0, 0, topLine > 0 ? '^' : ' ');
+
+            for (size_t i = 0; i < maxDisplay; i++) {
+                size_t lineIndex = topLine + i;
+    
+                wmove(actionWin, i, 0);
+                wclrtoeol(actionWin);
+                if (lineIndex < actions.size()) {
+                    if (supportsColor) {
+                        wattron(actionWin, COLOR_PAIR(actions[lineIndex].second));
+                        wprintw(actionWin, "%s", actions[lineIndex].first.c_str());
+                        wattroff(actionWin, COLOR_PAIR(actions[lineIndex].second));
+                    }
+                    else {
+                        wprintw(actionWin, "%s", actions[lineIndex].first.c_str());
+                    }
+                }
+            }
+
+            mvwaddch(actionWin, height - 1, 0, topLine + maxDisplay < actions.size() ? 'v' : ' ');
+        }
+        else {
+            for (size_t i = 0; i < actions.size(); i++) {
+                wmove(actionWin, i, 0);
+                wclrtoeol(actionWin);
+                if (supportsColor) {
+                    wattron(actionWin, COLOR_PAIR(actions[i].second));
+                    wprintw(actionWin, "%s", actions[i].first.c_str());
+                    wattroff(actionWin, COLOR_PAIR(actions[i].second));
+                }
+                else {
+                    wprintw(actionWin, "%s", actions[i].first.c_str());
+                }
+            }
+        }
+
+        wrefresh(actionWin);
+
+        fd_set readfs;
+        struct timeval tv;
+        do {
+            FD_ZERO(&readfs);
+            FD_SET(STDIN_FILENO, &readfs);
+            tv.tv_sec = 0;
+            tv.tv_usec = 180000;
+            redisplayColorsOutsideWindow(height, width, startY, startX);
+            refresh();
+        } while (!select(STDIN_FILENO + 1, &readfs, nullptr, nullptr, &tv));
+
+        int ch = getch();
+
+        switch (ch) {
+            case KEY_UP:
+                if (topLine > 0) {
+                    topLine--;
+                }
+                break;
+
+            case KEY_DOWN:
+                if (topLine + maxDisplay < actions.size()) {
+                    topLine++;
+                }
+                break;
+
+            case 'v':
+            case 27:
+                delwin(actionWin);
+                printDungeon();
+                printLine(STATUS_LINE1, "%s   v - View actions", actions.back().first.c_str());
+                return;
+        }
+    }
+}
+
+void nonTunnelingDistMap() {
     clear();
-    printLine(MESSAGE_LINE, "Press 'ESC' or 'T' to return");
+    printLine(MESSAGE_LINE, "Press 'ESC' or 'D' to return");
     printLine(STATUS_LINE2, "Non-tunneling distance map.");
 
     generateDistances(player.getPos());
@@ -1196,12 +1425,12 @@ void nonTunnelingDistMap(bool supportsColor, bool fogOfWarToggle) {
     int ch;
     do {
         ch = getch();
-    } while (ch != 27 && ch != 'T');
+    } while (ch != 27 && ch != 'D');
 
-    printDungeon(supportsColor, fogOfWarToggle);
+    printDungeon();
 }
 
-void showEquipmentObjectDescription(bool supportsColor, bool fogOfWarToggle) {
+void showEquipmentObjectDescription() {
     printLine(MESSAGE_LINE, "Choose an equipment slot a-l");
     int ch = getch();
     if (ch >= 'a' && ch <= 'l') {
@@ -1214,7 +1443,7 @@ void showEquipmentObjectDescription(bool supportsColor, bool fogOfWarToggle) {
         clear();
         mvprintw(0, 0, "%s", itemName.c_str());
         getch();
-        printDungeon(supportsColor, fogOfWarToggle);
+        printDungeon();
     }
     else if (ch == 'E' || ch == 27) {
         printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
@@ -1224,7 +1453,7 @@ void showEquipmentObjectDescription(bool supportsColor, bool fogOfWarToggle) {
     }
 }
 
-void showInventoryObjectDescription(bool supportsColor, bool fogOfWarToggle) {
+void showInventoryObjectDescription() {
     printLine(MESSAGE_LINE, "Choose an inventory slot 0-9");
     int ch = getch();
     if (ch >= '0' && ch <= '9') {
@@ -1237,7 +1466,7 @@ void showInventoryObjectDescription(bool supportsColor, bool fogOfWarToggle) {
         clear();
         mvprintw(0, 0, "%s", itemName.c_str());
         getch();
-        printDungeon(supportsColor, fogOfWarToggle);
+        printDungeon();
     }
     else if (ch == 'I' || ch == 27) {
         printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
@@ -1247,7 +1476,7 @@ void showInventoryObjectDescription(bool supportsColor, bool fogOfWarToggle) {
     }
 }
 
-void showMonsterInfo(Pos pos, bool supportsColor, bool fogOfWarToggle) {
+void showMonsterInfo(Pos pos) {
     Monster *mon = monsterAt[pos.y][pos.x].get();
     if (mon == nullptr) {
         return;
@@ -1257,12 +1486,12 @@ void showMonsterInfo(Pos pos, bool supportsColor, bool fogOfWarToggle) {
     mvprintw(2, 0, "%s", mon->getDescription().c_str());
     
     getch();
-    printDungeon(supportsColor, fogOfWarToggle);    
+    printDungeon();    
 }
 
-void tunnelingDistMap(bool supportsColor, bool fogOfWarToggle) {
+void tunnelingDistMap() {
     clear();
-    printLine(MESSAGE_LINE, "Press 'ESC' or 'D' to return");
+    printLine(MESSAGE_LINE, "Press 'ESC' or 'T' to return");
     printLine(STATUS_LINE2, "Tunneling distance map.");
 
     generateDistances(player.getPos());   
@@ -1315,12 +1544,12 @@ void tunnelingDistMap(bool supportsColor, bool fogOfWarToggle) {
     int ch;
     do {
         ch = getch();
-    } while (ch != 27 && ch != 'D');
+    } while (ch != 27 && ch != 'T');
 
-    printDungeon(supportsColor, fogOfWarToggle);
+    printDungeon();
 }
 
-void commandList(bool supportsColor, bool fogOfWarToggle) {
+void commandList() {
     int count = sizeof(switches) / sizeof(CommandInfo);
 
     int cols = 55;
@@ -1330,7 +1559,7 @@ void commandList(bool supportsColor, bool fogOfWarToggle) {
     int top = 0;
 
     clear();
-    while (1) {
+    while (true) {
         if (supportsColor) {
             attron(COLOR_PAIR(Color::Yellow));
 
@@ -1422,13 +1651,13 @@ void commandList(bool supportsColor, bool fogOfWarToggle) {
             case '?':
             case 27:
                 clear();
-                printDungeon(supportsColor, fogOfWarToggle);
+                printDungeon();
                 return;
         }
     }
 }
 
-void lossScreen(bool supportsColor) {
+void lossScreen() {
     clear();
 
     std::string youDied =   "                                         ..          .                ..       \n"
@@ -1525,7 +1754,7 @@ std::string colorField =    "                                         rr        
         ;
 }
 
-void winScreen(bool supportsColor) {
+void winScreen() {
     clear();
 
     std::string youWin =    "  ..                                   x=~              @88>               \n"

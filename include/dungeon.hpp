@@ -30,6 +30,8 @@ static const int BASE_DODGE_BONUS = 0;
 static const int BASE_DEFENSE = 0;
 static const int BASE_SPEED = 10;
 
+static const int BASE_VISION_RADIUS = 2;
+
 static const int INVENTORY_SIZE = 10;
 static const int DEFENSE_SCALE = 50;
 static const int HIT_SCALE = 75;

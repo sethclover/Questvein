@@ -13,9 +13,10 @@
 #include "dungeon.hpp"
 #include "fibonacciHeap.hpp"
 #include "game.hpp"
+#include "globals.hpp"
 #include "pathFinding.hpp"
 
-static bool fogOfWarToggle = true;
+bool fogOfWarToggle = true;
 
 int checkCorridor(int x, int y, bool visited[MAX_HEIGHT][MAX_WIDTH]) {
     if (x < 0 || x >= MAX_WIDTH || y < 0 || y >= MAX_HEIGHT) {
@@ -46,7 +47,7 @@ int checkCorridor(int x, int y, bool visited[MAX_HEIGHT][MAX_WIDTH]) {
 }
 
 bool inLineOfSight(Pos pos) {
-    int visionRadius = 2;
+    int visionRadius = BASE_VISION_RADIUS;
     if (player.getEquipmentItem(Equip::Light) != nullptr) {
         visionRadius += player.getEquipmentItem(Equip::Light)->getSpecialAttribute();
     }
@@ -57,35 +58,59 @@ bool inLineOfSight(Pos pos) {
     if (dist > effectiveRadius) {
         return false;
     }
-    else {
-        return true;
+
+    int x1 = player.getPos().x;
+    int y1 = player.getPos().y;
+    int x2 = pos.x;
+    int y2 = pos.y;
+
+    int dx = abs(x2 - x1);
+    int dy = abs(y2 - y1);
+    int sx = (x1 < x2) ? 1 : -1;
+    int sy = (y1 < y2) ? 1 : -1;
+    int err = dx - dy;
+
+    int x = x1;
+    int y = y1;
+
+    while (true) {
+        if (x != x1 || y != y1) {
+            if (dungeon[y][x].type == ROCK) {
+                return false;
+            }
+        }
+        if (x == x2 && y == y2) {
+            return true;
+        }
+        
+        int e2 = 2 * err;
+        if (e2 > -dy) {
+            err -= dy;
+            x += sx;
+        }
+        if (e2 < dx) {
+            err += dx;
+            y += sy;
+        }
     }
+
 }
 
 void updateAroundPlayer() {
-    int visionRadius = 2;
-    if (player.getEquipmentItem(Equip::Light) != nullptr) {
-        visionRadius += player.getEquipmentItem(Equip::Light)->getSpecialAttribute();
-    }
-    float effectiveRadius = visionRadius + 0.5f;
-    for (int i = player.getPos().y - effectiveRadius; i <= player.getPos().y + effectiveRadius; i++) {
-        for (int j = player.getPos().x - effectiveRadius; j <= player.getPos().x + effectiveRadius; j++) {
-            if (i < 0 || i >= MAX_HEIGHT || j < 0 || j >= MAX_WIDTH) {
-                continue;
+    for (int y = 0; y < MAX_HEIGHT; y++) {
+        for (int x = 0; x < MAX_WIDTH; x++) {
+            if (inLineOfSight((Pos){x, y})) {
+                dungeon[y][x].visible = dungeon[y][x].type;
             }
-            float xDist = static_cast<float>(j - player.getPos().x);
-            float yDist = static_cast<float>(i - player.getPos().y);
-            float dist = std::sqrt(xDist * xDist + yDist * yDist);
-            if (dist > effectiveRadius) {
-                continue;
-            }
-            dungeon[i][j].visible = dungeon[i][j].type;
         }
     }
 }
 
-int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, bool supportsColor) {
+int playGame() {
     int time = 0;
+
+    std::vector<std::pair<std::string, Color>> actions;
+
     std::unique_ptr<FibHeap> heap = std::make_unique<FibHeap>();
     std::unordered_map<Monster*, FibNode*> monMap;
 
@@ -112,7 +137,13 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
 
         if (node->getPos() == player.getPos()) {
             updateAroundPlayer();
-            printDungeon(supportsColor, fogOfWarToggle);
+            printDungeon();
+            if (!actions.empty()) {
+                if (actions.size() > 1) {
+                    printLine(STATUS_LINE1, "%s   v - View actions", actions.back().first.c_str());
+                }
+            }
+
             bool turnEnd = false;
             while (!turnEnd) {
                 int ch = 0;
@@ -140,8 +171,9 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                         FD_ZERO(&readfs);
                         FD_SET(STDIN_FILENO, &readfs);
                         tv.tv_sec = 0;
-                        tv.tv_usec = 180000;
-                        redisplayColors(supportsColor, fogOfWarToggle);
+                        tv.tv_usec = 125000;
+                        redisplayColors();
+                        refresh();
                     } while (!select(STDIN_FILENO + 1, &readfs, nullptr, nullptr, &tv));
                     
                     ch = getch();
@@ -290,7 +322,8 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             break;
 
                         case 'c':
-                            characterInfo(supportsColor, fogOfWarToggle);
+                            printLine(MESSAGE_LINE, "Action for %c Not implemented yet!", (char) ch);
+                            //characterInfo();
                             break;
                         
                         case 'd':
@@ -319,12 +352,12 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             break;
 
                         case 'e':
-                            openEquipment(supportsColor, fogOfWarToggle);
+                            openEquipment();
                             break;
                         
                         case 'f':
                             fogOfWarToggle = !fogOfWarToggle;
-                            printDungeon(supportsColor, fogOfWarToggle);
+                            printDungeon();
                             {
                                 const char* fogStatus = fogOfWarToggle ? "on" : "off";
                                 printLine(STATUS_LINE1, "Fog of war toggled %s", fogStatus);
@@ -336,7 +369,8 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             {
                                 int replaceFogOfWar = fogOfWarToggle;
                                 fogOfWarToggle = false;
-                                printDungeon(supportsColor, fogOfWarToggle);
+                                printDungeon();
+                                refresh();
 
                                 bool drop = false;
                                 int x = player.getPos().x;
@@ -517,17 +551,17 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 if (monsterAt[player.getPos().y][player.getPos().x]) {
                                     Monster *mon = monsterAt[player.getPos().y][player.getPos().x].get();
                                     if (mon->isBoss()) {
-                                        printDungeon(supportsColor, fogOfWarToggle);
-                                        printLineColor(STATUS_LINE1, Color::Green, supportsColor, "%s has been slain!\n", mon->getName().c_str());
+                                        printDungeon();
+                                        printLineColor(STATUS_LINE1, Color::Green, "%s has been slain!\n", mon->getName().c_str());
                                         printLine(STATUS_LINE2, "You win! Press any key to continue...");
                                         getch();
-                                        winScreen(supportsColor);
+                                        winScreen();
                                         
                                         clearAll();
                                         return 0;
                                     }
 
-                                    printLineColor(STATUS_LINE1, Color::Green, supportsColor, "Player stomped %s", mon->getName().c_str());
+                                    printLineColor(STATUS_LINE1, Color::Green, "Player stomped %s", mon->getName().c_str());
                                     monsterAt[player.getPos().y][player.getPos().x] = nullptr;
                                 }
                                 else {
@@ -535,20 +569,21 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 }
                                 fogOfWarToggle = replaceFogOfWar;
                                 updateAroundPlayer();
-                                printDungeon(supportsColor, fogOfWarToggle);
+                                printDungeon();
+                                refresh();
                             }
                             break;
                         
                         case 'i':
-                            openInventory(supportsColor, fogOfWarToggle);
+                            openInventory();
                             break;
 
                         case 'm':
-                            monsterList(supportsColor, fogOfWarToggle);
+                            monsterList();
                             break;
 
                         case 'o':
-                            objectList(supportsColor, fogOfWarToggle);
+                            objectList();
                             break;
 
                         case 's':
@@ -580,6 +615,13 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 else {
                                     printLine(MESSAGE_LINE, "Not a valid slot.");
                                 }
+                            }
+                            break;
+
+                        case 'v':
+                            if (actions.size() > 1) {
+                                printLine(MESSAGE_LINE, "Press 'v' or 'ESC' to return.");
+                                viewActions(actions);
                             }
                             break;
 
@@ -658,7 +700,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                     else if (item->getEquipmentIndex() == Equip::Light) {
                                         player.swapEquipment(index);
                                         updateAroundPlayer();
-                                        printDungeon(supportsColor, fogOfWarToggle);
+                                        printDungeon();
                                     }
                                     else if (item->getEquipmentIndex() != Equip::None) {
                                         player.swapEquipment(index);
@@ -667,7 +709,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                         break;
                                     }
                                     printLine(MESSAGE_LINE, "%s is now equipped.", itemName.c_str());
-                                    printStatus(supportsColor);
+                                    printStatus();
                                 }
                                 else if (ch == 'w' || ch == 27) {
                                     printLine(MESSAGE_LINE, "Press a key to continue... or press '?' for help."); 
@@ -704,11 +746,11 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             break;
 
                         case 'D':
-                            tunnelingDistMap(supportsColor, fogOfWarToggle);
+                            nonTunnelingDistMap();
                             break;
                         
                         case 'E':
-                            showEquipmentObjectDescription(supportsColor, fogOfWarToggle);
+                            showEquipmentObjectDescription();
                             break;
 
                         case 'H':
@@ -717,7 +759,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             break;
 
                         case 'I':
-                            showInventoryObjectDescription(supportsColor, fogOfWarToggle);
+                            showInventoryObjectDescription();
                             break;
 
                         case 'L':
@@ -986,10 +1028,11 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                     }
                                 }
                                 if (escape) {
-                                    printDungeon(supportsColor, fogOfWarToggle);
+                                    printDungeon();
+                                    refresh();
                                     break;
                                 }
-                                showMonsterInfo((Pos){x, y}, supportsColor, fogOfWarToggle);
+                                showMonsterInfo((Pos){x, y});
                             }
                             break;
 
@@ -1001,7 +1044,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             return 0;
 
                         case 'T':
-                            nonTunnelingDistMap(supportsColor, fogOfWarToggle);
+                            tunnelingDistMap();
                             break;
 
                         case 'U':
@@ -1023,22 +1066,22 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                         player.expungeFromInventory(index);
                                         if (amountHealed > 0) {
                                             printLine(MESSAGE_LINE, "You drank %s and heal %d HP.", itemName.c_str(), amountHealed);
-                                            printStatus(supportsColor);
+                                            printStatus();
                                         }
                                         else if (amountHealed < 0) {
                                             if (hp <= 0) {
                                                 printLine(MESSAGE_LINE, "");
-                                                printLineColor(STATUS_LINE1, Color::Red, supportsColor, "Player has died from %s", itemName.c_str());
+                                                printLineColor(STATUS_LINE1, Color::Red, "Player has died from %s", itemName.c_str());
                                                 printLine(STATUS_LINE2, "Press any key to continue...");
                                                 getch();
-                                                lossScreen(supportsColor);
+                                                lossScreen();
                     
                                                 clearAll();
                                                 return 0;
                                             }
                                             else {
                                                 printLine(MESSAGE_LINE, "You drank %s and took %d damage.", itemName.c_str(), amountHealed * -1);
-                                                printStatus(supportsColor);
+                                                printStatus();
                                             }
                                         }
                                         else {
@@ -1076,7 +1119,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             break;
 
                         case '?':
-                            commandList(supportsColor, fogOfWarToggle);
+                            commandList();
                             break;
 
                         default:
@@ -1100,17 +1143,17 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
 
                             if (hpLeft <= 0) {
                                 if (mon->isBoss()) {
-                                    printDungeon(supportsColor, fogOfWarToggle);
+                                    printDungeon();
                                     printLine(STATUS_LINE1, "%s has been slain!\n", mon->getName().c_str());
                                     printLine(STATUS_LINE2, "You win! Press any key to continue...");
                                     getch();
-                                    winScreen(supportsColor);
+                                    winScreen();
                                     
                                     clearAll();
                                     return 0;
                                 }
 
-                                printLineColor(STATUS_LINE1, Color::Green, supportsColor, "%s has been slain.\n", mon->getName().c_str());
+                                printLineColor(STATUS_LINE1, Color::Green, "%s has been slain.\n", mon->getName().c_str());
                                 monsterAt[mon->getPos().y][mon->getPos().x] = nullptr;
                             }
                             else {
@@ -1119,10 +1162,15 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                     mvaddch(mon->getPos().y + 1, mon->getPos().x, mon->getSymbol());
                                     attroff(COLOR_PAIR(Color::Red));
                                 }
-                                printLineColor(STATUS_LINE1, Color::Green, supportsColor, "You dealt %d damage to %s.\n", damageTaken, mon->getName().c_str());
+
+                                std::string action = "You dealt " + std::to_string(damageTaken) + " damage to " + mon->getName() + ".";
+                                fitString(action, MAX_WIDTH);
+                                actions.push_back(std::make_pair(action, Color::Green));
+
+                                printLineColor(STATUS_LINE1, Color::Green, "%s", action.c_str());
                                 napms(400);
                                 flushinp();
-                                printLine(STATUS_LINE1, "You dealt %d damage to %s.\n", damageTaken, mon->getName().c_str());
+                                printLine(STATUS_LINE1, "%s", action.c_str());
                                 napms(100);
                             }
                         }
@@ -1132,10 +1180,15 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                 mvaddch(mon->getPos().y + 1, mon->getPos().x, mon->getSymbol());
                                 attroff(COLOR_PAIR(Color::Yellow));
                             }
-                            printLineColor(STATUS_LINE1, Color::Yellow, supportsColor, "You missed %s.\n", mon->getName().c_str());
+
+                            std::string action = "You missed " + mon->getName() + ".";
+                            fitString(action, MAX_WIDTH);
+                            actions.push_back(std::make_pair(action, Color::Yellow));
+
+                            printLineColor(STATUS_LINE1, Color::Yellow, "%s", action.c_str());
                             napms(400);
                             flushinp();
-                            printLine(STATUS_LINE1, "You missed %s.\n", mon->getName().c_str());
+                            printLine(STATUS_LINE1, "%s", action.c_str());
                             napms(100);
                         }
 
@@ -1156,6 +1209,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                     turnEnd = false;
                 }
             }
+            actions.clear();
         }
         else {
             Monster *mon = monsterAt[node->getPos().y][node->getPos().x].get();
@@ -1361,14 +1415,19 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                 else if (newX == player.getPos().x && newY == player.getPos().y) {
                     if (godmodeFlag) {
                         updateAroundPlayer();
-                        printDungeon(supportsColor, fogOfWarToggle);
+                        printDungeon();
 
                         if (supportsColor) {
                             attron(COLOR_PAIR(Color::Yellow));
                             mvaddch(player.getPos().y + 1, player.getPos().x, '@');
                             attroff(COLOR_PAIR(Color::Yellow));
                         }
-                        printLineColor(STATUS_LINE1, Color::Yellow, supportsColor, "%s fails to realize they are in the presence of a god.");
+
+                        std::string action = mon->getName() + " fails to realize they are in the presence of a god.";
+                        fitString(action, MAX_WIDTH);
+                        actions.push_back(std::make_pair(action, Color::Yellow));
+
+                        printLineColor(STATUS_LINE1, Color::Yellow, "%s", action.c_str());
                         napms(400);
                         flushinp(); 
                         if (supportsColor) {
@@ -1376,7 +1435,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             mvaddch(player.getPos().y + 1, player.getPos().x, '@');
                             attroff(COLOR_PAIR(Color::White));
                         }                  
-                        printLine(STATUS_LINE1, "%s fails to realize they are in the presence of a god.");
+                        printLine(STATUS_LINE1, "%s", action.c_str());
                         napms(100);
                     }
                     else if (mon->attemptHit(player.getDodgeBonus())) {
@@ -1386,19 +1445,19 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
 
                         if (hpLeft <= 0) {
                             updateAroundPlayer();
-                            printDungeon(supportsColor, fogOfWarToggle);
+                            printDungeon();
                             printLine(MESSAGE_LINE, "");
-                            printLineColor(STATUS_LINE1, Color::Red, supportsColor, "Player killed by %s", mon->getName().c_str());
+                            printLineColor(STATUS_LINE1, Color::Red, "Player killed by %s", mon->getName().c_str());
                             printLine(STATUS_LINE2, "Press any key to continue...");
                             getch();
-                            lossScreen(supportsColor);
+                            lossScreen();
 
                             clearAll();
                             return 0;
                         }
                         else {
                             updateAroundPlayer();
-                            printDungeon(supportsColor, fogOfWarToggle);
+                            printDungeon();
 
                             if (dam > 0) {
                                 if (supportsColor) {
@@ -1406,7 +1465,12 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                     mvaddch(player.getPos().y + 1, player.getPos().x, '@');
                                     attroff(COLOR_PAIR(Color::Red));
                                 }
-                                printLineColor(STATUS_LINE1, Color::Red, supportsColor, "%s dealt %d damage to you.\n", mon->getName().c_str(), damageTaken);
+
+                                std::string action = mon->getName() + " dealt " + std::to_string(damageTaken) + " damage to you.";
+                                fitString(action, MAX_WIDTH);
+                                actions.push_back(std::make_pair(action, Color::Red));
+
+                                printLineColor(STATUS_LINE1, Color::Red, "%s", action.c_str());
                                 napms(400);
                                 flushinp();
                                 if (supportsColor) {
@@ -1414,7 +1478,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                     mvaddch(player.getPos().y + 1, player.getPos().x, '@');
                                     attroff(COLOR_PAIR(Color::White));
                                 }           
-                                printLine(STATUS_LINE1, "%s dealt %d damage to you.\n", mon->getName().c_str(), damageTaken);
+                                printLine(STATUS_LINE1, "%s", action.c_str());
                                 napms(100);
                             }
                             else {
@@ -1423,7 +1487,12 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                     mvaddch(player.getPos().y + 1, player.getPos().x, '@');
                                     attroff(COLOR_PAIR(Color::Yellow));
                                 }
-                                printLineColor(STATUS_LINE1, Color::Yellow, supportsColor, "%s did nothing to you.\n", mon->getName().c_str());
+
+                                std::string action = mon->getName() + " did nothing to you.";
+                                fitString(action, MAX_WIDTH);
+                                actions.push_back(std::make_pair(action, Color::Yellow));
+
+                                printLineColor(STATUS_LINE1, Color::Yellow, "%s", action.c_str());
                                 napms(400);
                                 flushinp();
                                 if (supportsColor) {
@@ -1431,21 +1500,26 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                                     mvaddch(player.getPos().y + 1, player.getPos().x, '@');
                                     attroff(COLOR_PAIR(Color::White));
                                 }           
-                                printLine(STATUS_LINE1, "%s did nothing to you.\n", mon->getName().c_str());
+                                printLine(STATUS_LINE1, "%s", action.c_str());
                                 napms(100);
                             }
                         }
                     }
                     else {
                         updateAroundPlayer();
-                        printDungeon(supportsColor, fogOfWarToggle);
+                        printDungeon();
 
                         if (supportsColor) {
                             attron(COLOR_PAIR(Color::Yellow));
                             mvaddch(player.getPos().y + 1, player.getPos().x, '@');
                             attroff(COLOR_PAIR(Color::Yellow));
                         }
-                        printLineColor(STATUS_LINE1, Color::Yellow, supportsColor, "You dodged %s's attack.\n", mon->getName().c_str());
+
+                        std::string action = "You dodged " + mon->getName() + "'s attack.";
+                        fitString(action, MAX_WIDTH);
+                        actions.push_back(std::make_pair(action, Color::Yellow));
+
+                        printLineColor(STATUS_LINE1, Color::Yellow, "%s", action.c_str());
                         napms(400);
                         flushinp();
                         if (supportsColor) {
@@ -1453,7 +1527,7 @@ int playGame(int numMonsters, int numObjects, bool autoFlag, bool godmodeFlag, b
                             mvaddch(player.getPos().y + 1, player.getPos().x, '@');
                             attroff(COLOR_PAIR(Color::White));
                         }           
-                        printLine(STATUS_LINE1, "You dodged %s's attack.\n", mon->getName().c_str());
+                        printLine(STATUS_LINE1, "%s", action.c_str());
                         napms(100);
                     }
 

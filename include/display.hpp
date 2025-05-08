@@ -1,5 +1,9 @@
 #pragma once
 
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "dungeon.hpp"
 
 static const int MESSAGE_LINE = 0;
@@ -8,21 +12,24 @@ static const int STATUS_LINE2 = 23;
 
 void printParsedMonsters();
 void printParsedObjects();
+void fitString(std::string& str, int maxWidth);
 void printLine(int line, const char *format, ...);
-void printLineColor(int line, Color color, bool supportsColor, const char *format, ...);
-void printStatus(bool supportsColor);
-void redisplayColors(bool supportsColor, bool fogOfWarToggle);
-void characterInfo(bool supportsColor, bool fogOfWarToggle);
-void openEquipment(bool supportsColor, bool fogOfWarToggle);
-void openInventory(bool supportsColor, bool fogOfWarToggle);
-void printDungeon(bool supportsColor, bool fogOfWarToggle);
-void monsterList(bool supportsColor, bool fogOfWarToggle);
-void objectList(bool supportsColor, bool fogOfWarToggle);
-void commandList(bool supportsColor, bool fogOfWarToggle);
-void showMonsterInfo(Pos pos, bool supportsColor, bool fogOfWarToggle);
-void tunnelingDistMap(bool supportsColor, bool fogOfWarToggle);
-void showEquipmentObjectDescription(bool supportsColor, bool fogOfWarToggle);
-void showInventoryObjectDescription(bool supportsColor, bool fogOfWarToggle);
-void nonTunnelingDistMap(bool supportsColor, bool fogOfWarToggle);
-void lossScreen(bool supportsColor);
-void winScreen(bool supportsColor);
+void printLineColor(int line, Color color, const char *format, ...);
+void printStatus();
+void redisplayColors();
+void redisplayColorsOutsideWindow(int height, int width, int startY, int startX);
+void characterInfo();
+void openEquipment();
+void openInventory();
+void printDungeon();
+void monsterList();
+void objectList();
+void showMonsterInfo(Pos pos);
+void nonTunnelingDistMap();
+void showEquipmentObjectDescription();
+void showInventoryObjectDescription();
+void viewActions(std::vector<std::pair<std::string, Color>>& actions);
+void tunnelingDistMap();
+void commandList();
+void lossScreen();
+void winScreen();

@@ -3,6 +3,21 @@
 Notable changes to the Dungeon Roguelike Game will be documented here.
 The formatting is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [10.0.0] - 2025-5-8
+
+### Added
+
+- If multiple actions occur after a player's turn, they will
+  have the opportunity to press 'v' and view all of the actions
+  that have taken place since the last turn for the PC
+- Line of sight is now obstructed by walls
+
+### Fixed
+
+- Long names will now be fitted to the screen size, concatenating
+  the last word with ellipsis
+- Stacks now display properly when the top item changes colors
+
 ## [9.5.0] - 2025-5-6
 
 ### Added

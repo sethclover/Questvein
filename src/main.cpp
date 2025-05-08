@@ -9,11 +9,9 @@
 #include "display.hpp"
 #include "dungeon.hpp"
 #include "game.hpp"
+#include "globals.hpp"
 #include "pathFinding.hpp"
 #include "saveLoad.hpp"
-
-//
-#include "fibonacciHeap.hpp"
 
 class SwitchInfo {
 public:
@@ -32,12 +30,21 @@ static const SwitchInfo switches[] = {
     {"-l", "--load", "Load a dungeon from a file (requires filename)"},
     {"-m", "--nummon", "Set the number of monsters (requires positive integer)"},
     {"-o", "--numobj", "Set the number of objects (requires positive integer)"},
-    //{"-t", "--typemon", "Set a specific monster type (requires a single Hex character)"},
     {"-a", "--auto", "Run the game in automatic (random) movement mode"},
     {"-g", "--godmode", "Enable god mode (invincible player)"}
 };
 
 static const int numSwitches = sizeof(switches) / sizeof(SwitchInfo);
+
+WINDOW *mainWin;
+
+bool autoFlag;
+bool godmodeFlag;
+
+bool supportsColor;
+
+int numMonsters;
+int numObjects;
 
 int main(int argc, char *argv[]) {
     srand(time(nullptr));
@@ -46,16 +53,14 @@ int main(int argc, char *argv[]) {
     bool printhardaFlag = false;
     bool saveFlag = false;
     bool loadFlag = false;
-    //bool monTypeFlag = false;
-    bool autoFlag = false;
-    bool godmodeFlag = false;
 
-    bool supportsColor = false;
+    autoFlag = false;
+    godmodeFlag = false;
+    supportsColor = false;
 
     char filename[256];
-    //char monType = '0';
-    int numMonsters = rand() % 9 + 7;
-    int numObjects = rand() % 3 + 10;
+    numMonsters = rand() % 9 + 7;
+    numObjects = rand() % 3 + 10;
 
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
@@ -194,27 +199,6 @@ int main(int argc, char *argv[]) {
 
             i++;
         }
-        // going to break
-        //
-        // else if (!strcmp(argv[i], "-t") || !strcmp(argv[i], "--typemon")) {
-        //     if (i < argc - 1) {
-        //         if (strlen(argv[i + 1]) == 1) {
-        //             monType = argv[i + 1][0];
-        //             numMonsters = 1;
-        //             monTypeFlag = true;
-        //         }
-        //         else {
-        //             std::cout << "Error: Argument after '--typemon/-t' must be a single character" << std::endl;
-        //             return 1;
-        //         }
-        //     }
-        //     else {
-        //         std::cout << "Error: Argument '--typemon/-t' requires a single character" << std::endl;
-        //         return 1;
-        //     }
-
-        //     i++;
-        // }
         else if (!strcmp(argv[i], "-a") || !strcmp(argv[i], "--auto")) {
             autoFlag = true;
         }
@@ -286,7 +270,7 @@ int main(int argc, char *argv[]) {
     printLine(MESSAGE_LINE, "Welcome adventurer! Press any key to begin...");
     getch();
 
-    while (playGame(numMonsters, numObjects, autoFlag, godmodeFlag, supportsColor))
+    while (playGame())
         ;
 
     endwin();

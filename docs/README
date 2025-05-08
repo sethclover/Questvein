@@ -1,14 +1,14 @@
-### Assignment 1.09 README
+### Assignment 1.10 README
 
-For assignment 1.09, Combat was finally added in the form of health
-and damage takes the place of dying when another character moves to
-the space of another character. Items can be equipped to alter the
-player's stats, including damage and speed. There are a bunch of new
-switches such as 'w' for wearing an item from an inventory slot,
-'t' for taking something off from an equipment slot, 'i' and 'e' for
-the inventory and equipment menus, respectively, 'x' for removing an
-item from the dungeon permanently, 'd' for dropping an item from the
-player's inventory to the group, and 'I' for inspecting the description
-of an object. Monsters also will no longer kill each other with 
-contact because they will instead push them to a different square.
-Killing the boss is the win condition for the dungeon now.
+For the final assignment, I focused on rounding out the mechanics of
+the game, accounting for edges cases of previous features, and adding
+new mechanics that make the game seem more complete. Its a long list
+and the changelog from 9.1.0 to 10.0.0 explains it all in more detail.
+I added colors for the player and status messages based on their
+source. Defense, hit bonus, and dodge bonus is functional. Lights and
+flasks work. Added random quips for building and cleaning the project. 
+Actions during a turn are recorded and can be viewed with 'v'. Better
+line of sight was added. There are also several additions that I have
+made before the final assignment, including colored distance maps with
+'D' and 'T', win and loss screen ASCII art, and a command list with
+'?'.
