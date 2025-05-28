@@ -31,7 +31,7 @@ Questvein is a single-player dungeon crawler where players navigate procedurally
 
 1. Clone the Repository:
 ```
-git clone https://github.com/sethclover/DungeonCrawler.git
+git clone https://github.com/sethclover/Questvein.git
 ```
 2. Move to the New Directory:
 ```
