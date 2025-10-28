@@ -25,7 +25,7 @@ Questvein is a single-player dungeon crawler where players navigate procedurally
 
 ### 3.1 System Requirements
 
-* OS: Linux or maxOS
+* OS: Linux or macOS
 
 ### 3.2 Installation
 
@@ -51,7 +51,7 @@ make
 
 ## 4.0 Controls
 
-In order to see the full list of controls, run the game, press any key to start the game, and the use the '?' command. Navigate the command list with the up and down arrow on your keyboard.
+In order to see the full list of controls, run the game, press any key to start the game, and use the '?' command. Navigate the command list with the up and down arrow on your keyboard.
 
 ## 5.0 Contact
 
