@@ -12,7 +12,7 @@ Welcome to Questvein, an immersive dungeon crawler where players explore treache
 
 ## 1.0 Game Overview
 
-Questvein is a single-player dungeon crawler where players navigate procedurally generated dungeons, engage in turn-based combat, and make strateic choices for survival. This game combines classic RPG and Roguelike mechanics with a unique flair for an unforgettable adventure.
+Questvein is a single-player dungeon crawler where players navigate procedurally generated dungeons, engage in turn-based combat, and make strategic choices for survival. This game combines classic RPG and Roguelike mechanics with a unique flair for an unforgettable adventure.
 
 ## 2.0 Core Features
 
@@ -25,7 +25,7 @@ Questvein is a single-player dungeon crawler where players navigate procedurally
 
 ### 3.1 System Requirements
 
-* OS: Linux or maxOS
+* OS: Linux or macOS
 
 ### 3.2 Installation
 
@@ -64,7 +64,7 @@ By default, you have an `object_desc.example.txt` and `monster_desc.example.txt`
 
 ## 5.0 Controls
 
-In order to see the full list of controls, run the game, press any key to start the game, and the use the '?' command. Navigate the command list with the up and down arrow on your keyboard.
+In order to see the full list of controls, run the game, press any key to start the game, and use the '?' command. Navigate the command list with the up and down arrow on your keyboard.
 
 ## 6.0 Contact
 
