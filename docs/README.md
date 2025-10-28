@@ -12,7 +12,7 @@ Welcome to Questvein, an immersive dungeon crawler where players explore treache
 
 ## 1.0 Game Overview
 
-Questvein is a single-player dungeon crawler where players navigate procedurally generated dungeons, engage in turn-based combat, and make strateic choices for survival. This game combines classic RPG and Roguelike mechanics with a unique flair for an unforgettable adventure.
+Questvein is a single-player dungeon crawler where players navigate procedurally generated dungeons, engage in turn-based combat, and make strategic choices for survival. This game combines classic RPG and Roguelike mechanics with a unique flair for an unforgettable adventure.
 
 ## 2.0 Core Features
 
