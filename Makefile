@@ -4,6 +4,7 @@ LDFLAGS = -lm -lncurses
 
 SRC_DIR = src
 BUILD_DIR = build
+BIN_DIR = bin
 
 SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
 OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SOURCES))
@@ -13,13 +14,14 @@ LEX_SRC = $(SRC_DIR)/lexer.l
 YACC_SRC = $(SRC_DIR)/parser.y
 LEX_OBJ = $(BUILD_DIR)/lex.yy.o
 YACC_OBJ = $(BUILD_DIR)/y.tab.o
-EXEC = $(BUILD_DIR)/dungeon
+EXEC = $(BIN_DIR)/dungeon
 
 all: $(EXEC)
 	@if [ -z "$(MAKE_RESTARTS)" ]; then echo "$(shell shuf -n 1 quips/nothing.txt)"; fi
 
 $(EXEC): $(OBJECTS) $(YACC_OBJ) $(LEX_OBJ)
 	@echo "$(shell shuf -n 1 quips/start.txt)"
+	@mkdir -p $(BIN_DIR)
 	@$(CC) $(OBJECTS) $(YACC_OBJ) $(LEX_OBJ) -o $@ $(LDFLAGS)
 
 $(LEX_OBJ): $(BUILD_DIR)/lex.yy.c $(BUILD_DIR)/parser.tab.h
@@ -47,7 +49,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 
 clean:
 	@echo "$(shell shuf -n 1 quips/clean.txt)"
-	@rm -f $(BUILD_DIR)/* $(SRC_DIR)/*~
+	@rm -f $(BUILD_DIR)/* $(BIN_DIR)/*
 
 .PHONY: all clean
 

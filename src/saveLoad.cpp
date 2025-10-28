@@ -9,10 +9,7 @@
 std::string dungeonFile;
 
 int  setupDungeonFile(char *filename) {
-    char *homeDir = getenv("HOME");
-    if (!homeDir) return 1;
-
-    dungeonFile = std::string(homeDir) + "/.rlg327/" + std::string(filename);
+    dungeonFile = "../data/" + std::string(filename);
     return 0 ;
 }
 

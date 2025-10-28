@@ -1,0 +1,677 @@
+OBJECT DESCRIPTION
+
+BEGIN OBJECT
+NAME a NERF(R) dagger
+TYPE WEAPON
+COLOR MAGENTA
+WEIGHT 1+0d1
+HIT 0+0d1
+DAM 1+0d1
+ATTR 0+0d1
+VAL 9+1d6
+DODGE 10+0d1
+DEF 0+0d1
+SPEED 0+0d1
+DESC
+This is a totally wicked looking dagger.  It's got awesome barbs on the back
+of the blade, a compass on the hilt, and myriad other embellishments that
+serve no functional purpose.  You could totally be a deadly assassin with a
+sweet blade like this.  Since it's so light, it won't encumber you.  It's
+made out of polyurethane foam.
+.
+RRTY 90
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME the Vorpal Blade
+DESC
+One, two! One, two! And through and through!
+It goes snicker-snack.
+.
+TYPE WEAPON
+COLOR RED
+WEIGHT 15+0d1
+HIT 12+3d4
+ATTR 0+0d1
+VAL 198+2d51
+DAM 31+1d9
+DODGE 0+0d1
+DEF 0+0d1
+SPEED 20+0d5
+RRTY 10
+ART TRUE
+END
+
+BEGIN OBJECT
+NAME a prom dress
+HIT 0+2d3
+DAM 0+2d3
+DODGE 0+0d1
+SPEED -1+0d1
+ATTR 0+0d1
+VAL 70+3d5
+DEF 0+0d1
+DESC
+This dress is totes fab! It's off-the-shoulder with an A-line waste, sequins,
+and lavender chiffon.  It fits tight to mid-calf and you totally can't take
+full steps in it, but, like, who cares?  You'll be the hit of the party as
+long as Shirley doesn't show up wearing the same thing again.
+.
+TYPE ARMOR
+COLOR MAGENTA
+WEIGHT 0+2d2
+RRTY 70
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME a pair of Prada dress sandals
+HIT 0+0d1
+DAM 0+3d10
+DODGE 0+0d1
+SPEED -5+0d1
+ATTR 0+0d1
+VAL 449+0d1
+DEF 0+0d1
+DESC
+You'll be the belle of the prom in these Prada dress sandals.  The 3" spike
+heel makes you a bit unsteady, but they look like they could cause some 
+major damage.
+.
+TYPE BOOTS
+COLOR MAGENTA
+WEIGHT 0+2d2
+RRTY 80
+ART FALSE
+END
+
+
+BEGIN OBJECT
+NAME a chainmail coif
+WEIGHT 8+0d1
+HIT 0+0d1
+DAM 0+0d1
+ATTR 0+0d1
+DODGE 0+0d1
+VAL 48+2d11
+DEF 10+2d6
+SPEED 0+0d1
+DESC
+A heavy chainmail head covering.
+.
+TYPE HELMET
+COLOR BLACK
+RRTY 100
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME the Aegis
+DESC
+A very high-quality shield.  Nobody knows what it looks like, except for
+maybe--now--you, but you're not telling.  The back side is inscribed with the
+words: "If found, please return to Zeus, Mount Olympus".
+.
+TYPE OFFHAND
+WEIGHT 3+0d1
+HIT 0+0d1
+DAM 0+0d1
+VAL 17000+0d1
+DODGE 20+2d8
+ATTR 0+0d1
+DEF 20+3d8
+SPEED 8+0d1
+COLOR YELLOW
+RRTY 15
+ART TRUE
+END
+
+BEGIN OBJECT
+NAME the cloak of invisibility
+TYPE CLOAK
+VAL 10000+5d1000
+DESC
+One of the Deathly Hallows, this cloak grants the wearer invisibility.  Last
+know to be the property of the Boy Who Lived.
+.
+WEIGHT 1+0d1
+DODGE 24+5d4
+DEF 0+0d1
+HIT 0+0d1
+ATTR 0+0d1
+DAM 0+0d1
+SPEED 0+0d1
+COLOR CYAN
+RRTY 20
+ART TRUE
+END
+
+BEGIN OBJECT
+NAME the One Ring
+TYPE RING
+WEIGHT 1+0d1
+COLOR YELLOW
+DODGE 50+6d8
+VAL 1000000+2d1000000
+DEF 30+6d3
+ATTR 0+0d1
+HIT 10+2d5
+DAM 10+12d55
+SPEED 12+5d5
+DESC
+The One Ring to rule them all... and in the darkness bind them.  Created by
+Sauron as a tool in his quest to dominate Middle Earth.  It draws the dark
+sorcerer's eye upon its wearer.
+.
+RRTY 3
+ART TRUE
+END
+
+BEGIN OBJECT
+NAME a torch
+TYPE LIGHT
+WEIGHT 2+1d2
+COLOR BLACK
+DODGE 0+0d1
+VAL 0+1d3
+DAM 0+0d1
+DEF 0+0d1
+HIT 0+0d1
+SPEED 0+0d1
+DESC
+A short wooden stick topped with an oil-soaked cloth, perfect for lighting
+your way through the dungeon.
+.
+ATTR 1+0d1
+RRTY 100
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME a torch of awesomenesssssssssssssssssssssssssssssssssssssssssssssssss
+TYPE LIGHT
+WEIGHT 2+1d2
+COLOR BLACK
+DODGE 0+0d1
+VAL 0+1d3
+DAM 0+0d1
+DEF 0+0d1
+HIT 0+0d1
+SPEED 0+0d1
+DESC
+A short wooden stick topped with an oil-soaked cloth, perfect for lighting
+your way through the dungeon.
+.
+ATTR 1+0d1
+RRTY 100
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME a Wicked Lasers(R) Torch
+TYPE LIGHT
+WEIGHT 1+1d2
+COLOR BLACK
+DODGE 0+0d1
+VAL 199+0d1
+DAM 0+0d1
+DEF 0+0d1
+HIT 0+0d1
+SPEED 0+0d1
+DESC
+From the makers of the world's most refined lasers, comes the ultimate in
+handheld flashlights. The Flashtorch is a compact, portable searchlight that
+is capable of producing an incredible 4100 lumens of intense white light. Use
+this power to guide your way home, light a fire, or even fry an egg!
+.
+ATTR 3+0d1
+RRTY 40
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME the Moon Tiara
+TYPE HELMET
+WEIGHT 1+1d2
+COLOR WHITE
+DODGE 10+0d1
+VAL 199+0d1
+DAM 0+0d1
+DEF 30+0d1
+HIT 0+0d1
+SPEED 0+0d1
+DESC
+Sailor Moon's Moon Tiara.  Maybe you can use it to do Moon Tiara Action?  But
+she's probably looking for it.
+.
+ATTR 200+0d1
+RRTY 35
+ART TRUE
+END
+
+BEGIN OBJECT
+NAME the Moon Stick
+TYPE OFFHAND
+WEIGHT 1+1d2
+COLOR MAGENTA
+DODGE 10+0d1
+VAL 199+0d1
+DAM 6+2d2
+DEF 30+0d1
+HIT 0+0d1
+SPEED 0+0d1
+DESC
+Sailor Moon's Moon Stick.  Maybe you can use it to do Moon Princess Halation?
+But she's probably looking for it.
+.
+ATTR 200+0d1
+RRTY 40
+ART TRUE
+END
+
+BEGIN OBJECT
+NAME a ring of speed
+TYPE RING
+WEIGHT 1+0d1
+COLOR RED
+DODGE 0+0d1
+VAL 1000+0d1
+DAM 0+0d1
+DEF 0+0d1
+HIT 0+0d1
+SPEED 0+1d18
+DESC
+Not only is it stylish, but it will let you move faster.
+.
+ATTR 0+0d1
+RRTY 75
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME a ring of damage
+TYPE RING
+WEIGHT 1+0d1
+COLOR CYAN
+DODGE 0+0d1
+VAL 1000+0d1
+DAM 0+10d5
+DEF 0+0d1
+HIT 0+0d1
+SPEED 0+0d1
+DESC
+Not only does it look great, but it will let you hit harder.
+.
+ATTR 0+0d1
+RRTY 80
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME Mjolnir
+TYPE WEAPON
+WEIGHT 1000+0d1
+COLOR GREEN
+DODGE 10+10d10
+VAL 19900+0d1
+DAM 10+5d15
+DEF 0+0d1
+HIT 100+0d1
+SPEED 10+0d1
+DESC
+The hammer of Thor, one of the most fearsome and powerful weapons in
+existence, capable of leveling mountains.
+.
+ATTR 10+0d1
+RRTY 10
+ART TRUE
+END
+
+BEGIN OBJECT
+NAME Sting
+TYPE WEAPON
+WEIGHT 10+0d1
+COLOR BLUE
+DODGE 0+0d1
+VAL 300+0d1
+DAM 0+8d15
+DEF 0+0d1
+HIT 10+0d1
+SPEED 5+0d1
+DESC
+A magical, elven blade, it glows blue when orcs are near.
+.
+ATTR 10+0d1
+RRTY 60
+ART TRUE
+END
+
+BEGIN OBJECT
+NAME fingerless gloves
+TYPE GLOVES
+WEIGHT 2+0d1
+COLOR GREEN
+DODGE 0+0d1
+VAL 3+0d1
+DAM 0+0d1
+DEF 5+0d1
+HIT 10+0d1
+SPEED 0+0d1
+DESC
+Put these on and you'll be bad like Michael Jackson.
+.
+ATTR 0+0d1
+RRTY 80
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME the Heart of the Ocean
+TYPE AMULET
+WEIGHT 2+0d1
+COLOR BLUE
+DODGE 0+0d1
+VAL 20000000+0d1
+DAM 2+10d2
+DEF 10+0d1
+HIT 10+0d1
+SPEED 10+0d1
+DESC
+A 56 carat diamond was originally owned by Louis XVI and cut into a heart
+shape after the French Revolution.  Last known whereabouts: Bottom of the
+Atlantic Ocean (thanks, Rose).  Little did she know, it's imbued with
+fantastic magical powers!
+.
+ATTR 0+0d1
+RRTY 20
+ART TRUE
+END
+
+BEGIN OBJECT
+NAME a rusty spork
+TYPE WEAPON
+COLOR RED
+WEIGHT 2+0d1
+HIT 1+1d2
+DAM 2+1d3
+ATTR 0+0d1
+VAL 5+1d4
+DODGE 0+0d1
+DEF 0+0d1
+SPEED 0+0d1
+DESC
+Is it a spoon? Is it a fork? It's both, and it's rusty! This spork looks
+like it was pilfered from a goblin's mess hall. It's not much, but it could
+poke an eye out if you try hard enough.
+.
+RRTY 90
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME the Monocle of Magnification
+TYPE HELMET
+COLOR WHITE
+WEIGHT 1+0d1
+HIT 0+0d1
+DAM 0+0d1
+ATTR 5+1d3
+VAL 250+2d20
+DODGE 5+1d2
+DEF 2+1d2
+SPEED 0+0d1
+DESC
+A polished silver monocle that makes everything look bigger—enemies, traps,
+and your own ego. Rumored to have been lost by a nearsighted wizard, it
+sharpens your perception but makes you a bit too confident.
+.
+RRTY 50
+ART TRUE
+END
+
+BEGIN OBJECT
+NAME a pair of fuzzy slippers
+TYPE BOOTS
+COLOR RED WHITE
+WEIGHT 1+0d1
+HIT 0+0d1
+DAM 0+0d1
+ATTR 0+0d1
+VAL 20+1d10
+DODGE 2+1d3
+DEF 1+1d2
+SPEED -2+0d1
+DESC
+These cozy slippers are embroidered with little bunnies. They're super
+comfy, but you can't help shuffling along slowly. Perfect for lounging
+in a dungeon... if that's your thing.
+.
+RRTY 85
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME the Bag of Infinite Marbles
+TYPE OFFHAND
+COLOR GREEN
+WEIGHT 3+0d1
+HIT 0+0d1
+DAM 5+2d4
+ATTR 0+0d1
+VAL 500+2d50
+DODGE 0+0d1
+DEF 0+0d1
+SPEED -5+0d1
+DESC
+A small, enchanted sack that spills an endless stream of marbles when
+swung. Great for tripping up foes, but you'll probably slip on them
+too. Handle with care, unless you like falling.
+.
+RRTY 30
+ART TRUE
+END
+
+BEGIN OBJECT
+NAME a crusty loaf of bread
+TYPE WEAPON
+COLOR YELLOW
+WEIGHT 4+0d1
+HIT 0+1d2
+DAM 3+1d4
+ATTR 0+0d1
+VAL 8+1d5
+DODGE 0+0d1
+DEF 0+0d1
+SPEED 0+0d1
+DESC
+This loaf is so stale it could double as a club. Found in the dungeon's
+forgotten pantry, it's hard enough to crack a kobold's skull, but it crumbles
+a bit with each swing.
+.
+RRTY 95
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME a bedazzled codpiece
+TYPE ARMOR
+COLOR MAGENTA
+WEIGHT 3+0d1
+HIT 0+0d1
+DAM 0+0d1
+ATTR 0+0d1
+VAL 75+2d10
+DODGE -2+0d1
+DEF 5+1d4
+SPEED -1+0d1
+DESC
+This gaudy codpiece is encrusted with fake gemstones that sparkle
+distractingly. It offers decent protection for... strategic areas, but its
+bulk makes you waddle awkwardly. Perfect for the bold or the shameless.
+.
+RRTY 80
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME the Wand of Wild Surges
+TYPE OFFHAND
+COLOR RED YELLOW
+WEIGHT 1+0d1
+HIT 0+0d1
+DAM 5+3d6
+ATTR 2+1d3
+VAL 600+3d50
+DODGE 0+0d1
+DEF 0+0d1
+SPEED 0+0d1
+DESC
+A gnarled wand crackling with chaotic energy. Each wave unleashes a random
+magical effect—fireballs, frogs, or maybe just glitter. Stolen from a wizard
+with a gambling problem, it's as dangerous to you as to your enemies.
+.
+RRTY 25
+ART TRUE
+END
+
+BEGIN OBJECT
+NAME a pair of squeaky galoshes
+TYPE BOOTS
+COLOR YELLOW
+WEIGHT 2+0d1
+HIT 0+0d1
+DAM 0+0d1
+ATTR 0+0d1
+VAL 15+1d8
+DODGE 1+1d2
+DEF 2+1d3
+SPEED -3+0d1
+DESC
+These rubber galoshes squeak loudly with every step, alerting every monster
+in the dungeon to your presence. They keep your feet dry, though, and offer
+a bit of protection from slippery traps.
+.
+RRTY 85
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME the Amulet of Yawn
+TYPE AMULET
+COLOR CYAN
+WEIGHT 1+0d1
+HIT 0+0d1
+DAM 0+0d1
+ATTR 0+0d1
+VAL 300+2d25
+DODGE 0+0d1
+DEF 8+4d4
+SPEED -5+0d1
+DESC
+This dull, heavy amulet emits an aura of crushing boredom. Enemies might fall
+asleep just looking at you, but you're struggling to stay awake too. Found in
+a dusty corner of the dungeon, it's oddly protective.
+.
+RRTY 40
+ART TRUE
+END
+
+BEGIN OBJECT
+NAME a bent tin whistle
+TYPE OFFHAND
+COLOR WHITE
+WEIGHT 1+0d1
+HIT 0+0d1
+DAM 1+1d2
+ATTR 0+0d1
+VAL 10+1d6
+DODGE 0+0d1
+DEF 0+0d1
+SPEED 0+0d1
+DESC
+This dented whistle produces an ear-piercing screech when blown. It might
+scare off rats or annoy goblins, but it's just as likely to attract 
+something worse. Still, it's shiny!
+.
+RRTY 90
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME a tiny vile of healing
+TYPE FLASK
+COLOR WHITE
+WEIGHT 0+0d1
+HIT 0+0d1
+DAM 0+0d1
+ATTR 4+1d6
+VAL 2+1d2
+DODGE 0+0d1
+DEF 0+0d1
+SPEED 0+0d1
+DESC
+Yeah, it might not be a lot, but hey, healing is healing. Beggars can't
+be choosers in these dungeons.
+.
+RRTY 65
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME a Big Pot
+TYPE FLASK
+COLOR BLUE
+WEIGHT 4+0d1
+HIT 0+0d1
+DAM 0+0d1
+ATTR 50+0d1
+VAL 10+1d6
+DODGE 0+0d1
+DEF 0+0d1
+SPEED 0+0d1
+DESC
+Now this oughta turn the tide in your favor. Get back in there, champ!
+.
+RRTY 50
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME a large Baja Blast from Taco Bell
+TYPE FLASK
+COLOR CYAN
+WEIGHT 2+0d1
+HIT 0+0d1
+DAM 0+0d1
+ATTR 15+2d8
+VAL 5+1d4
+DODGE 0+0d1
+DEF 0+0d1
+SPEED 0+0d1
+DESC
+Truly a legendary treasure of these cold depths. Refresh yourself with
+an explosion of sweet berry goodness.
+.
+RRTY 40
+ART FALSE
+END
+
+BEGIN OBJECT
+NAME the Flask of Pain and Agony
+TYPE FLASK
+COLOR RED
+WEIGHT 1+0d1
+HIT 0+0d1
+DAM 0+0d1
+ATTR -91+1d90
+VAL 0+0d1
+DODGE 0+0d1
+DEF 0+0d1
+SPEED 0+0d1
+DESC
+Yeeeoowch!
+.
+RRTY 20
+ART TRUE
+END

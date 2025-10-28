@@ -67,29 +67,30 @@ int main(int argc, char *argv[]) {
             printf("Usage: Dungeon Crawler [options]\n"
                     "\nAvailable options:\n");
             for (int i = 0; i < numSwitches; i++) {
-                printf("  %-4s, %-13s:  %s\n", switches[i].shortOp, switches[i].longOp, switches[i].desc);
+                printf("  %-4s, %-17s:  %s\n", switches[i].shortOp, switches[i].longOp, switches[i].desc);
             }
             printf("\nExamples:\n"
-                    "    ./dungeon --save test1.rlg327 -a\n"
-                    "    ./dungeon -l test1.rlg327 --nummon 10 -d\n"
-                    "\nTry the print hardness before option!\n\n");
+                    "    ./dungeon --save test1.questv -a\n"
+                    "    ./dungeon -l test1.questv --nummon 10\n\n");
             return 0;
         }
         else if (!strcmp(argv[i], "-pm") || !strcmp(argv[i], "--parse-monsters")) {
-            char *homeDir = getenv("HOME");
-            if (!homeDir) return 1;
-
-            std::string monsterFile = std::string(homeDir) + "/.rlg327/monster_desc.txt";
-            parse(monsterFile.c_str());
+            if (parse("../data/monster_desc.txt")) {
+                std::cout << "Attempting to parse example monster description file instead." << std::endl;
+                if (parse("../data/monster_desc.example.txt")) {
+                    return 1;
+                }
+            }
             printParsedMonsters();
             return 0;
         }
         else if (!strcmp(argv[i], "-po") || !strcmp(argv[i], "--parse-objects")) {
-            char *homeDir = getenv("HOME");
-            if (!homeDir) return 1;
-
-            std::string objectFile = std::string(homeDir) + "/.rlg327/object_desc.txt";
-            parse(objectFile.c_str());
+            if (parse("../data/object_desc.txt")) {
+                std::cout << "Attempting to parse example object description file instead." << std::endl;
+                if (parse("../data/object_desc.example.txt")) {
+                    return 1;
+                }
+            }
             printParsedObjects();
             return 0;
         }
@@ -211,12 +212,18 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    char *homeDir = getenv("HOME");
-    if (!homeDir) return 1;
-    std::string objectFile = std::string(homeDir) + "/.rlg327/object_desc.txt";
-    parse(objectFile.c_str());
-    std::string monsterFile = std::string(homeDir) + "/.rlg327/monster_desc.txt";
-    parse(monsterFile.c_str());
+    if (parse("../data/object_desc.txt")) {
+        std::cout << "Attempting to parse example object description file instead." << std::endl;
+        if (parse("../data/object_desc.example.txt")) {
+            return 1;
+        }
+    }
+    if (parse("../data/monster_desc.txt")) {
+        std::cout << "Attempting to parse example monster description file instead." << std::endl;
+        if (parse("../data/monster_desc.example.txt")) {
+            return 1;
+        }
+    }
     
     if (loadFlag) {
         if (printhardbFlag) {

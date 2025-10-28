@@ -1,3 +1,5 @@
-.rlg327/
+data/*
+!data/*.example.txt
 .vscode
 build/
+bin/

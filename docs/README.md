@@ -44,17 +44,30 @@ cd Questvein
 ```
 make
 ```
-2. Run the Game:
+2. Switch directories
 ```
-./build/dungeon
+cd bin
 ```
+Note: you must be in the `bin` directory or the object and monster description files will not be detected.
 
-## 4.0 Controls
+3. Run the Game:
+```
+./dungeon
+```
+or if you need help with usage:
+```
+./dungeon --help
+```
+## 4.0 Customizing the game
+
+By default, you have an `object_desc.example.txt` and `monster_desc.example.txt` which is what is used to parse the game entities. If you want to modify this information (You should!), then just copy the file, rename it without the `.example`as follows: `object_desc.txt` and `monster_desc.txt`. Now you can add, remove, or modify game entities and that data will be parsed in place of the `.example` data automatically!
+
+## 5.0 Controls
 
 In order to see the full list of controls, run the game, press any key to start the game, and the use the '?' command. Navigate the command list with the up and down arrow on your keyboard.
 
-## 5.0 Contact
+## 6.0 Contact
 
 Developed by Seth Clover
 
-Email: sclover@iastate.edu
+Email: seth.clover@gmail.com
